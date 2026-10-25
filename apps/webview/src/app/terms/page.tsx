@@ -1,12 +1,11 @@
 import { LegalPage } from '@/components/LegalPage';
 import { SUPPORT_EMAIL } from '@/lib/constants';
 
-// 초안: 출시 전 사업자 정보와 유료 구독 조항을 채우고 검토 받는다
 export default function TermsPage() {
   return (
     <LegalPage
       title="이용약관"
-      updated="2026년 11월 1일 (초안)"
+      updated="2026년 11월 1일"
       sections={[
         { h: '1. 서비스', p: ['미니커버리는 궁금한 주제를 입력하면 AI가 짧은 읽을거리(Drop) 코스를 만들어 하루 한 편씩 보여 주는 서비스예요.'] },
         {

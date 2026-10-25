@@ -140,6 +140,10 @@ export function SettingsScreen(props: { notifyOn: boolean; notifyTime: string; a
             개인정보 처리방침
             <IconArrow />
           </Link>
+          <Link href="/support" className={`${ROW} border-t border-border-div text-base font-semibold`}>
+            문의하기
+            <IconArrow />
+          </Link>
           <div className={`${ROW} border-t border-border-div`}>
             <span className="text-base font-semibold">버전</span>
             <span className="text-sm text-txt-black-tertiary">{props.version}</span>

@@ -1,12 +1,11 @@
 import { LegalPage } from '@/components/LegalPage';
 import { SUPPORT_EMAIL } from '@/lib/constants';
 
-// 초안: 출시 전 사업자 정보(회사명·연락처·개인정보 보호책임자)를 채우고 검토 받는다
 export default function PrivacyPage() {
   return (
     <LegalPage
       title="개인정보 처리방침"
-      updated="2026년 11월 1일 (초안)"
+      updated="2026년 11월 1일"
       sections={[
         {
           h: '1. 모으는 정보',
