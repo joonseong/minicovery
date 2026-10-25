@@ -1,6 +1,6 @@
 import { SupabaseClient, createClient } from '@supabase/supabase-js';
 
-import type { AppEvent, Course, Drop, FailureLog, Report, UsageLog, User } from '../types';
+import type { AppEvent, Course, Drop, FailureLog, Report, SocialField, UsageLog, User } from '../types';
 import type { Store } from './index';
 
 /**
@@ -47,8 +47,8 @@ export class SupabaseStore implements Store {
     const rows = await this.many<User>(this.db.from('users').select('data').eq('email', email).limit(1));
     return rows[0] ?? null;
   }
-  async findUserByAppleSub(sub: string) {
-    const rows = await this.many<User>(this.db.from('users').select('data').eq('data->>appleSub', sub).limit(1));
+  async findUserBySocial(field: SocialField, id: string) {
+    const rows = await this.many<User>(this.db.from('users').select('data').eq(`data->>${field}`, id).limit(1));
     return rows[0] ?? null;
   }
   listUsers() {

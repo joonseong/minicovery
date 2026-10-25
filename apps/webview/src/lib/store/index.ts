@@ -1,4 +1,4 @@
-import type { AppEvent, Course, Drop, FailureLog, Report, UsageLog, User } from '../types';
+import type { AppEvent, Course, Drop, FailureLog, Report, SocialField, UsageLog, User } from '../types';
 import { FileStore } from './file';
 import { SupabaseStore } from './supabase';
 
@@ -8,7 +8,8 @@ export interface Store {
   /** 임시 계정 → 가입 계정으로 학습 기록 이전 */
   moveUserData(fromUserId: string, toUserId: string): Promise<void>;
   findUserByEmail(email: string): Promise<User | null>;
-  findUserByAppleSub(sub: string): Promise<User | null>;
+  /** 소셜 로그인 계정 찾기 (Apple sub · 카카오 회원번호 · Google sub) */
+  findUserBySocial(field: SocialField, id: string): Promise<User | null>;
   listUsers(): Promise<User[]>;
 
   getCourse(id: string): Promise<Course | null>;

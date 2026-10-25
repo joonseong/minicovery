@@ -29,6 +29,10 @@ export interface User {
   presubscribedAt?: string;
   /** Apple 로그인 sub */
   appleSub?: string;
+  /** 카카오 회원번호 */
+  kakaoId?: string;
+  /** Google 로그인 sub */
+  googleSub?: string;
   /** Plus 구독 시작 시각. 비어 있으면 무료 */
   plusSince?: string;
   /** App Store 구독 만료 시각. 갱신·해지 알림과 앱 실행 시 동기화로 바뀐다 */
@@ -159,3 +163,5 @@ export interface FailureLog {
   stage: string;
   message: string;
 }
+
+export type SocialField = 'appleSub' | 'kakaoId' | 'googleSub';

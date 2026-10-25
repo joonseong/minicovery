@@ -9,13 +9,17 @@ export type NativeRequest =
   | { type: 'openSettings' }
   | { type: 'haptic' }
   | { type: 'iapPurchase'; id: string; productId: string; accountToken: string }
-  | { type: 'iapRestore'; id: string };
+  | { type: 'iapRestore'; id: string }
+  | { type: 'kakaoSignIn'; id: string }
+  | { type: 'googleSignIn'; id: string };
 
 export type NativeResponse =
   | { type: 'pushPermission'; id: string; granted: boolean; token?: string }
   | { type: 'appleSignIn'; id: string; identityToken?: string; error?: string }
   | { type: 'iapPurchase'; id: string; jws?: string; error?: IapError }
-  | { type: 'iapRestore'; id: string; jws?: string[]; error?: IapError };
+  | { type: 'iapRestore'; id: string; jws?: string[]; error?: IapError }
+  | { type: 'kakaoSignIn'; id: string; accessToken?: string; error?: string }
+  | { type: 'googleSignIn'; id: string; idToken?: string; error?: string };
 
 /** canceled: 사용자가 닫음, pending: 승인 대기(자녀 보호 등), unsupported: 결제 기능이 없는 옛 앱 버전 */
 export type IapError = 'canceled' | 'pending' | 'unsupported' | 'not_found' | 'failed';
@@ -24,7 +28,7 @@ declare global {
   interface Window {
     ReactNativeWebView?: { postMessage: (message: string) => void };
     /** 앱이 페이지보다 먼저 심는 기능 목록. 옛 앱 버전에는 없다 */
-    minicoveryNative?: { iap?: boolean };
+    minicoveryNative?: { iap?: boolean; kakao?: boolean; google?: boolean };
   }
 }
 
@@ -115,4 +119,21 @@ export async function nativeRestore(): Promise<{ jws?: string[]; error?: IapErro
   const id = Math.random().toString(36).slice(2);
   const res = await askNative<Extract<NativeResponse, { type: 'iapRestore' }>>({ type: 'iapRestore', id }, 60_000);
   return res ?? { error: 'unsupported' };
+}
+
+/** 카카오·Google 로그인 기능이 있는 앱 (빌드 4부터) */
+export const canSocialSignIn = (provider: 'kakao' | 'google') => isNative() && Boolean(window.minicoveryNative?.[provider]);
+
+/** 앱이 카카오 로그인(카카오톡 또는 카카오계정)을 띄우고 액세스 토큰을 돌려준다. 서버가 카카오에 확인한다 */
+export async function nativeKakaoSignIn(): Promise<{ accessToken?: string; error?: string }> {
+  const id = Math.random().toString(36).slice(2);
+  const res = await askNative<Extract<NativeResponse, { type: 'kakaoSignIn' }>>({ type: 'kakaoSignIn', id }, 5 * 60_000);
+  return res ?? { error: 'failed' };
+}
+
+/** 앱이 Google 로그인을 띄우고 ID 토큰을 돌려준다. 서버가 Google 공개키로 검증한다 */
+export async function nativeGoogleSignIn(): Promise<{ idToken?: string; error?: string }> {
+  const id = Math.random().toString(36).slice(2);
+  const res = await askNative<Extract<NativeResponse, { type: 'googleSignIn' }>>({ type: 'googleSignIn', id }, 5 * 60_000);
+  return res ?? { error: 'failed' };
 }

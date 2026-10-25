@@ -62,6 +62,12 @@ importers:
       '@react-native-firebase/messaging':
         specifier: ^21.14.0
         version: 21.14.0(@react-native-firebase/app@21.14.0(react-native@0.81.6(@babel/core@7.26.10)(@react-native-community/cli@20.0.2(typescript@5.8.3))(@react-native/metro-config@0.81.6(@babel/core@7.26.10))(@types/react@19.3.0)(react@19.1.4))(react@19.1.4))
+      '@react-native-google-signin/google-signin':
+        specifier: 16.1.5
+        version: 16.1.5(react-native@0.81.6(@babel/core@7.26.10)(@react-native-community/cli@20.0.2(typescript@5.8.3))(@react-native/metro-config@0.81.6(@babel/core@7.26.10))(@types/react@19.3.0)(react@19.1.4))(react@19.1.4)
+      '@react-native-seoul/kakao-login':
+        specifier: 6.0.4
+        version: 6.0.4(react-native@0.81.6(@babel/core@7.26.10)(@react-native-community/cli@20.0.2(typescript@5.8.3))(@react-native/metro-config@0.81.6(@babel/core@7.26.10))(@types/react@19.3.0)(react@19.1.4))(react@19.1.4)
       react:
         specifier: 19.1.4
         version: 19.1.4
@@ -1672,6 +1678,22 @@ packages:
     peerDependenciesMeta:
       expo:
         optional: true
+
+  '@react-native-google-signin/google-signin@16.1.5':
+    resolution: {integrity: sha512-9rmMwACzHK9Cbd0Yp7efg5uWgiYoLwmNAJh4gRCuMcSQH+qplpK7E4d1Q4tbsD8M9jvvVtRX2Z0AP9wwBKmPrQ==}
+    peerDependencies:
+      expo: '>=52.0.40'
+      react: '*'
+      react-native: '*'
+    peerDependenciesMeta:
+      expo:
+        optional: true
+
+  '@react-native-seoul/kakao-login@6.0.4':
+    resolution: {integrity: sha512-/hvDiRNBvkqlK4sBhlGh4rFDkUoFhT/BBB9ALq0UkEoCH2Dpo5Vas5Bm8kJJVklJ5+EVxJUYY9tFuRcpZKm3Ug==}
+    peerDependencies:
+      react: '*'
+      react-native: '*'
 
   '@react-native/assets-registry@0.81.6':
     resolution: {integrity: sha512-nNlJ7mdXFoq/7LMG3eJIncqjgXkpDJak3xO8Lb4yQmFI3XVI1nupPRjlYRY0ham1gLE0F/AWvKFChsKUfF5lOQ==}
@@ -7281,6 +7303,16 @@ snapshots:
   '@react-native-firebase/messaging@21.14.0(@react-native-firebase/app@21.14.0(react-native@0.81.6(@babel/core@7.26.10)(@react-native-community/cli@20.0.2(typescript@5.8.3))(@react-native/metro-config@0.81.6(@babel/core@7.26.10))(@types/react@19.3.0)(react@19.1.4))(react@19.1.4))':
     dependencies:
       '@react-native-firebase/app': 21.14.0(react-native@0.81.6(@babel/core@7.26.10)(@react-native-community/cli@20.0.2(typescript@5.8.3))(@react-native/metro-config@0.81.6(@babel/core@7.26.10))(@types/react@19.3.0)(react@19.1.4))(react@19.1.4)
+
+  '@react-native-google-signin/google-signin@16.1.5(react-native@0.81.6(@babel/core@7.26.10)(@react-native-community/cli@20.0.2(typescript@5.8.3))(@react-native/metro-config@0.81.6(@babel/core@7.26.10))(@types/react@19.3.0)(react@19.1.4))(react@19.1.4)':
+    dependencies:
+      react: 19.1.4
+      react-native: 0.81.6(@babel/core@7.26.10)(@react-native-community/cli@20.0.2(typescript@5.8.3))(@react-native/metro-config@0.81.6(@babel/core@7.26.10))(@types/react@19.3.0)(react@19.1.4)
+
+  '@react-native-seoul/kakao-login@6.0.4(react-native@0.81.6(@babel/core@7.26.10)(@react-native-community/cli@20.0.2(typescript@5.8.3))(@react-native/metro-config@0.81.6(@babel/core@7.26.10))(@types/react@19.3.0)(react@19.1.4))(react@19.1.4)':
+    dependencies:
+      react: 19.1.4
+      react-native: 0.81.6(@babel/core@7.26.10)(@react-native-community/cli@20.0.2(typescript@5.8.3))(@react-native/metro-config@0.81.6(@babel/core@7.26.10))(@types/react@19.3.0)(react@19.1.4)
 
   '@react-native/assets-registry@0.81.6': {}
 

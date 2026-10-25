@@ -1,8 +1,6 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 
-import { currentUser, setUidCookie } from '@/lib/session';
-import { mergeDeviceRecords, track } from '@/lib/service';
-import { getStore } from '@/lib/store';
+import { signInWithSocial } from '@/lib/social';
 
 const APPLE_JWKS = createRemoteJWKSet(new URL('https://appleid.apple.com/auth/keys'));
 const BUNDLE_ID = process.env.APPLE_BUNDLE_ID ?? 'com.minicovery.app';
@@ -24,26 +22,5 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Apple 로그인을 확인하지 못했어요.' }, { status: 401 });
   }
 
-  const store = getStore();
-  const device = await currentUser();
-  const account = await store.findUserByAppleSub(sub);
-  if (!account) {
-    device.anon = false;
-    device.appleSub = sub;
-    device.email ??= email;
-    await store.saveUser(device);
-    await track(device.id, 'signup', { method: 'apple' });
-    return Response.json({ ok: true, created: true });
-  }
-  if (device.anon && device.id !== account.id) {
-    try {
-      await store.moveUserData(device.id, account.id);
-      await mergeDeviceRecords(device, account);
-    } catch (error) {
-      console.error('[apple] moveUserData', error);
-    }
-  }
-  setUidCookie(account.id);
-  await track(account.id, 'login', { method: 'apple' });
-  return Response.json({ ok: true, created: false });
+  return signInWithSocial('appleSub', sub, email);
 }

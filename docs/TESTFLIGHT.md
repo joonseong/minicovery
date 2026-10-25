@@ -49,6 +49,6 @@ Xcode에서:
 - 인앱 결제(Plus 월 3,900원): 상품 ID `com.minicovery.plus.monthly`. 앱은 StoreKit 2(`MinicoveryIAP.swift`), 서버는 `/api/iap/verify`가 App Store Server API로 확인한다.
   App Store Connect > 앱 정보 > App Store 서버 알림(버전 2)에 운영·샌드박스 모두 `https://minicovery.vercel.app/api/iap/notify` 를 넣는다.
   첫 구독 상품은 앱 버전과 함께 심사에 제출한다.
-- 카카오·Google 로그인: 앱 키를 받으면 `NEXT_PUBLIC_KAKAO_LOGIN` / `NEXT_PUBLIC_GOOGLE_LOGIN` 을 켜고 OAuth 라우트를 붙인다.
+- 카카오·Google 로그인: 앱이 네이티브 SDK로 토큰을 받고 서버(`/api/auth/kakao`, `/api/auth/google`)가 검증한다. 앱 값은 `apps/app/src/config.ts`·`Info.plist`, 서버는 `KAKAO_APP_ID`, `GOOGLE_CLIENT_IDS`.
 - 이용약관·개인정보 처리방침(`/terms`, `/privacy`)은 초안이다. 사업자 정보와 연락처를 채우고 검토 받는다.
 - 앱 아이콘은 토끼 얼굴 + 브랜드 녹색으로 만든 임시안이다.

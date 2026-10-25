@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import type { AppEvent, Course, Drop, FailureLog, Report, UsageLog, User } from '../types';
+import type { AppEvent, Course, Drop, FailureLog, Report, SocialField, UsageLog, User } from '../types';
 import type { Store } from './index';
 
 interface Db {
@@ -43,8 +43,8 @@ export class FileStore implements Store {
   async findUserByEmail(email: string) {
     return Object.values(this.db.users).find(u => u.email === email) ?? null;
   }
-  async findUserByAppleSub(sub: string) {
-    return Object.values(this.db.users).find(u => u.appleSub === sub) ?? null;
+  async findUserBySocial(field: SocialField, id: string) {
+    return Object.values(this.db.users).find(u => u[field] === id) ?? null;
   }
   async listUsers() {
     return Object.values(this.db.users);
