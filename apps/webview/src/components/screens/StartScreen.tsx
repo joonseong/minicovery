@@ -61,7 +61,7 @@ export function StartScreen({ initialTopic, suggestions, quota, currentTopic, re
             <br />
             궁금하세요?
           </h1>
-          <p className="text-base text-txt-black-secondary">입력한 주제를 하루 3분짜리 코스로 만들어 드려요.</p>
+          <p className="text-base text-txt-black-secondary">입력한 주제를 하루 한 편씩 읽는 코스로 만들어 드려요.</p>
         </div>
 
         <form

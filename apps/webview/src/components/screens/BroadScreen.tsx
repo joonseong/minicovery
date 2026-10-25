@@ -39,7 +39,7 @@ export function BroadScreen({ topic, suggestions, quota, currentTopic, replace }
             <br />
             궁금하세요?
           </h1>
-          <p className="text-base text-txt-black-secondary">입력한 주제를 하루 3분짜리 코스로 만들어 드려요.</p>
+          <p className="text-base text-txt-black-secondary">입력한 주제를 하루 한 편씩 읽는 코스로 만들어 드려요.</p>
         </div>
         <div className="mt-8">
           <input
@@ -52,7 +52,7 @@ export function BroadScreen({ topic, suggestions, quota, currentTopic, replace }
         <section className="mt-6 flex flex-col gap-4 rounded-2xl bg-shape-depth1 p-5">
           <div className="flex flex-col gap-1">
             <h2 className="text-lg font-semibold">조금 좁혀 볼까요?</h2>
-            <p className="text-sm text-txt-black-secondary">‘{topic}’은 범위가 넓어서 3분 코스로 담기 어려워요. 이 중에서 골라 주세요.</p>
+            <p className="text-sm text-txt-black-secondary">‘{topic}’은 범위가 넓어서 한 코스로 담기 어려워요. 이 중에서 골라 주세요.</p>
           </div>
           <div className="flex flex-wrap gap-2">
             {suggestions.map(s => (
