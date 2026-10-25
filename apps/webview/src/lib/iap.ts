@@ -41,14 +41,17 @@ async function apiToken() {
     .sign(key);
 }
 
-/** 운영 서버에 없으면(404) 샌드박스(TestFlight·심사)에서 찾는다 */
+/**
+ * 운영 서버에 없으면 샌드박스(TestFlight·심사)에서 찾는다.
+ * 출시 전에는 운영 서버가 404 대신 401을 돌려주므로 운영 쪽 401도 넘어간다
+ */
 async function fetchTransaction(transactionId: string): Promise<AppleTransaction | null> {
   const token = await apiToken();
   for (const host of HOSTS) {
     const res = await fetch(`${host}/inApps/v1/transactions/${encodeURIComponent(transactionId)}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (res.status === 404) continue;
+    if (res.status === 404 || (res.status === 401 && host === HOSTS[0])) continue;
     if (!res.ok) throw new Error(`app store ${res.status}`);
     const { signedTransactionInfo } = (await res.json()) as { signedTransactionInfo: string };
     return decodeJwt(signedTransactionInfo) as unknown as AppleTransaction;
