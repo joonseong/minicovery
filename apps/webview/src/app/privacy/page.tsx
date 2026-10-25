@@ -1,4 +1,5 @@
 import { LegalPage } from '@/components/LegalPage';
+import { SUPPORT_EMAIL } from '@/lib/constants';
 
 // 초안: 출시 전 사업자 정보(회사명·연락처·개인정보 보호책임자)를 채우고 검토 받는다
 export default function PrivacyPage() {
@@ -35,7 +36,7 @@ export default function PrivacyPage() {
             '법령에 따라 보관해야 하는 정보는 정해진 기간 동안만 보관해요.',
           ],
         },
-        { h: '5. 문의', p: ['개인정보 관련 문의: (출시 전 연락처 기재)'] },
+        { h: '5. 개인정보 보호책임자와 문의', p: [`운영자 및 개인정보 보호책임자: 미니멀`, `개인정보 관련 문의: ${SUPPORT_EMAIL}`] },
       ]}
     />
   );

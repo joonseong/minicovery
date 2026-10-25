@@ -46,6 +46,9 @@ export const NOTIFY_ASK_INTERVAL_DAYS = 3;
 /** App Store 리뷰를 요청하는 누적 완료 편수 */
 export const REVIEW_AT_DROPS = [3, 10, 30];
 export const PLUS_PRICE_LABEL = '월 3,900원';
+
+/** 고객 문의 (App Store 지원 URL 페이지·약관에 표시) */
+export const SUPPORT_EMAIL = 'minimalReading@gmail.com';
 export const PLUS_PRODUCT_ID = 'com.minicovery.plus.monthly';
 
 /** 캐릭터 단계: 다 배운 주제 수 기준 */

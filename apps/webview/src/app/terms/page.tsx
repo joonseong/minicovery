@@ -1,4 +1,5 @@
 import { LegalPage } from '@/components/LegalPage';
+import { SUPPORT_EMAIL } from '@/lib/constants';
 
 // 초안: 출시 전 사업자 정보와 유료 구독 조항을 채우고 검토 받는다
 export default function TermsPage() {
@@ -25,7 +26,7 @@ export default function TermsPage() {
           ],
         },
         { h: '4. 이용 제한', p: ['불법 행위 방법, 무기·약물 제조, 자해, 혐오, 특정인 비방 등은 코스로 만들 수 없어요.'] },
-        { h: '5. 문의', p: ['(출시 전 연락처 기재)'] },
+        { h: '5. 운영자와 문의', p: [`운영자: 미니멀`, `문의: ${SUPPORT_EMAIL}`] },
       ]}
     />
   );
