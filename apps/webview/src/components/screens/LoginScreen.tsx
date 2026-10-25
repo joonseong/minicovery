@@ -6,9 +6,10 @@ import { useState } from 'react';
 
 import { postJson } from '@/lib/client/ndjson';
 
+import { SocialButtons } from '../Social';
 import { AppHeader, Footer, Main, PrimaryButton, Screen } from '../ui';
 
-/** 이메일 로그인 · 가입 (보조 수단) */
+/** 로그인(소셜 + 이메일) · 이메일 가입 (보조 수단) */
 export function LoginScreen({ next, mode }: { next: string; mode: 'login' | 'signup' }) {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -17,6 +18,11 @@ export function LoginScreen({ next, mode }: { next: string; mode: 'login' | 'sig
   const [busy, setBusy] = useState(false);
   const signup = mode === 'signup';
   const ready = email.includes('@') && pw.length >= (signup ? 8 : 1);
+
+  const done = () => {
+    router.replace(next);
+    router.refresh();
+  };
 
   const submit = async () => {
     if (!ready || busy) return;
@@ -28,20 +34,24 @@ export function LoginScreen({ next, mode }: { next: string; mode: 'login' | 'sig
       setError(res.data.error ?? '다시 시도해 주세요.');
       return;
     }
-    router.replace(next);
-    router.refresh();
+    done();
   };
 
   return (
     <Screen>
       <AppHeader layout="nav" back />
       <Main className="pb-6 pt-4">
-        <h1 className="text-2xl font-bold tracking-[-1px]">{signup ? '이메일로 가입' : '이메일로 로그인'}</h1>
+        <h1 className="text-2xl font-bold tracking-[-1px]">{signup ? '이메일로 가입' : '로그인'}</h1>
         <p className="mt-2 text-base text-txt-black-secondary">
           {signup ? '지금까지 읽은 코스와 진도가 그대로 저장돼요.' : '이 기기에서 읽은 기록도 계정으로 옮겨 드려요.'}
         </p>
+        {signup ? null : (
+          <div className="mt-6">
+            <SocialButtons next={next} onDone={done} divider="또는 이메일로" />
+          </div>
+        )}
         <form
-          className="mt-8 flex flex-col gap-4"
+          className={`${signup ? 'mt-8' : 'mt-6'} flex flex-col gap-4`}
           onSubmit={e => {
             e.preventDefault();
             void submit();
