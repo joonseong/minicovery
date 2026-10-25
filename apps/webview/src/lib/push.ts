@@ -57,7 +57,10 @@ export async function sendPush(
         message: { token, notification: { title: message.title, body: message.body }, data: message.data },
       }),
     });
-    return res.ok ? { ok: true } : { ok: false, error: `fcm ${res.status}` };
+    if (res.ok) return { ok: true };
+    // 예: THIRD_PARTY_AUTH_ERROR(APNs 키 문제), UNREGISTERED(앱 삭제로 토큰 만료)
+    const detail = (await res.json().catch(() => null)) as { error?: { details?: { errorCode?: string }[] } } | null;
+    return { ok: false, error: `fcm ${res.status} ${detail?.error?.details?.find(d => d.errorCode)?.errorCode ?? ''}`.trim() };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : String(error) };
   }
