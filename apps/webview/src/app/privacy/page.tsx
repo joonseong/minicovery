@@ -23,7 +23,8 @@ export default function PrivacyPage() {
           h: '3. 맡기는 곳',
           p: [
             '코스와 Drop 글은 Anthropic의 Claude API로 만들어요. 이때 입력한 주제와 학습 수준이 전달되고, 이메일 등 계정 정보는 전달하지 않아요.',
-            '데이터는 클라우드 호스팅 서비스에 저장하고, 알림은 Google Firebase Cloud Messaging과 Apple 푸시 알림 서비스로 보내요.',
+            '데이터는 Supabase(서울 리전)에 저장하고, 서버는 Vercel에서 운영해요.',
+            '알림은 Google Firebase Cloud Messaging과 Apple 푸시 알림 서비스로 보내요. 이때 푸시 토큰과 알림 내용(코스 이름, Drop 첫 문장)이 전달돼요.',
           ],
         },
         {
