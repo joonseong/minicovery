@@ -11,7 +11,8 @@
    - `ANTHROPIC_API_KEY` — 대표가 출시 직전에 넣는다. 비어 있으면 가짜 응답으로 동작한다.
    - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
    - `CRON_SECRET` (임의의 긴 문자열), `ADMIN_TOKEN`
-   - `PLUS_BETA_FREE=true` (인앱 결제 연동 전 베타)
+   - `PLUS_BETA_FREE` — `true`면 결제 없이 Plus를 켠다(베타). 빌드 3(인앱 결제)부터는 끈다.
+   - `APPLE_IAP_KEY_ID`, `APPLE_IAP_ISSUER_ID`, `APPLE_IAP_PRIVATE_KEY` — App Store Connect > 사용자 및 액세스 > 통합 > 앱 내 구입 키 (.p8 내용)
    - `APPLE_BUNDLE_ID=com.minicovery.app`
    - `FIREBASE_SERVICE_ACCOUNT` (푸시를 쓸 때)
 4. 크론: `vercel.json` — 야간 생성(매일 02:00 KST), 결과 수거(05:30 KST). Hobby 요금제도 되는 하루 1회 크론만 둔다.
@@ -45,7 +46,9 @@ Xcode에서:
 
 ## 4. 정식 출시 전에 남은 것
 
-- 인앱 결제(Plus 월 3,900원): App Store Connect에 자동 갱신 구독 상품을 만들고 StoreKit 연동. 지금은 `PLUS_BETA_FREE` 로 결제 없이 켠다.
+- 인앱 결제(Plus 월 3,900원): 상품 ID `com.minicovery.plus.monthly`. 앱은 StoreKit 2(`MinicoveryIAP.swift`), 서버는 `/api/iap/verify`가 App Store Server API로 확인한다.
+  App Store Connect > 앱 정보 > App Store 서버 알림(버전 2)에 운영·샌드박스 모두 `https://minicovery.vercel.app/api/iap/notify` 를 넣는다.
+  첫 구독 상품은 앱 버전과 함께 심사에 제출한다.
 - 카카오·Google 로그인: 앱 키를 받으면 `NEXT_PUBLIC_KAKAO_LOGIN` / `NEXT_PUBLIC_GOOGLE_LOGIN` 을 켜고 OAuth 라우트를 붙인다.
 - 이용약관·개인정보 처리방침(`/terms`, `/privacy`)은 초안이다. 사업자 정보와 연락처를 채우고 검토 받는다.
 - 앱 아이콘은 토끼 얼굴 + 브랜드 녹색으로 만든 임시안이다.
