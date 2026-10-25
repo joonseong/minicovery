@@ -41,6 +41,7 @@ export const QUIET_HOURS = { start: '21:00', end: '08:00' };
 export const FREE_COURSE_LIMIT = 1;
 export const PLUS_MONTHLY_COURSES = 3;
 export const PLUS_PRICE_LABEL = '월 3,900원';
+export const PLUS_PRODUCT_ID = 'com.minicovery.plus.monthly';
 
 /** 캐릭터 단계: 다 배운 주제 수 기준 */
 export const STAGES = [

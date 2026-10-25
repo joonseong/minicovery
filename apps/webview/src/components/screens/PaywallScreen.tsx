@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-import { PLUS_PRICE_LABEL } from '@/lib/constants';
+import { PLUS_PRICE_LABEL, PLUS_PRODUCT_ID } from '@/lib/constants';
+import { canPurchase, isNative, nativePurchase, nativeRestore } from '@/lib/client/bridge';
 import { postJson } from '@/lib/client/ndjson';
 
 import { AppHeader, CHARACTER, Footer, IconCheck, Main, PrimaryButton, Screen } from '../ui';
@@ -16,19 +17,68 @@ const BENEFITS = [
   { title: '한 달 학습 리포트', desc: '이번 달 배운 내용을 한눈에 정리해 드려요.' },
 ];
 
-export function PaywallScreen({ stageKey, plus, beta }: { stageKey: 'rabbit' | 'cat'; plus: boolean; beta: boolean }) {
+export function PaywallScreen({
+  stageKey,
+  plus,
+  beta,
+  accountToken,
+}: {
+  stageKey: 'rabbit' | 'cat';
+  plus: boolean;
+  beta: boolean;
+  /** App Store 거래에 붙이는 사용자 id (UUID) */
+  accountToken: string;
+}) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const ch = CHARACTER[stageKey];
 
+  const verify = (jws: string | string[]) => postJson<{ plus?: boolean }>('/api/iap/verify', { jws });
+
   const start = async () => {
     if (busy) return;
+    setMessage('');
+    if (beta) {
+      setBusy(true);
+      const res = await postJson('/api/me/plus');
+      setBusy(false);
+      if (res.ok) router.replace('/start');
+      return;
+    }
+    if (!canPurchase()) {
+      setMessage(isNative() ? '앱을 최신 버전으로 업데이트하면 결제할 수 있어요.' : '결제는 미니커버리 iOS 앱에서 할 수 있어요.');
+      return;
+    }
     setBusy(true);
-    const res = await postJson('/api/me/plus');
+    const result = await nativePurchase(PLUS_PRODUCT_ID, accountToken);
+    if (!result.jws) {
+      setBusy(false);
+      if (result.error === 'pending') setMessage('결제 승인을 기다리고 있어요. 승인되면 Plus가 켜져요.');
+      else if (result.error !== 'canceled') setMessage('결제를 마치지 못했어요. 잠시 뒤 다시 시도해 주세요.');
+      return;
+    }
+    const res = await verify(result.jws);
     setBusy(false);
-    if (res.ok) router.replace('/start');
-    else setMessage('결제는 정식 출시 때 열려요. 조금만 기다려 주세요.');
+    if (res.data.plus) router.replace('/start');
+    else setMessage('결제를 확인하지 못했어요. 잠시 뒤 구매 복원을 눌러 주세요.');
+  };
+
+  const restore = async () => {
+    if (busy) return;
+    if (!canPurchase()) {
+      setMessage(isNative() ? '앱을 최신 버전으로 업데이트하면 복원할 수 있어요.' : '구매 복원은 미니커버리 iOS 앱에서 할 수 있어요.');
+      return;
+    }
+    setBusy(true);
+    setMessage('');
+    const result = await nativeRestore();
+    const res = result.jws?.length ? await verify(result.jws) : null;
+    setBusy(false);
+    if (res?.data.plus) {
+      setMessage('구독을 복원했어요.');
+      router.refresh();
+    } else setMessage(result.error && result.error !== 'canceled' ? '복원하지 못했어요. 잠시 뒤 다시 시도해 주세요.' : '복원할 구독이 없어요.');
   };
 
   return (
@@ -78,12 +128,22 @@ export function PaywallScreen({ stageKey, plus, beta }: { stageKey: 'rabbit' | '
         )}
         <p className="text-center text-sm text-txt-black-tertiary">
           언제든 해지할 수 있어요 ·{' '}
-          <button type="button" className="underline" onClick={() => setMessage('복원할 구매 내역이 없어요.')}>
-            구매 복원
-          </button>{' '}
+          {plus && !beta ? (
+            <a href="https://apps.apple.com/account/subscriptions" className="underline">
+              구독 관리
+            </a>
+          ) : (
+            <button type="button" className="underline" onClick={() => void restore()}>
+              구매 복원
+            </button>
+          )}{' '}
           ·{' '}
           <Link href="/terms" className="underline">
             이용약관
+          </Link>{' '}
+          ·{' '}
+          <Link href="/privacy" className="underline">
+            개인정보
           </Link>
         </p>
       </Footer>

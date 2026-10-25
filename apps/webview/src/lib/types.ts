@@ -31,6 +31,10 @@ export interface User {
   appleSub?: string;
   /** Plus 구독 시작 시각. 비어 있으면 무료 */
   plusSince?: string;
+  /** App Store 구독 만료 시각. 갱신·해지 알림과 앱 실행 시 동기화로 바뀐다 */
+  plusExpiresAt?: string;
+  /** App Store 구독 원거래 ID (갱신해도 같다). 구매 복원·알림에서 사용자를 찾는 데 쓴다 */
+  plusOriginalTxId?: string;
   /** 오늘 Drop을 받을 코스 (KST 날짜별). 하루 한 편 정책 */
   todayPick?: { date: string; courseId: string };
   /** 내일 받을 코스. 야간 Batch가 이 코스의 다음 Drop을 미리 만든다 */

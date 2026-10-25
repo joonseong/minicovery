@@ -9,24 +9,28 @@
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		6ED03B7925A7DC57BB0C92D6 /* Pods_Minicovery.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3FC02B09C7CCE1890E027ABE /* Pods_Minicovery.framework */; };
+		716B99790763FA71223E0CB7 /* MinicoveryIAP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AFE74ECF04B5E362CBC2C50 /* MinicoveryIAP.swift */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		BAF22AFEFA38272656F06442 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
+		CF983FED1C3B4C9847DFBB60 /* MinicoveryIAP.m in Sources */ = {isa = PBXBuildFile; fileRef = 066A7C59331C5B70C3509550 /* MinicoveryIAP.m */; };
 		F1EBA5E1A1B2C3D4E5F60001 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = F1EBA5E1A1B2C3D4E5F60002 /* GoogleService-Info.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		066A7C59331C5B70C3509550 /* MinicoveryIAP.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = MinicoveryIAP.m; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* Minicovery.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Minicovery.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = Minicovery/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = Minicovery/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = Minicovery/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		F1EBA5E1A1B2C3D4E5F60002 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Minicovery/GoogleService-Info.plist"; sourceTree = "<group>"; };
 		3B4392A12AC88292D35C810B /* Pods-Minicovery.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Minicovery.debug.xcconfig"; path = "Target Support Files/Pods-Minicovery/Pods-Minicovery.debug.xcconfig"; sourceTree = "<group>"; };
 		3FC02B09C7CCE1890E027ABE /* Pods_Minicovery.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Minicovery.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		5709B34CF0A7D63546082F79 /* Pods-Minicovery.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Minicovery.release.xcconfig"; path = "Target Support Files/Pods-Minicovery/Pods-Minicovery.release.xcconfig"; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = Minicovery/AppDelegate.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = Minicovery/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		8AFE74ECF04B5E362CBC2C50 /* MinicoveryIAP.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MinicoveryIAP.swift; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		F1EBA5E1A1B2C3D4E5F60002 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "Minicovery/GoogleService-Info.plist"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -50,6 +54,8 @@
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
 				F1EBA5E1A1B2C3D4E5F60002 /* GoogleService-Info.plist */,
+				8AFE74ECF04B5E362CBC2C50 /* MinicoveryIAP.swift */,
+				066A7C59331C5B70C3509550 /* MinicoveryIAP.m */,
 			);
 			name = Minicovery;
 			sourceTree = "<group>";
@@ -265,6 +271,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				761780ED2CA45674006654EE /* AppDelegate.swift in Sources */,
+				716B99790763FA71223E0CB7 /* MinicoveryIAP.swift in Sources */,
+				CF983FED1C3B4C9847DFBB60 /* MinicoveryIAP.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -279,8 +287,8 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Minicovery/Minicovery.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = QB5LWB6R86;
-				CURRENT_PROJECT_VERSION = 2;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Minicovery/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
@@ -311,8 +319,8 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Minicovery/Minicovery.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = QB5LWB6R86;
-				CURRENT_PROJECT_VERSION = 2;
 				INFOPLIST_FILE = Minicovery/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (

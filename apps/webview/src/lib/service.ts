@@ -88,7 +88,10 @@ export async function checkTopic(user: User, input: string) {
 
 /* ---------- 코스 ---------- */
 
-export const isPlus = (user: User) => Boolean(user.plusSince);
+/** App Store 구독이 유효하거나, 베타(PLUS_BETA_FREE) 동안 무료로 켠 경우. 갱신 처리 지연을 감안해 만료 뒤 6시간은 봐준다 */
+export const isPlus = (user: User) =>
+  (user.plusExpiresAt ? Date.parse(user.plusExpiresAt) + 6 * 3600_000 > Date.now() : false) ||
+  (process.env.PLUS_BETA_FREE === 'true' && Boolean(user.plusSince));
 
 export type Quota = { ok: true } | { ok: false; reason: 'free' | 'monthly' };
 
@@ -601,6 +604,13 @@ export async function grantPlus(user: User) {
 
 /** 로그인할 때 이 기기 임시 계정의 다 배운 기록도 계정으로 합친다 (코스·Drop은 store.moveUserData가 옮김) */
 export async function mergeDeviceRecords(device: User, account: User) {
+  // 가입 전에 이 기기에서 산 구독은 계정으로 옮긴다
+  if (device.plusExpiresAt && (!account.plusExpiresAt || device.plusExpiresAt > account.plusExpiresAt)) {
+    account.plusSince ??= device.plusSince;
+    account.plusExpiresAt = device.plusExpiresAt;
+    account.plusOriginalTxId = device.plusOriginalTxId;
+    await getStore().saveUser(account);
+  }
   if (!device.learned?.length) return;
   const seen = new Set((account.learned ?? []).map(l => l.courseId));
   account.learned = [...(account.learned ?? []), ...device.learned.filter(l => !seen.has(l.courseId))];

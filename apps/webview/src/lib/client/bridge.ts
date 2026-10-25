@@ -7,15 +7,24 @@ export type NativeRequest =
   | { type: 'requestPushPermission'; id: string }
   | { type: 'appleSignIn'; id: string }
   | { type: 'openSettings' }
-  | { type: 'haptic' };
+  | { type: 'haptic' }
+  | { type: 'iapPurchase'; id: string; productId: string; accountToken: string }
+  | { type: 'iapRestore'; id: string };
 
 export type NativeResponse =
   | { type: 'pushPermission'; id: string; granted: boolean; token?: string }
-  | { type: 'appleSignIn'; id: string; identityToken?: string; error?: string };
+  | { type: 'appleSignIn'; id: string; identityToken?: string; error?: string }
+  | { type: 'iapPurchase'; id: string; jws?: string; error?: IapError }
+  | { type: 'iapRestore'; id: string; jws?: string[]; error?: IapError };
+
+/** canceled: 사용자가 닫음, pending: 승인 대기(자녀 보호 등), unsupported: 결제 기능이 없는 옛 앱 버전 */
+export type IapError = 'canceled' | 'pending' | 'unsupported' | 'not_found' | 'failed';
 
 declare global {
   interface Window {
     ReactNativeWebView?: { postMessage: (message: string) => void };
+    /** 앱이 페이지보다 먼저 심는 기능 목록. 옛 앱 버전에는 없다 */
+    minicoveryNative?: { iap?: boolean };
   }
 }
 
@@ -66,4 +75,44 @@ export function nativeAppleSignIn(): Promise<{ identityToken?: string; error?: s
     window.addEventListener('minicovery-native', handler);
     postNative({ type: 'appleSignIn', id });
   });
+}
+
+/** 앱에 요청을 보내고 같은 id의 답을 기다린다. 답이 없으면(옛 앱 버전) unsupported */
+function askNative<T extends NativeResponse>(message: NativeRequest & { id: string }, timeoutMs: number): Promise<T | null> {
+  return new Promise(resolve => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<NativeResponse>).detail;
+      if (detail?.type === message.type && detail.id === message.id) {
+        window.removeEventListener('minicovery-native', handler);
+        clearTimeout(timer);
+        resolve(detail as T);
+      }
+    };
+    const timer = setTimeout(() => {
+      window.removeEventListener('minicovery-native', handler);
+      resolve(null);
+    }, timeoutMs);
+    window.addEventListener('minicovery-native', handler);
+    postNative(message);
+  });
+}
+
+/** 결제 기능이 있는 iOS 앱 (빌드 3부터) */
+export const canPurchase = () => isNative() && Boolean(window.minicoveryNative?.iap);
+
+/** iOS 앱에서만: App Store 구독 결제. 성공하면 서버가 확인할 거래 JWS를 돌려준다 */
+export async function nativePurchase(productId: string, accountToken: string): Promise<{ jws?: string; error?: IapError }> {
+  if (!canPurchase()) return { error: 'unsupported' };
+  const id = Math.random().toString(36).slice(2);
+  // 결제 시트에서 오래 머물 수 있어 넉넉히 기다린다
+  const res = await askNative<Extract<NativeResponse, { type: 'iapPurchase' }>>({ type: 'iapPurchase', id, productId, accountToken }, 10 * 60_000);
+  return res ?? { error: 'unsupported' };
+}
+
+/** iOS 앱에서만: 구매 복원. 이 Apple 계정의 유효한 구독 거래들을 돌려준다 */
+export async function nativeRestore(): Promise<{ jws?: string[]; error?: IapError }> {
+  if (!canPurchase()) return { error: 'unsupported' };
+  const id = Math.random().toString(36).slice(2);
+  const res = await askNative<Extract<NativeResponse, { type: 'iapRestore' }>>({ type: 'iapRestore', id }, 60_000);
+  return res ?? { error: 'unsupported' };
 }
