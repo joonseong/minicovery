@@ -12,6 +12,9 @@ export async function POST(request: Request) {
     return Response.json({ applied, plus: isPlus(user) });
   } catch (error) {
     console.error('iap verify', error);
-    return Response.json({ error: 'verify', plus: isPlus(user) }, { status: 502 });
+    // 설정 문제를 찾기 쉽게 원인 종류만 돌려준다 (키 값은 담지 않음)
+    const message = error instanceof Error ? error.message : '';
+    const reason = /^(APPLE_IAP_\* not set|app store \d+)$/.test(message) ? message : 'key';
+    return Response.json({ error: 'verify', reason, plus: isPlus(user) }, { status: 502 });
   }
 }
