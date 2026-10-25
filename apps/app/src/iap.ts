@@ -7,6 +7,16 @@ const native = Platform.OS === 'ios' ? NativeModules.MinicoveryIAP : null;
 
 export const iapAvailable = () => Boolean(native);
 
+/** 첫 구독 무료 체험을 받을 수 있는지 (Apple이 계정 기준으로 판단) */
+export async function trialEligible(productId: string): Promise<{ eligible: boolean; days?: number }> {
+  if (!native?.trialEligible) return { eligible: false };
+  try {
+    return await native.trialEligible(productId);
+  } catch {
+    return { eligible: false };
+  }
+}
+
 /** App Store 리뷰 요청 (StoreKit). 완료 화면으로 넘어간 뒤 뜨도록 조금 기다린다 */
 export function requestReview() {
   if (native?.requestReview) setTimeout(() => native.requestReview(), 1500);

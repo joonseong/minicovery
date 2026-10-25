@@ -12,6 +12,10 @@ RCT_EXTERN_METHOD(currentEntitlements:(BOOL)sync
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 
+RCT_EXTERN_METHOD(trialEligible:(NSString *)productId
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
 RCT_EXTERN_METHOD(requestReview)
 
 @end

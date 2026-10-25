@@ -24,6 +24,8 @@ interface AppleTransaction {
   expiresDate?: number;
   revocationDate?: number;
   appAccountToken?: string;
+  /** 1: 도입 혜택(첫 구독 무료 체험 등) */
+  offerType?: number;
   environment: 'Production' | 'Sandbox';
 }
 
@@ -85,7 +87,7 @@ async function applyTransaction(user: User, tx: AppleTransaction) {
   user.plusExpiresAt = expiresAt;
   user.plusOriginalTxId = tx.originalTransactionId;
   await store.saveUser(user);
-  if (started) await track(user.id, 'plus_started', { env: tx.environment, transactionId: tx.transactionId });
+  if (started) await track(user.id, 'plus_started', { env: tx.environment, transactionId: tx.transactionId, trial: tx.offerType === 1 });
   return true;
 }
 

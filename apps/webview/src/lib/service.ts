@@ -395,12 +395,14 @@ export async function completeDrop(user: User, dropId: string, signal: Understan
   }
   await store.saveCourse(course);
 
-  // 내일 받을 코스: 이 코스가 끝났으면 다른 진행 중 코스
-  if (!isLast) user.tomorrowCourseId = course.id;
-  else {
-    const other = (await store.listCourses(user.id)).find(c => c.status === 'active' && c.id !== course.id);
-    user.tomorrowCourseId = other?.id;
-  }
+  // 내일 받을 코스: 이 코스가 끝났으면 다른 진행 중 코스. 전체 열린 코스는 하루 한 편과 따로라 건드리지 않는다
+  if (!course.openedAllAt) {
+    if (!isLast) user.tomorrowCourseId = course.id;
+    else {
+      const other = (await store.listCourses(user.id)).find(c => c.status === 'active' && c.id !== course.id && !c.openedAllAt);
+      user.tomorrowCourseId = other?.id;
+    }
+  } else if (isLast && user.tomorrowCourseId === course.id) user.tomorrowCourseId = undefined;
   // 알림이 꺼져 있으면 Drop을 다 읽을 때 다시 묻는다 (3일에 한 번까지)
   const askNotify =
     !already &&
@@ -506,11 +508,51 @@ export async function todayView(user: User): Promise<TodayItem[]> {
 
 /* ---------- 하루 한 편 ---------- */
 
-/** 오늘(KST) 완료한 Drop. 하루에 한 편만 열린다 */
+/**
+ * 오늘(KST) 완료한 Drop. 하루에 한 편만 열린다.
+ * 전체 열린 코스에서 연 뒤 읽은 Drop은 하루 한 편에 세지 않는다
+ */
 export async function completedToday(userId: string): Promise<Drop | null> {
+  const store = getStore();
   const today = kstDate();
-  const drops = await getStore().listDropsByUser(userId);
-  return drops.find(d => d.completedAt && kstDate(d.completedAt) === today) ?? null;
+  const openedAt = new Map((await store.listCourses(userId)).filter(c => c.openedAllAt).map(c => [c.id, c.openedAllAt!]));
+  const drops = await store.listDropsByUser(userId);
+  return (
+    drops.find(d => {
+      if (!d.completedAt || kstDate(d.completedAt) !== today) return false;
+      const opened = openedAt.get(d.courseId);
+      return !opened || d.completedAt < opened;
+    }) ?? null
+  );
+}
+
+/* ---------- 전체 열기 (Plus, 한 달에 한 코스) ---------- */
+
+/** 이번 달(KST) 전체 열기를 쓸 수 있는지, 썼다면 다시 쓸 수 있는 날 (M월 1일) */
+export function openAllStatus(user: User): { available: boolean; nextLabel?: string } {
+  if (!isPlus(user)) return { available: false };
+  const month = kstDate().slice(0, 7);
+  if (!user.openAllAt || kstDate(user.openAllAt).slice(0, 7) !== month) return { available: true };
+  const next = (Number(month.slice(5, 7)) % 12) + 1;
+  return { available: false, nextLabel: `${next}월 1일` };
+}
+
+export async function openAllCourse(user: User, courseId: string) {
+  const store = getStore();
+  const course = await store.getCourse(courseId);
+  if (!course || course.userId !== user.id || course.status !== 'active' || course.openedAllAt) return false;
+  if (!openAllStatus(user).available) return false;
+  course.openedAllAt = nowIso();
+  user.openAllAt = course.openedAllAt;
+  // 내일 받을 코스였다면 다른 진행 중 코스로 넘긴다 (전체 열린 코스는 따로 읽는다)
+  if (user.tomorrowCourseId === course.id) {
+    const other = (await store.listCourses(user.id)).find(c => c.status === 'active' && c.id !== course.id && !c.openedAllAt);
+    user.tomorrowCourseId = other?.id;
+  }
+  await store.saveCourse(course);
+  await store.saveUser(user);
+  await track(user.id, 'course_opened_all', { courseId });
+  return true;
 }
 
 export interface CourseNext {
@@ -532,7 +574,8 @@ export async function activeCourses(userId: string): Promise<CourseNext[]> {
 
 /** 오늘 받을 코스: 오늘 고른 코스 → 어제 정해 둔 내일 코스 → 최근 코스 */
 export function pickedCourseId(user: User, items: CourseNext[]): string | undefined {
-  const ids = items.map(i => i.course.id);
+  // 전체 열린 코스는 하루 한 편과 따로 읽는다
+  const ids = items.filter(i => !i.course.openedAllAt).map(i => i.course.id);
   const today = kstDate();
   if (user.todayPick?.date === today && ids.includes(user.todayPick.courseId)) return user.todayPick.courseId;
   if (user.tomorrowCourseId && ids.includes(user.tomorrowCourseId)) return user.tomorrowCourseId;
@@ -552,7 +595,7 @@ export async function pickToday(user: User, courseId: string) {
 
 export async function pickTomorrow(user: User, courseId: string) {
   const course = await getStore().getCourse(courseId);
-  if (!course || course.userId !== user.id || course.status !== 'active') return false;
+  if (!course || course.userId !== user.id || course.status !== 'active' || course.openedAllAt) return false;
   user.tomorrowCourseId = courseId;
   await getStore().saveUser(user);
   await track(user.id, 'tomorrow_picked', { courseId });
@@ -568,6 +611,7 @@ export async function canOpenDrop(user: User, drop: Drop): Promise<boolean> {
   const store = getStore();
   const course = await store.getCourse(drop.courseId);
   if (!course || course.status !== 'active') return false;
+  if (course.openedAllAt) return true;
   const next = (await store.listDrops(course.id)).find(d => !d.completedAt);
   if (next?.id !== drop.id) return false;
   if (drop.index === 0 && kstDate(course.createdAt) === kstDate()) return true;

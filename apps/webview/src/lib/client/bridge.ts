@@ -9,6 +9,7 @@ export type NativeRequest =
   | { type: 'openSettings' }
   | { type: 'haptic' }
   | { type: 'requestReview' }
+  | { type: 'iapTrial'; id: string; productId: string }
   | { type: 'iapPurchase'; id: string; productId: string; accountToken: string }
   | { type: 'iapRestore'; id: string }
   | { type: 'kakaoSignIn'; id: string }
@@ -20,7 +21,8 @@ export type NativeResponse =
   | { type: 'iapPurchase'; id: string; jws?: string; error?: IapError }
   | { type: 'iapRestore'; id: string; jws?: string[]; error?: IapError }
   | { type: 'kakaoSignIn'; id: string; accessToken?: string; error?: string }
-  | { type: 'googleSignIn'; id: string; idToken?: string; error?: string };
+  | { type: 'googleSignIn'; id: string; idToken?: string; error?: string }
+  | { type: 'iapTrial'; id: string; eligible: boolean; days?: number };
 
 /** canceled: 사용자가 닫음, pending: 승인 대기(자녀 보호 등), unsupported: 결제 기능이 없는 옛 앱 버전 */
 export type IapError = 'canceled' | 'pending' | 'unsupported' | 'not_found' | 'failed';
@@ -29,7 +31,7 @@ declare global {
   interface Window {
     ReactNativeWebView?: { postMessage: (message: string) => void };
     /** 앱이 페이지보다 먼저 심는 기능 목록. 옛 앱 버전에는 없다 */
-    minicoveryNative?: { iap?: boolean; review?: boolean; kakao?: boolean; google?: boolean };
+    minicoveryNative?: { iap?: boolean; review?: boolean; trial?: boolean; kakao?: boolean; google?: boolean };
   }
 }
 
@@ -147,4 +149,12 @@ export function nativeRequestReview() {
 /** iOS 앱에서만: 시스템 설정의 이 앱 화면 열기 (알림을 거절한 뒤 다시 켤 때) */
 export function openAppSettings() {
   if (isNative()) postNative({ type: 'openSettings' });
+}
+
+/** iOS 앱에서만 (빌드 6부터): 이 Apple 계정이 첫 구독 무료 체험을 받을 수 있는지. 모르면 false */
+export async function nativeTrialEligible(productId: string): Promise<{ eligible: boolean; days?: number }> {
+  if (!isNative() || !window.minicoveryNative?.trial) return { eligible: false };
+  const id = Math.random().toString(36).slice(2);
+  const res = await askNative<Extract<NativeResponse, { type: 'iapTrial' }>>({ type: 'iapTrial', id, productId }, 10_000);
+  return res ? { eligible: res.eligible, days: res.days } : { eligible: false };
 }

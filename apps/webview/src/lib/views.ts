@@ -38,7 +38,7 @@ export async function todayData(user: User) {
   const store = getStore();
   const items = await activeCourses(user.id);
   const cards: CourseCard[] = [];
-  for (const i of items) cards.push(card(i.course, await store.listDrops(i.course.id)));
+  for (const i of items) if (!i.course.openedAllAt) cards.push(card(i.course, await store.listDrops(i.course.id)));
   const doneDrop = await completedToday(user.id);
   const week = await weekDone(user.id);
   const tomorrowId = user.tomorrowCourseId && cards.some(c => c.id === user.tomorrowCourseId) ? user.tomorrowCourseId : cards[0]?.id;

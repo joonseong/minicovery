@@ -3,7 +3,7 @@ import { costUsd } from './ai/pricing';
 import { QUIET_HOURS } from './constants';
 import { isCompleteBody, parseDropText } from './drop-format';
 import { sendPush } from './push';
-import { track, verifyDrop } from './service';
+import { completedToday, track, verifyDrop } from './service';
 import { getStore } from './store';
 import type { Course, Drop } from './types';
 import { kstDate, kstTime, newId, nowIso } from './util';
@@ -25,6 +25,7 @@ export async function submitNightlyBatch() {
   // 하루 한 편: 사용자마다 내일 받을 코스 하나의 다음 Drop만 만든다
   const byUser = new Map<string, Course[]>();
   for (const course of courses) {
+    if (course.openedAllAt) continue;
     if (Date.parse(course.lastReadAt ?? course.createdAt) < cutoff) continue;
     byUser.set(course.userId, [...(byUser.get(course.userId) ?? []), course]);
   }
@@ -137,14 +138,13 @@ export async function sendDueNotifications(windowMinutes = 10) {
     if (user.notifyPermission !== 'granted' || !user.pushToken || !user.notifyTime) continue;
     if (!(user.notifyTime > windowStart && user.notifyTime <= hhmm)) continue;
 
-    const drops = await store.listDropsByUser(user.id);
-    if (drops.some(d => d.completedAt && kstDate(d.completedAt) === today)) continue;
+    if (await completedToday(user.id)) continue;
     const events = await store.listEvents(new Date(now.getTime() - 86_400_000).toISOString());
     if (events.some(e => e.userId === user.id && e.name === 'push_sent' && kstDate(e.at) === today)) continue;
 
     // 오늘 받기로 한 코스(어제 고른 내일 코스)의 다음 Drop
     const courses = (await store.listCourses(user.id))
-      .filter(c => c.status === 'active')
+      .filter(c => c.status === 'active' && !c.openedAllAt)
       .sort((a, b) => (b.lastReadAt ?? '').localeCompare(a.lastReadAt ?? ''));
     const course = courses.find(c => c.id === user.tomorrowCourseId) ?? courses[0];
     if (!course) continue;

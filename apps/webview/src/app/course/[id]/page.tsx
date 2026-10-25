@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 
 import { CourseScreen } from '@/components/screens/CourseScreen';
-import { activeCourses, completedToday, pickedCourseId } from '@/lib/service';
+import { activeCourses, completedToday, openAllStatus, pickedCourseId } from '@/lib/service';
 import { currentUser } from '@/lib/session';
 import { getStore } from '@/lib/store';
 import { LEVEL_LABEL } from '@/lib/types';
@@ -17,6 +17,9 @@ export default async function CoursePage({ params }: { params: { id: string } })
   const next = drops.find(d => !d.completedAt);
   const doneToday = await completedToday(user.id);
   const picked = pickedCourseId(user, await activeCourses(user.id));
+  const openAll = openAllStatus(user);
+  // 다음 달 1일 (전체 열기 확인 시트 문구)
+  const nextMonth = (new Date(Date.now() + 9 * 3600_000).getUTCMonth() + 1) % 12 + 1;
   return (
     <CourseScreen
       courseId={course.id}
@@ -26,7 +29,11 @@ export default async function CoursePage({ params }: { params: { id: string } })
       nextId={course.status === 'active' ? next?.id : undefined}
       doneToday={Boolean(doneToday)}
       isPicked={picked === course.id}
+      isTomorrow={user.tomorrowCourseId === course.id}
       completed={course.status === 'completed'}
+      openedAll={Boolean(course.openedAllAt)}
+      canOpenAll={openAll.available}
+      openAllNext={`${nextMonth}월 1일`}
     />
   );
 }

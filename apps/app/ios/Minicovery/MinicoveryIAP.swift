@@ -81,6 +81,27 @@ final class MinicoveryIAP: NSObject {
     }
   }
 
+  /// 이 Apple 계정이 첫 구독 무료 체험(도입 혜택)을 받을 수 있는지. 혜택이 없거나 이미 구독해 봤으면 false
+  @objc func trialEligible(
+    _ productId: String,
+    resolver resolve: @escaping RCTPromiseResolveBlock,
+    rejecter reject: @escaping RCTPromiseRejectBlock
+  ) {
+    Task {
+      guard
+        let product = try? await Product.products(for: [productId]).first,
+        let subscription = product.subscription,
+        let offer = subscription.introductoryOffer,
+        offer.paymentMode == .freeTrial
+      else {
+        resolve(["eligible": false])
+        return
+      }
+      let eligible = await subscription.isEligibleForIntroOffer
+      resolve(["eligible": eligible, "days": offer.period.unit == .week ? offer.period.value * 7 : offer.period.value])
+    }
+  }
+
   /// App Store 리뷰 요청. 실제로 띄울지는 iOS가 정한다 (1년에 3번까지, TestFlight에서는 뜨지 않음)
   @objc func requestReview() {
     DispatchQueue.main.async {

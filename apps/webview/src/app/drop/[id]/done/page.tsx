@@ -15,7 +15,7 @@ export default async function DropDonePage({ params }: { params: { id: string } 
   const course = (await store.getCourse(drop.courseId))!;
   const items = await activeCourses(user.id);
   const courses = items
-    .filter(i => i.next)
+    .filter(i => i.next && !i.course.openedAllAt)
     .map(i => ({ id: i.course.id, topic: i.course.topic, index: i.next!.index, total: i.course.outline.length, title: i.next!.title }));
   const tomorrowId = courses.some(c => c.id === user.tomorrowCourseId) ? user.tomorrowCourseId! : courses[0]?.id;
   const week = await weekDone(user.id);

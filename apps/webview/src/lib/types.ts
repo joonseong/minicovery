@@ -45,6 +45,8 @@ export interface User {
   todayPick?: { date: string; courseId: string };
   /** 내일 받을 코스. 야간 Batch가 이 코스의 다음 Drop을 미리 만든다 */
   tomorrowCourseId?: string;
+  /** Plus '전체 열기'를 마지막으로 쓴 시각 (한 달에 한 코스) */
+  openAllAt?: string;
   /** 다 배운 주제 기록. 코스를 지워도 남는다 (캐릭터 단계 기준) */
   learned?: LearnedTopic[];
 }
@@ -87,6 +89,8 @@ export interface Course {
   explainAnswer?: ExplainAnswer;
   /** 마지막으로 Drop을 완료한 시각 (알림 대상 코스 고르기) */
   lastReadAt?: string;
+  /** Plus '전체 열기'를 쓴 시각. 이 코스는 하루 한 편 제한 없이 읽는다 */
+  openedAllAt?: string;
 }
 
 export interface DropBody {

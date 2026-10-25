@@ -2,18 +2,18 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { PLUS_PRICE_LABEL, PLUS_PRODUCT_ID } from '@/lib/constants';
-import { canPurchase, isNative, nativePurchase, nativeRestore } from '@/lib/client/bridge';
+import { canPurchase, isNative, nativePurchase, nativeRestore, nativeTrialEligible } from '@/lib/client/bridge';
 import { postJson } from '@/lib/client/ndjson';
 
 import { AppHeader, CHARACTER, Footer, IconCheck, Main, PrimaryButton, Screen } from '../ui';
 
 const BENEFITS = [
   { title: '새 코스 한 달 3개', desc: '궁금한 주제가 생기면 바로 코스로 만들어요.' },
-  { title: '매일 코스를 골라 받기', desc: '진행 중인 코스 중 오늘 읽을 하나를 골라요.' },
-  { title: '읽은 Drop 다시 보기', desc: '지난 Drop은 언제든 다시 열 수 있어요.' },
+  { title: '한 달에 한 코스는 전체 열기', desc: '급하게 알고 싶은 주제는 기다리지 않고 끝까지 읽어요.' },
+  { title: '여러 코스를 번갈아 받기', desc: '진행 중인 코스 중 내일 받을 하나를 골라요.' },
 ];
 
 export function PaywallScreen({
@@ -32,6 +32,12 @@ export function PaywallScreen({
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const ch = CHARACTER[stageKey];
+  // 첫 구독 무료 체험: 받을 수 있는 계정인지는 Apple이 정한다 (체험 기간도 App Store Connect 설정값)
+  const [trialDays, setTrialDays] = useState(0);
+  useEffect(() => {
+    if (plus || beta) return;
+    void nativeTrialEligible(PLUS_PRODUCT_ID).then(r => setTrialDays(r.eligible ? (r.days ?? 7) : 0));
+  }, [plus, beta]);
 
   const verify = (jws: string | string[]) => postJson<{ plus?: boolean }>('/api/iap/verify', { jws });
 
@@ -114,7 +120,11 @@ export function PaywallScreen({
         <div className="flex items-center justify-between gap-3 rounded-2xl border-2 border-border-brand bg-shape-depth1 px-5 py-4">
           <span className="flex flex-col gap-0.5">
             <span className="text-base font-semibold">미니커버리 Plus</span>
-            <span className="text-sm text-txt-black-tertiary">매달 자동 갱신</span>
+            {trialDays ? (
+              <span className="text-sm text-txt-point">처음 {trialDays}일 무료</span>
+            ) : (
+              <span className="text-sm text-txt-black-tertiary">매달 자동 갱신</span>
+            )}
           </span>
           <span className="text-lg font-semibold">{PLUS_PRICE_LABEL}</span>
         </div>
@@ -123,10 +133,13 @@ export function PaywallScreen({
             새 코스 만들기
           </PrimaryButton>
         ) : (
-          <PrimaryButton onClick={() => void start()}>{busy ? '처리하는 중…' : 'Plus 시작하기'}</PrimaryButton>
+          <PrimaryButton onClick={() => void start()}>{busy ? '처리하는 중…' : trialDays ? `${trialDays}일 무료로 시작하기` : 'Plus 시작하기'}</PrimaryButton>
         )}
         <p className="text-center text-sm text-txt-black-tertiary">
-          언제든 해지할 수 있어요 ·{' '}
+          {trialDays && !plus
+            ? `${trialDays}일 뒤 ${PLUS_PRICE_LABEL}이 결제돼요. 체험 중에 해지하면 결제되지 않아요.`
+            : '언제든 해지할 수 있어요.'}
+          <br />
           {plus && !beta ? (
             <a href="https://apps.apple.com/account/subscriptions" className="underline">
               구독 관리
