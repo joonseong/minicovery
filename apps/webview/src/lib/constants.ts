@@ -40,6 +40,11 @@ export const QUIET_HOURS = { start: '21:00', end: '08:00' };
 /** 무료는 코스 1개, Plus는 새 코스 한 달 3개 (2026-10-22 대표 결정) */
 export const FREE_COURSE_LIMIT = 1;
 export const PLUS_MONTHLY_COURSES = 3;
+
+/** 알림이 꺼진 사용자에게 Drop 완료 뒤 다시 물어보는 간격 */
+export const NOTIFY_ASK_INTERVAL_DAYS = 3;
+/** App Store 리뷰를 요청하는 누적 완료 편수 */
+export const REVIEW_AT_DROPS = [3, 10, 30];
 export const PLUS_PRICE_LABEL = '월 3,900원';
 export const PLUS_PRODUCT_ID = 'com.minicovery.plus.monthly';
 

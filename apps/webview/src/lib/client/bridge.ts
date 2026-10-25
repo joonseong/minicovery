@@ -8,6 +8,7 @@ export type NativeRequest =
   | { type: 'appleSignIn'; id: string }
   | { type: 'openSettings' }
   | { type: 'haptic' }
+  | { type: 'requestReview' }
   | { type: 'iapPurchase'; id: string; productId: string; accountToken: string }
   | { type: 'iapRestore'; id: string }
   | { type: 'kakaoSignIn'; id: string }
@@ -28,7 +29,7 @@ declare global {
   interface Window {
     ReactNativeWebView?: { postMessage: (message: string) => void };
     /** 앱이 페이지보다 먼저 심는 기능 목록. 옛 앱 버전에는 없다 */
-    minicoveryNative?: { iap?: boolean; kakao?: boolean; google?: boolean };
+    minicoveryNative?: { iap?: boolean; review?: boolean; kakao?: boolean; google?: boolean };
   }
 }
 
@@ -136,4 +137,14 @@ export async function nativeGoogleSignIn(): Promise<{ idToken?: string; error?: 
   const id = Math.random().toString(36).slice(2);
   const res = await askNative<Extract<NativeResponse, { type: 'googleSignIn' }>>({ type: 'googleSignIn', id }, 5 * 60_000);
   return res ?? { error: 'failed' };
+}
+
+/** iOS 앱에서만 (빌드 5부터): App Store 리뷰 요청. 띄울지는 iOS가 정하고 결과는 알 수 없다 */
+export function nativeRequestReview() {
+  if (isNative() && window.minicoveryNative?.review) postNative({ type: 'requestReview' });
+}
+
+/** iOS 앱에서만: 시스템 설정의 이 앱 화면 열기 (알림을 거절한 뒤 다시 켤 때) */
+export function openAppSettings() {
+  if (isNative()) postNative({ type: 'openSettings' });
 }

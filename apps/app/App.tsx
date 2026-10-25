@@ -7,7 +7,7 @@ import { appleAuth } from '@invertase/react-native-apple-authentication';
 import messaging from '@react-native-firebase/messaging';
 
 import { WEB_URL } from './src/config';
-import { entitlements, iapAvailable, purchase } from './src/iap';
+import { entitlements, iapAvailable, purchase, requestReview } from './src/iap';
 import { signInWithGoogle, signInWithKakao, socialAvailable } from './src/social';
 import { pathFromMessage, pushAvailable, requestPush } from './src/push';
 
@@ -25,13 +25,14 @@ type WebMessage =
   | { type: 'appleSignIn'; id: string }
   | { type: 'openSettings' }
   | { type: 'haptic' }
+  | { type: 'requestReview' }
   | { type: 'iapPurchase'; id: string; productId: string; accountToken: string }
   | { type: 'iapRestore'; id: string }
   | { type: 'kakaoSignIn'; id: string }
   | { type: 'googleSignIn'; id: string };
 
 // 웹이 결제 기능 유무를 알 수 있게 페이지보다 먼저 심는다 (옛 앱 버전에는 없음)
-const INJECT_BEFORE = `window.minicoveryNative = ${JSON.stringify({ iap: iapAvailable(), ...socialAvailable })}; true;`;
+const INJECT_BEFORE = `window.minicoveryNative = ${JSON.stringify({ iap: iapAvailable(), review: iapAvailable(), ...socialAvailable })}; true;`;
 
 // 앱을 켤 때 유효한 구독을 서버에 알린다 (갱신·만료 반영, 알림을 놓쳤을 때 대비)
 const syncEntitlementsJs = (jws: string[]) =>
@@ -133,6 +134,7 @@ export default function App() {
         reply({ type: 'iapRestore', id: message.id, ...result });
       }
       if (message.type === 'openSettings') void Linking.openSettings();
+      if (message.type === 'requestReview') requestReview();
     },
     [reply],
   );

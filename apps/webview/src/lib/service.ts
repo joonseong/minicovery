@@ -1,7 +1,15 @@
 import { getGenerator } from './ai';
 import { costUsd } from './ai/pricing';
 import type { Metered } from './ai/types';
-import { DAILY_PREMIUM_REALTIME, FREE_COURSE_LIMIT, LEARNED_COMPLETION_RATIO, PLUS_MONTHLY_COURSES, STAGES } from './constants';
+import {
+  DAILY_PREMIUM_REALTIME,
+  FREE_COURSE_LIMIT,
+  LEARNED_COMPLETION_RATIO,
+  NOTIFY_ASK_INTERVAL_DAYS,
+  PLUS_MONTHLY_COURSES,
+  REVIEW_AT_DROPS,
+  STAGES,
+} from './constants';
 import { formatDropText, isCompleteBody, parseDropText } from './drop-format';
 import { getStore } from './store';
 import type {
@@ -356,7 +364,8 @@ export async function completeDrop(user: User, dropId: string, signal: Understan
   const store = getStore();
   const drop = await store.getDrop(dropId);
   if (!drop || drop.userId !== user.id) throw new Error('not found');
-  const firstEver = !(await store.listDropsByUser(user.id)).some(d => d.completedAt);
+  const doneBefore = (await store.listDropsByUser(user.id)).filter(d => d.completedAt && d.id !== dropId).length;
+  const firstEver = doneBefore === 0;
   const already = Boolean(drop.completedAt);
   drop.signal = signal;
   drop.completedAt ??= nowIso();
@@ -392,6 +401,13 @@ export async function completeDrop(user: User, dropId: string, signal: Understan
     const other = (await store.listCourses(user.id)).find(c => c.status === 'active' && c.id !== course.id);
     user.tomorrowCourseId = other?.id;
   }
+  // 알림이 꺼져 있으면 Drop을 다 읽을 때 다시 묻는다 (3일에 한 번까지)
+  const askNotify =
+    !already &&
+    user.notifyPermission !== 'granted' &&
+    (!user.notifyAskedAt || Date.now() - Date.parse(user.notifyAskedAt) > NOTIFY_ASK_INTERVAL_DAYS * 86_400_000);
+  if (askNotify) user.notifyAskedAt = nowIso();
+  const askSignup = firstEver && user.anon;
   await store.saveUser(user);
 
   return {
@@ -399,8 +415,11 @@ export async function completeDrop(user: User, dropId: string, signal: Understan
     courseCompleted: isLast,
     courseId: course.id,
     levelUp,
-    askNotify: firstEver && user.notifyPermission === 'unknown',
-    askSignup: firstEver && user.anon,
+    askNotify,
+    notifyDenied: user.notifyPermission === 'denied',
+    askSignup,
+    // 리뷰 요청: 몇 편째에서만, 다른 팝업이 없을 때 (iOS가 1년에 3번까지로 막는다)
+    askReview: !already && !askNotify && !askSignup && REVIEW_AT_DROPS.includes(doneBefore + 1),
   };
 }
 

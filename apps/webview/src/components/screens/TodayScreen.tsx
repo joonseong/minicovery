@@ -7,7 +7,8 @@ import { useState } from 'react';
 import { postJson } from '@/lib/client/ndjson';
 import type { CourseCard } from '@/lib/views';
 
-import { AppHeader, BottomNav, CHARACTER, IconClose, IconSwap, Main, PrimaryButton, Screen } from '../ui';
+import { TomorrowList } from '../TomorrowList';
+import { AppHeader, BottomNav, CHARACTER, IconClose, Main, PrimaryButton, Screen } from '../ui';
 
 type Props = {
   dateLabel: string;
@@ -31,6 +32,9 @@ export function TodayScreen({ dateLabel, cards, pickedId, doneToday, tomorrow, w
   const cur = cards.find(c => c.id === picked);
   const others = cards.filter(c => c.id !== picked);
   const ch = CHARACTER[stage.key];
+  const upcoming = cards
+    .filter(c => c.nextTitle)
+    .map(c => ({ id: c.id, topic: c.topic, index: c.done, total: c.total, title: c.nextTitle! }));
 
   const read = async () => {
     if (!cur?.nextDropId || busy) return;
@@ -89,15 +93,10 @@ export function TodayScreen({ dateLabel, cards, pickedId, doneToday, tomorrow, w
               <br />
               다음 Drop이 열려요
             </h2>
-            {tomorrow?.nextTitle ? (
-              <div className="mt-4 flex items-center gap-2 rounded-2xl bg-shape-white py-4 pl-4 pr-1">
-                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <span className="text-sm font-semibold text-txt-black-tertiary">내일의 Drop · {tomorrow.topic}</span>
-                  <span className="text-base font-semibold">{tomorrow.nextTitle}</span>
-                </span>
-                <Link href={`/drop/${doneToday.dropId}/done`} aria-label="내일 받을 코스 바꾸기" className="flex h-11 w-11 flex-shrink-0 items-center justify-center">
-                  <IconSwap />
-                </Link>
+            {upcoming.length ? (
+              <div className="mt-4 flex flex-col gap-2">
+                <p className="text-sm font-bold text-txt-black-secondary">내일의 Drop</p>
+                <TomorrowList items={upcoming} tomorrowId={tomorrow?.id} size="md" />
               </div>
             ) : null}
             <Link

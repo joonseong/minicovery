@@ -1,6 +1,7 @@
 import Foundation
 import React
 import StoreKit
+import UIKit
 
 /// App Store 구독 결제 (StoreKit 2). 웹뷰 메시지(iapPurchase·iapRestore)를 App.tsx가 받아 여기로 넘긴다.
 /// 거래는 서버(/api/iap/verify)가 App Store Server API로 다시 확인하므로, 여기서는 JWS만 돌려준다.
@@ -77,6 +78,14 @@ final class MinicoveryIAP: NSObject {
         if case .verified = result { list.append(result.jwsRepresentation) }
       }
       resolve(["jws": list])
+    }
+  }
+
+  /// App Store 리뷰 요청. 실제로 띄울지는 iOS가 정한다 (1년에 3번까지, TestFlight에서는 뜨지 않음)
+  @objc func requestReview() {
+    DispatchQueue.main.async {
+      let scene = UIApplication.shared.connectedScenes.first { $0.activationState == .foregroundActive } as? UIWindowScene
+      if let scene { SKStoreReviewController.requestReview(in: scene) }
     }
   }
 }

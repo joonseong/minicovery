@@ -7,6 +7,11 @@ const native = Platform.OS === 'ios' ? NativeModules.MinicoveryIAP : null;
 
 export const iapAvailable = () => Boolean(native);
 
+/** App Store 리뷰 요청 (StoreKit). 완료 화면으로 넘어간 뒤 뜨도록 조금 기다린다 */
+export function requestReview() {
+  if (native?.requestReview) setTimeout(() => native.requestReview(), 1500);
+}
+
 export async function purchase(productId: string, accountToken: string): Promise<IapResult<{ jws?: string }>> {
   if (!native) return { error: 'failed' };
   try {

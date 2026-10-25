@@ -12,4 +12,6 @@ RCT_EXTERN_METHOD(currentEntitlements:(BOOL)sync
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 
+RCT_EXTERN_METHOD(requestReview)
+
 @end

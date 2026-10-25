@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import { requestPushPermission } from '@/lib/client/bridge';
+import { nativeRequestReview, openAppSettings, requestPushPermission } from '@/lib/client/bridge';
 import { postJson } from '@/lib/client/ndjson';
 
 import { SocialButtons } from './Social';
@@ -15,7 +15,10 @@ export interface CompleteResult {
   courseId: string;
   levelUp: boolean;
   askNotify: boolean;
+  /** 전에 거절했으면 iOS가 다시 묻지 않아서, 허용이 안 되면 설정 앱으로 보낸다 */
+  notifyDenied?: boolean;
   askSignup: boolean;
+  askReview?: boolean;
 }
 
 /** 완료 뒤 어디로 갈지: 단계 상승 → 코스 완료 → 오늘의 Drop 완료 */
@@ -25,8 +28,8 @@ export function afterCompleteHref(r: CompleteResult, dropId: string) {
 }
 
 /**
- * Drop을 다 읽은 뒤 순서대로: 알림 권한 안내(첫 Drop) → 가입 안내(첫 Drop, 임시 계정) → 완료 화면.
- * 팝업이 연달아 뜨지 않게 각각 한 번만 묻는다.
+ * Drop을 다 읽은 뒤 순서대로: 알림 권한 안내(알림이 꺼져 있으면 3일에 한 번) → 가입 안내(첫 Drop, 임시 계정) → 완료 화면.
+ * 다른 팝업이 없는 날 몇 편째(3·10·30편)에는 완료 화면 위로 App Store 리뷰를 요청한다.
  */
 export function AfterComplete({ result, dropId }: { result: CompleteResult | null; dropId: string }) {
   const router = useRouter();
@@ -39,8 +42,10 @@ export function AfterComplete({ result, dropId }: { result: CompleteResult | nul
   }, [result]);
 
   useEffect(() => {
-    if (step === 'go') router.replace(next);
-  }, [step, next, router]);
+    if (step !== 'go') return;
+    if (result?.askReview) nativeRequestReview();
+    router.replace(next);
+  }, [step, next, router, result]);
 
   const afterNotify = () => setStep(result?.askSignup ? 'signup' : 'go');
 
@@ -61,6 +66,7 @@ export function AfterComplete({ result, dropId }: { result: CompleteResult | nul
             onClick={async () => {
               const r = await requestPushPermission();
               await postJson('/api/me/notify', { permission: r.granted ? 'granted' : 'denied', pushToken: r.token });
+              if (!r.granted && result?.notifyDenied) openAppSettings();
               afterNotify();
             }}
           >

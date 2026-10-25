@@ -22,6 +22,8 @@ export interface User {
   /** 'HH:mm' KST. 비어 있으면 첫 Drop을 읽은 시각 */
   notifyTime?: string;
   notifyPermission: 'unknown' | 'granted' | 'denied';
+  /** Drop 완료 뒤 알림 권한을 마지막으로 물어본 시각 (3일에 한 번까지) */
+  notifyAskedAt?: string;
   /** 거절 후 재안내 배너를 닫은 시각 (7일간 숨김) */
   notifyBannerDismissedAt?: string;
   pushToken?: string;
