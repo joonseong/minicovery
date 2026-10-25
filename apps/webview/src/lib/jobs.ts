@@ -164,3 +164,14 @@ export async function sendDueNotifications(windowMinutes = 10) {
   }
   return { sent };
 }
+
+/** 운영자 확인용: 한 사용자에게 시험 알림을 보낸다 (조용한 시간과 상관없이) */
+export async function sendTestPush(userId: string | null) {
+  const user = userId ? await getStore().getUser(userId) : null;
+  if (!user?.pushToken) return { ok: false, error: 'no push token' };
+  return sendPush(user.pushToken, {
+    title: '미니커버리 알림 테스트',
+    body: '알림이 잘 도착했어요. 내일 아침 Drop도 이렇게 알려 드릴게요.',
+    data: { path: '/today' },
+  });
+}
