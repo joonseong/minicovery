@@ -14,7 +14,6 @@ const BENEFITS = [
   { title: '새 코스 한 달 3개', desc: '궁금한 주제가 생기면 바로 코스로 만들어요.' },
   { title: '매일 코스를 골라 받기', desc: '진행 중인 코스 중 오늘 읽을 하나를 골라요.' },
   { title: '읽은 Drop 다시 보기', desc: '지난 Drop은 언제든 다시 열 수 있어요.' },
-  { title: '한 달 학습 리포트', desc: '이번 달 배운 내용을 한눈에 정리해 드려요.' },
 ];
 
 export function PaywallScreen({
