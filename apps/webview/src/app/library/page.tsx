@@ -31,7 +31,7 @@ function Group({ name, items }: { name: string; items: CourseCard[] }) {
                     <span className="block h-full rounded-full bg-shape-brand" style={{ width: `${Math.round((c.done / Math.max(1, c.total)) * 100)}%` }} />
                   </span>
                   <span className="flex-shrink-0 text-sm text-txt-black-tertiary">
-                    {c.done} / {c.total}
+                    {c.done} / {c.total}편
                   </span>
                 </span>
               </span>
@@ -55,7 +55,7 @@ export default async function LibraryPage() {
       <Main className="gap-8 pb-8 pt-2">
         <section className="flex flex-col items-center pt-2 text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={ch.face} alt={`${ch.name} 등급`} className="h-[72px] w-[72px] object-contain" />
+          <img src={ch.face} alt={`${ch.name} 단계`} className="h-[72px] w-[72px] object-contain" />
           <p className="mt-3 text-sm font-bold text-txt-point">{ch.name} 단계</p>
           <p className="mt-0.5 text-2xl font-bold tracking-[-1px]">다 배운 주제 {d.stage.learned}개</p>
           <Link href="/map" className="mt-1 inline-flex min-h-11 items-center gap-0.5 text-sm text-txt-black-tertiary">
@@ -71,21 +71,44 @@ export default async function LibraryPage() {
           ) : null}
         </section>
 
-        <section className="flex flex-col gap-2">
-          <h2 className="text-sm font-bold text-txt-black-secondary">구독</h2>
-          <Link href="/plus" className="flex min-h-14 items-center justify-between gap-3 rounded-2xl bg-shape-depth1 pl-5 pr-4">
-            <span className="text-base font-semibold">미니커버리 Plus</span>
-            <span className="flex items-center gap-1 text-sm font-semibold text-txt-point">
-              {d.plus ? '이용 중' : '알아보기'}
-              <Chevron />
+        {d.plus ? (
+          <section className="flex flex-col gap-2">
+            <h2 className="text-sm font-bold text-txt-black-secondary">구독</h2>
+            <Link href="/plus" className="flex items-center gap-3 rounded-2xl bg-shape-depth1 py-4 pl-5 pr-4">
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="text-base font-semibold">
+                  미니커버리 Plus <span className="text-txt-point">이용 중</span>
+                </span>
+                {d.usage ? (
+                  <>
+                    <span className="text-sm text-txt-black-secondary">
+                      새 코스 {d.usage.coursesLeft}개 · 전체 열기 {d.usage.openAllLeft}번 남음
+                    </span>
+                    <span className="text-sm text-txt-black-tertiary">{d.usage.resetLabel}에 다시 채워져요</span>
+                  </>
+                ) : null}
+              </span>
+              <span className="flex flex-shrink-0 items-center gap-1 text-sm font-semibold text-txt-black-secondary">
+                관리
+                <Chevron />
+              </span>
+            </Link>
+          </section>
+        ) : (
+          // 무료 사용자: 구독 자리를 눈에 띄는 Plus 배너로. 혜택 설명·결제는 /plus에서만
+          <Link href="/plus?from=profile" className="mc-press flex flex-col gap-4 rounded-2xl bg-shape-brand p-5 text-txt-white-primary">
+            <span className="flex flex-col gap-0.5">
+              <span className="text-sm font-semibold text-txt-white-secondary">미니커버리 Plus</span>
+              <span className="text-lg font-bold">Plus로 더 많이 배워 보세요</span>
             </span>
+            <span className="flex h-[52px] items-center justify-center rounded-full bg-shape-white text-base font-bold text-txt-point">시작하기</span>
           </Link>
-        </section>
+        )}
 
         <Group name="진행 중인 코스" items={d.active} />
         <Group name="다 배운 코스" items={d.done} />
         {!d.active.length && !d.done.length ? (
-          <p className="rounded-2xl bg-shape-depth1 p-5 text-sm text-txt-black-secondary">아직 코스가 없어요. 탐색에서 궁금한 주제를 입력해 보세요.</p>
+          <p className="rounded-2xl bg-shape-depth1 p-5 text-sm text-txt-black-secondary">아직 코스가 없어요. 새 코스 탭에서 궁금한 주제를 입력해 보세요.</p>
         ) : null}
       </Main>
       <BottomNav active="library" />

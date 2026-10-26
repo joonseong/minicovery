@@ -147,7 +147,7 @@ export function AppHeader({ layout = 'nav', title, back, close, settings, divide
 
 const TABS = [
   { key: 'today', label: '오늘', href: '/today', icon: 'today' },
-  { key: 'explore', label: '탐색', href: '/start', icon: 'explore' },
+  { key: 'explore', label: '새 코스', href: '/start', icon: 'explore' },
   { key: 'map', label: '내 학습', href: '/map', icon: 'learn' },
   { key: 'library', label: '프로필', href: '/library', icon: 'profile' },
 ] as const;

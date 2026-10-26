@@ -7,23 +7,36 @@ import { useEffect, useState } from 'react';
 import { PLUS_PRICE_LABEL, PLUS_PRODUCT_ID } from '@/lib/constants';
 import { canPurchase, isNative, nativePurchase, nativeRestore, nativeTrialEligible } from '@/lib/client/bridge';
 import { postJson } from '@/lib/client/ndjson';
+import type { PlusUsage } from '@/lib/service';
 
 import { AppHeader, CHARACTER, Footer, IconCheck, Main, PrimaryButton, Screen } from '../ui';
 
 const BENEFITS = [
-  { title: '새 코스 한 달 3개', desc: '궁금한 주제가 생기면 바로 코스로 만들어요.' },
-  { title: '한 달에 한 코스는 전체 열기', desc: '급하게 알고 싶은 주제는 기다리지 않고 끝까지 읽어요.' },
-  { title: '여러 코스를 번갈아 받기', desc: '진행 중인 코스 중 내일 받을 하나를 골라요.' },
+  { title: '새 코스 한 달 3개', desc: '구독 시작일부터 한 달마다 3개가 다시 채워져요.' },
+  { title: '한 달에 한 코스는 전체 열기', desc: '기다리지 않고 끝까지 읽어요. 해지해도 열린 코스는 계속 읽을 수 있어요.' },
+  { title: '여러 코스를 함께 배우기', desc: '진행 중인 코스 중 내일 받을 하나를 골라요.' },
 ];
+
+/** 들어온 곳에 맞춘 첫 줄 (done 무료 코스 완료 · keep 코스 바꾸기 안내 · 그 밖은 profile) */
+const HEADS = {
+  done: { sub: '첫 코스를 다 배웠어요', line1: '다음 주제도', line2: '계속 배워 볼까요?' },
+  keep: { sub: '지금 코스는 그대로 두고', line1: '새 주제를', line2: '하나 더 시작해 볼까요?' },
+  profile: { sub: '미니커버리 Plus', line1: '궁금한 주제를', line2: '더 많이 배워 보세요' },
+} as const;
+export type PaywallFrom = keyof typeof HEADS;
 
 export function PaywallScreen({
   stageKey,
   plus,
   beta,
   accountToken,
+  from,
+  usage,
 }: {
   stageKey: 'rabbit' | 'cat';
   plus: boolean;
+  from: PaywallFrom;
+  usage: PlusUsage | null;
   beta: boolean;
   /** App Store 거래에 붙이는 사용자 id (UUID) */
   accountToken: string;
@@ -32,6 +45,7 @@ export function PaywallScreen({
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const ch = CHARACTER[stageKey];
+  const head = plus ? HEADS.profile : HEADS[from];
   // 첫 구독 무료 체험: 받을 수 있는 계정인지는 Apple이 정한다 (체험 기간도 App Store Connect 설정값)
   const [trialDays, setTrialDays] = useState(0);
   useEffect(() => {
@@ -92,13 +106,18 @@ export function PaywallScreen({
       <Main className="pb-6 pt-2">
         <section className="flex flex-col items-center text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={ch.face} alt={`${ch.name} 등급 캐릭터`} className="h-[72px] w-[72px] object-contain" />
-          <p className="mt-3 text-sm font-bold text-txt-point">{plus ? '지금 Plus를 쓰고 있어요' : '무료 코스 1개를 다 썼어요'}</p>
+          <img src={ch.face} alt={`${ch.name} 단계 캐릭터`} className="h-[72px] w-[72px] object-contain" />
+          <p className="mt-3 text-sm font-bold text-txt-point">{plus ? '지금 Plus를 쓰고 있어요' : head.sub}</p>
           <h1 className="mt-1 text-[28px] font-bold leading-9 tracking-[-1px]">
-            다음 주제도
+            {head.line1}
             <br />
-            계속 배워 볼까요?
+            {head.line2}
           </h1>
+          {plus && usage ? (
+            <p className="mt-2 text-sm text-txt-black-secondary">
+              새 코스 {usage.coursesLeft}개 · 전체 열기 {usage.openAllLeft}번 남음 · {usage.resetLabel}에 다시 채워져요
+            </p>
+          ) : null}
         </section>
         <ul className="mt-8 flex flex-col gap-5">
           {BENEFITS.map(b => (
@@ -108,11 +127,14 @@ export function PaywallScreen({
               </span>
               <span className="flex flex-col gap-0.5">
                 <span className="text-base font-semibold">{b.title}</span>
-                <span className="text-sm text-txt-black-tertiary">{b.desc}</span>
+                <span className="text-sm text-txt-black-secondary">{b.desc}</span>
               </span>
             </li>
           ))}
         </ul>
+        <p className="mt-6 rounded-2xl bg-shape-depth1 px-5 py-4 text-sm text-txt-black-secondary">
+          무료는 한 번에 코스 1개를 배울 수 있어요. 해지해도 만든 코스와 읽은 Drop은 그대로 남고, 새 코스 만들기와 전체 열기만 멈춰요.
+        </p>
         {beta && !plus ? <p className="mt-6 text-center text-sm text-txt-black-tertiary">베타 기간에는 결제 없이 Plus를 써 볼 수 있어요.</p> : null}
         {message ? <p className="mt-4 text-center text-sm text-txt-black-secondary">{message}</p> : null}
       </Main>

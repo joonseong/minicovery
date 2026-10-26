@@ -166,14 +166,17 @@ export function DropScreen({ initialDrop, courseTitle, total }: { initialDrop: D
                   }}
                   className={reported ? 'min-h-11 text-sm text-txt-black-tertiary' : 'min-h-11 text-sm text-txt-black-tertiary underline'}
                 >
-                  {reported ? '알려 주셔서 고마워요' : '내용이 이상해요'}
+                  {reported ? '알려 주셔서 고마워요. 확인하고 고칠게요' : '내용이 이상해요'}
                 </button>
               </div>
             </section>
             <div ref={sentinel} />
             {!rereading ? (
               <section className="mt-10 flex flex-col gap-4">
-                <h2 className="text-center text-lg font-semibold">오늘 Drop, 어땠어요?</h2>
+                <div className="flex flex-col gap-1 text-center">
+                  <h2 className="text-lg font-semibold">오늘 Drop, 어땠어요?</h2>
+                  <p className="text-sm text-txt-black-secondary">어느 쪽을 눌러도 오늘 Drop을 마쳐요. ‘조금 헷갈려요’는 더 쉽게 다시 설명해 줘요.</p>
+                </div>
                 <div className="grid grid-cols-2 gap-2">
                   <PrimaryButton onClick={() => void complete()}>{completing ? '저장하는 중…' : '이해했어요'}</PrimaryButton>
                   <OutlineButton href={`/drop/${drop.id}/easy`}>조금 헷갈려요</OutlineButton>

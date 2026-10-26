@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 
 import { DropDoneScreen } from '@/components/screens/DropDoneScreen';
-import { activeCourses, isPlus, weekDone } from '@/lib/service';
+import { activeCourses, isPlus, plusUsage, weekDone } from '@/lib/service';
 import { currentUser } from '@/lib/session';
 import { getStore } from '@/lib/store';
 
@@ -28,6 +28,7 @@ export default async function DropDonePage({ params }: { params: { id: string } 
       courses={courses}
       tomorrowId={tomorrowId}
       plus={isPlus(user)}
+      usage={await plusUsage(user)}
       currentTopic={course.topic}
     />
   );

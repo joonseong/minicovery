@@ -8,9 +8,9 @@ import { checkTopic, levelHref } from '@/lib/client/start';
 import { MonthlySheet, ReplaceSheet } from '../QuotaSheets';
 import { AppHeader, BottomNav, Main, Screen } from '../ui';
 
-type Props = { topic: string; suggestions: string[]; quota: 'ok' | 'free' | 'monthly'; currentTopic?: string; replace?: boolean };
+type Props = { topic: string; suggestions: string[]; quota: 'ok' | 'free' | 'monthly'; currentTopic?: string; replace?: boolean; resetLabel?: string };
 
-export function BroadScreen({ topic, suggestions, quota, currentTopic, replace }: Props) {
+export function BroadScreen({ topic, suggestions, quota, currentTopic, replace, resetLabel }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [sheet, setSheet] = useState<null | { kind: 'free' | 'monthly'; replaceHref: string }>(null);
@@ -77,7 +77,7 @@ export function BroadScreen({ topic, suggestions, quota, currentTopic, replace }
       </Main>
       <BottomNav active="explore" />
       <ReplaceSheet open={sheet?.kind === 'free'} onClose={() => setSheet(null)} courseTopic={currentTopic} replaceHref={sheet?.replaceHref ?? '/start'} />
-      <MonthlySheet open={sheet?.kind === 'monthly'} onClose={() => setSheet(null)} />
+      <MonthlySheet open={sheet?.kind === 'monthly'} onClose={() => setSheet(null)} resetLabel={resetLabel} />
     </Screen>
   );
 }

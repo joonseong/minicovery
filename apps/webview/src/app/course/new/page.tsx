@@ -45,7 +45,7 @@ function Generating() {
         }),
       });
       if (res.status === 402) {
-        router.replace('/plus');
+        router.replace('/plus?from=keep');
         return;
       }
       if (!res.ok) {
@@ -89,7 +89,7 @@ function Generating() {
       </Main>
       {done ? (
         <Footer className="mc-in gap-2">
-          <p className="text-center text-sm text-txt-black-tertiary">첫 Drop을 쓰는 중이에요. 바로 열려요.</p>
+          <p className="text-center text-sm text-txt-black-secondary">하루 한 편씩 열려요. 첫 Drop은 지금 바로 읽을 수 있어요.</p>
           <PrimaryButton href={`/drop/${firstDropId}`} replace>
             첫 Drop 읽기
           </PrimaryButton>

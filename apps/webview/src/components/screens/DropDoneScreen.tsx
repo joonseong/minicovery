@@ -2,13 +2,13 @@
 
 import { useState } from 'react';
 
-import Link from 'next/link';
-
 import { josa } from '@/lib/josa';
+import type { PlusUsage } from '@/lib/service';
 
+import { PlusLeft } from '../PlusLeft';
 import { ReplaceConfirm } from '../QuotaSheets';
 import { TomorrowList, type TomorrowItem } from '../TomorrowList';
-import { CHARACTER, Footer, Main, PrimaryButton, Screen, Sheet, AppHeader } from '../ui';
+import { CHARACTER, Footer, Main, OutlineButton, PrimaryButton, Screen, Sheet, AppHeader } from '../ui';
 const LABELS = ['월', '화', '수', '목', '금', '토', '일'];
 
 export function DropDoneScreen(props: {
@@ -18,6 +18,7 @@ export function DropDoneScreen(props: {
   courses: TomorrowItem[];
   tomorrowId?: string;
   plus: boolean;
+  usage: PlusUsage | null;
   currentTopic: string;
 }) {
   const [confirm, setConfirm] = useState(false);
@@ -60,17 +61,26 @@ export function DropDoneScreen(props: {
 
         {props.courses.length ? (
           <section className="mt-8 flex flex-col gap-2">
-            <h2 className="text-sm font-bold text-txt-black-secondary">내일의 Drop</h2>
+            <h2 className="text-sm font-bold text-txt-black-secondary">{props.courses.length > 1 ? '내일 받을 코스' : '내일 받을 Drop'}</h2>
             <TomorrowList items={props.courses} tomorrowId={props.tomorrowId} />
-            {props.courses.length > 1 ? <p className="text-sm text-txt-black-tertiary">코스를 누르면 내일 그 코스의 Drop을 받아요. 받는 코스는 하나예요.</p> : null}
             {props.plus ? (
-              <Link href="/start" className="flex min-h-11 items-center self-center px-3 text-sm text-txt-black-tertiary underline">
-                새 주제로 코스 만들기
-              </Link>
+              <>
+                <OutlineButton href="/start" className="mt-3">
+                  새 주제로 코스 만들기
+                </OutlineButton>
+                <PlusLeft usage={props.usage} />
+              </>
             ) : (
-              <button type="button" onClick={() => setConfirm(true)} className="flex min-h-11 items-center self-center px-3 text-sm text-txt-black-tertiary underline">
-                새 주제로 바꾸기
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => setConfirm(true)}
+                  className="mc-press mt-2 h-12 rounded-full border border-border-button bg-shape-white text-base font-semibold text-txt-black-secondary"
+                >
+                  다른 주제로 바꾸기
+                </button>
+                <p className="text-center text-sm text-txt-black-secondary">무료는 한 번에 코스 1개를 배울 수 있어요.</p>
+              </>
             )}
           </section>
         ) : null}

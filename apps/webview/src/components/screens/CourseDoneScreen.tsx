@@ -5,13 +5,19 @@ import { useState } from 'react';
 import { postJson } from '@/lib/client/ndjson';
 import type { ExplainAnswer } from '@/lib/types';
 
-import { AppHeader, Badge, CHARACTER, Main, Screen, cx } from '../ui';
+import { AppHeader, CHARACTER, Main, OutlineButton, Screen, cx } from '../ui';
 
 const ANSWERS: [ExplainAnswer, string][] = [
   ['yes', '예'],
   ['some', '조금'],
   ['not_yet', '아직'],
 ];
+
+const REPLIES: Record<ExplainAnswer, string> = {
+  yes: '좋아요! 한 문장 요약을 떠올리면 더 오래 기억나요.',
+  some: '충분해요. 헷갈린 Drop은 언제든 다시 읽을 수 있어요.',
+  not_yet: '괜찮아요. 다시 읽고 싶은 Drop부터 천천히 봐요.',
+};
 
 export function CourseDoneScreen(props: {
   courseId: string;
@@ -74,25 +80,38 @@ export function CourseDoneScreen(props: {
               );
             })}
           </div>
+          {answer ? <p className="mt-3 text-sm text-txt-point">{REPLIES[answer]}</p> : null}
         </section>
 
         {props.related.length ? (
           <section className="mt-10 flex flex-col gap-3">
-            <h2 className="text-lg font-semibold">{props.plus ? '다음엔 이걸 알아볼까요?' : 'Plus로 이어서 배울 수 있어요'}</h2>
+            <h2 className="text-lg font-semibold">다음엔 이걸 알아볼까요?</h2>
             <div className="flex flex-col gap-2">
               {props.related.map(r => (
                 <a
                   key={r}
-                  href={props.plus ? `/start?topic=${encodeURIComponent(r)}` : '/plus'}
+                  href={`/start?topic=${encodeURIComponent(r)}`}
                   className="mc-press flex items-center justify-between gap-3 rounded-2xl border border-border-button px-5 py-4"
                 >
                   <span className="text-lg font-semibold">{r}</span>
-                  {props.plus ? <span className="flex-shrink-0 text-sm font-bold text-txt-point">시작하기</span> : <Badge>Plus</Badge>}
+                  <span className="flex-shrink-0 text-sm font-bold text-txt-point">시작하기</span>
                 </a>
               ))}
             </div>
           </section>
         ) : null}
+
+        <section className="mt-8 flex flex-col">
+          <OutlineButton href="/start">{props.plus ? '새 주제로 코스 만들기' : '무료로 새 주제 시작하기'}</OutlineButton>
+          <p className="mt-2 text-center text-sm text-txt-black-secondary">
+            이 코스는 ‘다 배운 코스’에 남아요.{props.plus ? '' : ' 무료는 한 번에 코스 1개를 배울 수 있어요.'}
+          </p>
+          {props.plus ? null : (
+            <a href="/plus?from=done" className="mt-1 flex min-h-11 items-center self-center px-3 text-sm font-semibold text-txt-point">
+              Plus로 여러 코스 함께 배우기
+            </a>
+          )}
+        </section>
       </Main>
     </Screen>
   );

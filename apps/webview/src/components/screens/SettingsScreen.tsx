@@ -31,12 +31,21 @@ function Switch({ on, onChange, label }: { on: boolean; onChange: (v: boolean) =
   );
 }
 
-export function SettingsScreen(props: { notifyOn: boolean; notifyTime: string; account: string | null; plus: boolean; version: string }) {
+export function SettingsScreen(props: {
+  notifyOn: boolean;
+  notifyTime: string;
+  account: string | null;
+  plus: boolean;
+  /** 다음 결제일 'M월 D일' (Plus일 때) */
+  renewLabel?: string;
+  version: string;
+}) {
   const router = useRouter();
   const [on, setOn] = useState(props.notifyOn);
   const [time, setTime] = useState(props.notifyTime);
   const [notice, setNotice] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmLogout, setConfirmLogout] = useState(false);
 
   const toggle = async (v: boolean) => {
     setNotice('');
@@ -90,8 +99,28 @@ export function SettingsScreen(props: { notifyOn: boolean; notifyTime: string; a
                   </svg>
                 </span>
               </label>
-              <p className="mt-1 text-sm text-txt-black-tertiary">하루 한 번, 오늘 Drop을 아직 안 읽었을 때만 보내요. 밤 9시부터 아침 8시까지는 보내지 않아요.</p>
+              <p className="mt-1 text-sm text-txt-black-secondary">
+                새 Drop은 매일 0시에 열려요. 알림은 정한 시간에 하루 한 번, 아직 안 읽은 날만 보내요. 밤 9시부터 아침 8시까지는 보내지 않아요.
+              </p>
             </>
+          ) : null}
+        </section>
+
+        <section className="flex flex-col">
+          <h2 className="mb-1 text-sm font-bold text-txt-black-secondary">구독</h2>
+          <Link href="/plus" className={ROW}>
+            <span className="flex flex-col gap-0.5">
+              <span className="text-base font-semibold">미니커버리 Plus</span>
+              <span className="text-sm text-txt-black-secondary">
+                {props.plus ? `이용 중${props.renewLabel ? ` · ${props.renewLabel} 갱신` : ''}` : '무료 · 한 번에 코스 1개'}
+              </span>
+            </span>
+            <IconArrow />
+          </Link>
+          {props.plus ? (
+            <p className="mt-1 text-sm text-txt-black-secondary">
+              해지는 아이폰 설정 &gt; 내 이름 &gt; 구독에서 할 수 있어요. 해지해도 만든 코스와 읽은 Drop은 그대로 남아요.
+            </p>
           ) : null}
         </section>
 
@@ -101,21 +130,11 @@ export function SettingsScreen(props: { notifyOn: boolean; notifyTime: string; a
             <span className="text-base font-semibold">로그인 계정</span>
             <span className="truncate text-sm text-txt-black-secondary">{props.account ?? '가입 전 (이 기기에만 저장)'}</span>
           </div>
-          <div className={`${ROW} border-t border-border-div`}>
-            <span className="text-base font-semibold">구독</span>
-            <Link href="/plus" className="text-sm text-txt-black-secondary">
-              {props.plus ? 'Plus 이용 중' : '무료 · Plus 알아보기'}
-            </Link>
-          </div>
           {props.account ? (
             <button
               type="button"
               className={`${ROW} border-t border-border-div text-left text-base font-semibold`}
-              onClick={async () => {
-                await postJson('/api/auth/logout');
-                router.replace('/start');
-                router.refresh();
-              }}
+              onClick={() => setConfirmLogout(true)}
             >
               로그아웃
             </button>
@@ -155,7 +174,10 @@ export function SettingsScreen(props: { notifyOn: boolean; notifyTime: string; a
         <h2 id="deleteTitle" className="mt-6 text-2xl font-bold tracking-[-1px]">
           {props.account ? '계정을 삭제할까요?' : '학습 기록을 지울까요?'}
         </h2>
-        <p className="mt-2 text-base text-txt-black-secondary">코스, 읽은 Drop, 내 학습 기록이 모두 지워지고 되돌릴 수 없어요.</p>
+        <p className="mt-2 text-base text-txt-black-secondary">
+          코스, 읽은 Drop, 내 학습 기록이 모두 지워지고 되돌릴 수 없어요.
+          {props.plus ? ' Plus 구독은 자동으로 해지되지 않으니 아이폰 설정 > 구독에서 따로 해지해 주세요.' : ''}
+        </p>
         <PrimaryButton
           className="mt-6 !bg-[#B82637]"
           onClick={async () => {
@@ -167,6 +189,24 @@ export function SettingsScreen(props: { notifyOn: boolean; notifyTime: string; a
           삭제하기
         </PrimaryButton>
         <TextButton onClick={() => setConfirmDelete(false)}>취소</TextButton>
+      </Sheet>
+
+      <Sheet open={confirmLogout} onClose={() => setConfirmLogout(false)} labelledBy="logoutTitle">
+        <h2 id="logoutTitle" className="mt-6 text-2xl font-bold tracking-[-1px]">
+          로그아웃할까요?
+        </h2>
+        <p className="mt-2 text-base text-txt-black-secondary">읽은 코스와 기록은 계정에 남아 있어요. 다시 로그인하면 이어서 읽을 수 있어요.</p>
+        <PrimaryButton
+          className="mt-6"
+          onClick={async () => {
+            await postJson('/api/auth/logout');
+            router.replace('/start');
+            router.refresh();
+          }}
+        >
+          로그아웃
+        </PrimaryButton>
+        <TextButton onClick={() => setConfirmLogout(false)}>취소</TextButton>
       </Sheet>
     </Screen>
   );

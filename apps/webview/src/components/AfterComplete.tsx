@@ -59,8 +59,10 @@ export function AfterComplete({ result, dropId }: { result: CompleteResult | nul
           <br />
           알려드릴까요?
         </h2>
-        <p className="mt-2 text-base text-txt-black-secondary">하루 한 번, 오늘 읽은 시간쯤 알려드려요.</p>
-        <p className="mt-1 text-sm text-txt-black-tertiary">밤 9시부터 아침 8시까지는 보내지 않아요.</p>
+        <p className="mt-2 text-base text-txt-black-secondary">
+          새 Drop은 매일 0시에 열려요. 알림은 하루 한 번, 오늘 읽은 시간쯤 아직 안 읽었을 때만 보내요.
+        </p>
+        <p className="mt-1 text-sm text-txt-black-secondary">밤 9시부터 아침 8시까지는 보내지 않고, 시간은 설정에서 바꿀 수 있어요.</p>
         <div className="mt-8 flex flex-col gap-2 pb-2">
           <PrimaryButton
             onClick={async () => {
@@ -91,6 +93,7 @@ export function AfterComplete({ result, dropId }: { result: CompleteResult | nul
         <div className="mt-6 flex flex-col gap-2 pb-2">
           <SocialButtons height={52} next={next} onDone={() => setStep('go')} />
           <TextButton onClick={() => setStep('go')}>나중에</TextButton>
+          <p className="text-center text-sm text-txt-black-secondary">지금은 이 기기에만 저장돼요. 나중에 가입해도 그대로 옮겨져요.</p>
         </div>
       </Sheet>
     </>

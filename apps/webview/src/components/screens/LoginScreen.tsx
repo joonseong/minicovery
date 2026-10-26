@@ -43,7 +43,7 @@ export function LoginScreen({ next, mode }: { next: string; mode: 'login' | 'sig
       <Main className="pb-6 pt-4">
         <h1 className="text-2xl font-bold tracking-[-1px]">{signup ? '이메일로 가입' : '로그인'}</h1>
         <p className="mt-2 text-base text-txt-black-secondary">
-          {signup ? '지금까지 읽은 코스와 진도가 그대로 저장돼요.' : '이 기기에서 읽은 기록도 계정으로 옮겨 드려요.'}
+          {signup ? '지금까지 읽은 코스와 진도가 그대로 저장돼요.' : '이 기기에서 읽은 코스와 기록도 계정으로 옮겨 드려요. 계정에 있던 코스도 그대로 남아요.'}
         </p>
         {signup ? null : (
           <div className="mt-6">

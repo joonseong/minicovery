@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 
 import { CourseScreen } from '@/components/screens/CourseScreen';
-import { activeCourses, completedToday, openAllStatus, pickedCourseId } from '@/lib/service';
+import { activeCourses, completedToday, openAllStatus, pickedCourseId, plusUsage } from '@/lib/service';
 import { currentUser } from '@/lib/session';
 import { getStore } from '@/lib/store';
 import { LEVEL_LABEL } from '@/lib/types';
@@ -16,10 +16,13 @@ export default async function CoursePage({ params }: { params: { id: string } })
   const drops = await store.listDrops(course.id);
   const next = drops.find(d => !d.completedAt);
   const doneToday = await completedToday(user.id);
-  const picked = pickedCourseId(user, await activeCourses(user.id));
+  const items = await activeCourses(user.id);
+  const picked = pickedCourseId(user, items);
   const openAll = openAllStatus(user);
-  // 다음 달 1일 (전체 열기 확인 시트 문구)
-  const nextMonth = (new Date(Date.now() + 9 * 3600_000).getUTCMonth() + 1) % 12 + 1;
+  const usage = await plusUsage(user);
+  // 내일 받을 코스를 전체 열면 다른 진행 중 코스로 넘어간다 (openAllCourse와 같은 규칙)
+  const isTomorrow = (user.tomorrowCourseId ?? items.find(i => !i.course.openedAllAt)?.course.id) === course.id;
+  const nextTomorrow = isTomorrow ? items.find(i => i.course.id !== course.id && !i.course.openedAllAt)?.course.topic : undefined;
   return (
     <CourseScreen
       courseId={course.id}
@@ -33,7 +36,8 @@ export default async function CoursePage({ params }: { params: { id: string } })
       completed={course.status === 'completed'}
       openedAll={Boolean(course.openedAllAt)}
       canOpenAll={openAll.available}
-      openAllNext={`${nextMonth}월 1일`}
+      openAllNext={usage?.resetLabel ?? ''}
+      nextTomorrowTopic={nextTomorrow}
     />
   );
 }

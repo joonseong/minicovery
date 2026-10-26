@@ -21,10 +21,12 @@ export function CourseScreen(props: {
   isTomorrow: boolean;
   completed: boolean;
   openedAll: boolean;
-  /** Plus이고 이번 달 전체 열기가 남았을 때 */
+  /** Plus이고 이번 구독 기간에 전체 열기가 남았을 때 */
   canOpenAll: boolean;
-  /** 전체 열기를 쓰면 다시 쓸 수 있는 날 (예: 11월 1일) */
+  /** 전체 열기를 쓰면 다시 쓸 수 있는 날 = 다음 결제일 (예: 11월 27일) */
   openAllNext: string;
+  /** 이 코스를 열면 내일 대신 받게 될 코스 (이 코스가 내일 받을 코스일 때만) */
+  nextTomorrowTopic?: string;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -64,13 +66,13 @@ export function CourseScreen(props: {
         <div className="mt-4 flex items-center gap-3">
           <Progress value={done / Math.max(1, total)} />
           <span className="flex-shrink-0 text-sm font-semibold text-txt-black-secondary">
-            {done} / {total} 완료
+            {done} / {total}편 읽음
           </span>
         </div>
 
         {props.canOpenAll && !props.openedAll && !props.completed && remaining > 1 ? (
           <section className="mt-6 flex flex-col rounded-2xl bg-shape-depth1 p-5">
-            <span className="text-sm font-bold text-txt-point">Plus · 이번 달 1번 남음</span>
+            <span className="text-sm font-bold text-txt-point">Plus · 전체 열기 1번 남음</span>
             <span className="mt-1 text-lg font-semibold">이 코스 전체 열기</span>
             <span className="mt-1 text-sm text-txt-black-secondary">남은 {remaining}편을 기다리지 않고 바로 이어서 읽을 수 있어요.</span>
             <button
@@ -132,8 +134,10 @@ export function CourseScreen(props: {
             );
           })}
         </ol>
-        <p className="mt-3 text-sm text-txt-black-tertiary">
-          {props.openedAll ? '읽은 Drop은 언제든 다시 볼 수 있어요.' : 'Drop은 하루 한 편, 받는 중인 코스로 와요. 읽은 Drop은 언제든 다시 볼 수 있어요.'}
+        <p className="mt-3 text-sm text-txt-black-secondary">
+          {props.openedAll || props.completed
+            ? '읽은 Drop은 언제든 다시 볼 수 있어요.'
+            : 'Drop은 하루 한 편씩 열려요. 오늘 Drop을 읽으면 다음 편은 내일 0시에 열려요. 읽은 Drop은 언제든 다시 볼 수 있어요.'}
         </p>
       </Main>
       {!props.completed && props.nextId ? (
@@ -147,7 +151,7 @@ export function CourseScreen(props: {
               <PrimaryButton onClick={() => void receiveTomorrow()}>내일은 이 코스로 받기</PrimaryButton>
             )
           ) : (
-            <PrimaryButton onClick={() => void receive()}>{props.isPicked ? '오늘의 Drop 읽기' : '오늘은 이 코스로 받기'}</PrimaryButton>
+            <PrimaryButton onClick={() => void receive()}>{props.isPicked ? `Drop ${done + 1} 읽기` : '오늘은 이 코스 읽기'}</PrimaryButton>
           )}
         </Footer>
       ) : null}
@@ -157,8 +161,15 @@ export function CourseScreen(props: {
           이 코스를 전체 열까요?
         </h2>
         <p className="mt-1 text-base text-txt-black-secondary">
-          전체 열기는 한 달에 한 코스만 쓸 수 있어요. 이번 달에는 다른 코스를 전체 열 수 없고, {props.openAllNext}에 다시 쓸 수 있어요.
+          전체 열기는 구독 한 달에 한 코스만 쓸 수 있어요. 다음 결제일({props.openAllNext})부터 다시 쓸 수 있어요.
         </p>
+        <ul className="mt-4 flex flex-col gap-2 rounded-2xl bg-shape-depth1 px-5 py-4 text-sm text-txt-black-secondary">
+          <li>
+            열린 코스는 하루 한 편과 따로 읽어요.
+            {props.nextTomorrowTopic ? ` 내일은 ‘${props.nextTomorrowTopic}’ 코스로 받아요.` : ''}
+          </li>
+          <li>구독을 해지해도 열린 코스는 계속 읽을 수 있어요.</li>
+        </ul>
         <div className="mt-6 flex flex-col gap-1 pb-2">
           <PrimaryButton onClick={() => void openAll()}>{busy ? '여는 중…' : '전체 열기'}</PrimaryButton>
           <TextButton onClick={() => setSheet(false)}>나중에</TextButton>

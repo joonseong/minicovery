@@ -4,13 +4,24 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { checkTopic, levelHref } from '@/lib/client/start';
+import { josa } from '@/lib/josa';
+
+import Link from 'next/link';
 
 import { MonthlySheet, ReplaceSheet } from '../QuotaSheets';
 import { AppHeader, BottomNav, Main, PrimaryButton, Screen } from '../ui';
 
-type Props = { initialTopic: string; suggestions: string[]; quota: 'ok' | 'free' | 'monthly'; currentTopic?: string; replace?: boolean };
+type Props = {
+  initialTopic: string;
+  suggestions: string[];
+  quota: 'ok' | 'free' | 'monthly';
+  currentTopic?: string;
+  replace?: boolean;
+  /** Plus 새 코스가 다시 채워지는 날 */
+  resetLabel?: string;
+};
 
-export function StartScreen({ initialTopic, suggestions, quota, currentTopic, replace }: Props) {
+export function StartScreen({ initialTopic, suggestions, quota, currentTopic, replace, resetLabel }: Props) {
   const router = useRouter();
   const [topic, setTopic] = useState(initialTopic);
   const [busy, setBusy] = useState(false);
@@ -64,8 +75,18 @@ export function StartScreen({ initialTopic, suggestions, quota, currentTopic, re
           <p className="text-base text-txt-black-secondary">입력한 주제를 하루 한 편씩 읽는 코스로 만들어 드려요.</p>
         </div>
 
+        {quota === 'free' && currentTopic && !replace ? (
+          // 무료 한도를 주제를 다 입력하기 전에 알린다
+          <p className="mt-6 rounded-2xl bg-shape-depth1 px-5 py-4 text-sm text-txt-black-secondary">
+            무료는 한 번에 코스 1개를 배울 수 있어요. 지금 ‘{currentTopic}’{josa(currentTopic, '을/를').slice(currentTopic.length)} 배우는 중이라, 새 코스를 만들면 지금 코스는 지워져요.{' '}
+            <Link href="/plus?from=keep" className="font-semibold text-txt-point">
+              Plus로 함께 배우기
+            </Link>
+          </p>
+        ) : null}
+
         <form
-          className="mt-8 flex flex-col gap-3"
+          className={quota === 'free' && currentTopic && !replace ? 'mt-6 flex flex-col gap-3' : 'mt-8 flex flex-col gap-3'}
           onSubmit={e => {
             e.preventDefault();
             void go(topic);
@@ -130,7 +151,7 @@ export function StartScreen({ initialTopic, suggestions, quota, currentTopic, re
         courseTopic={currentTopic}
         replaceHref={sheet?.replaceHref ?? '/start'}
       />
-      <MonthlySheet open={sheet?.kind === 'monthly'} onClose={() => setSheet(null)} />
+      <MonthlySheet open={sheet?.kind === 'monthly'} onClose={() => setSheet(null)} resetLabel={resetLabel} />
     </Screen>
   );
 }
