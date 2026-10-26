@@ -136,7 +136,7 @@ export async function courseQuota(user: User): Promise<Quota> {
   const courses = (await getStore().listCourses(user.id)).filter(c => c.status !== 'failed');
   const period = plusPeriod(user);
   if (!period) {
-    const going = courses.filter(c => c.status === 'active' || c.status === 'generating');
+    const going = courses.filter(c => (c.status === 'active' || c.status === 'generating') && !c.openedAllAt);
     return going.length < FREE_COURSE_LIMIT ? { ok: true } : { ok: false, reason: 'free' };
   }
   const made = courses.filter(c => c.createdAt >= period.start).length;
@@ -162,11 +162,11 @@ export async function plusUsage(user: User): Promise<PlusUsage | null> {
   };
 }
 
-/** 무료 사용자가 새 주제로 바꿀 때: 진행 중인 코스와 Drop은 지우고, 다 배운 코스와 기록(user.learned)은 남긴다 */
+/** 무료 사용자가 새 주제로 바꿀 때: 진행 중인 코스와 Drop은 지우고, 다 배운 코스·전체 열린 코스와 기록(user.learned)은 남긴다 */
 export async function deleteFreeCourses(user: User) {
   const store = getStore();
   for (const c of await store.listCourses(user.id)) {
-    if (c.status !== 'active' && c.status !== 'generating') continue;
+    if ((c.status !== 'active' && c.status !== 'generating') || c.openedAllAt) continue;
     c.status = 'deleted';
     await store.saveCourse(c);
   }

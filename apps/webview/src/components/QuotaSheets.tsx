@@ -44,7 +44,7 @@ export function MonthlySheet({ open, onClose, resetLabel }: { open: boolean; onC
   return (
     <Sheet open={open} onClose={onClose} labelledBy="monthlyTitle">
       <h2 id="monthlyTitle" className="mt-6 text-2xl font-bold tracking-[-1px]">
-        이번 달 새 코스를 다 만들었어요
+        새 코스를 다 만들었어요
       </h2>
       <p className="mt-1 text-base text-txt-black-secondary">Plus는 구독 시작일부터 한 달마다 새 코스를 3개까지 만들 수 있어요. {resetLabel ? `${resetLabel}에 다시 3개가 채워져요.` : ''}</p>
       <PrimaryButton className="mt-6" onClick={onClose}>

@@ -50,7 +50,7 @@ export default async function MapPage() {
               <p className="text-sm font-semibold">
                 주제 {d.stage.next.left}개만 더 다 배우면 <span className="text-txt-point">{d.stage.next.name}</span>로 성장해요
               </p>
-              <p className="text-sm text-txt-black-secondary">코스의 Drop을 70% 넘게 읽고, 읽은 Drop의 절반 넘게 ‘이해했어요’를 누르면 다 배운 주제가 돼요.</p>
+              <p className="text-sm text-txt-black-secondary">코스를 끝까지 읽으면 다 배운 주제가 돼요. ‘조금 헷갈려요’를 눌러도 똑같이 쳐요.</p>
             </div>
           ) : null}
         </section>

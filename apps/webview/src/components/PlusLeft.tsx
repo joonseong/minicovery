@@ -7,7 +7,7 @@ export function PlusLeft({ usage, className = 'mt-2' }: { usage: PlusUsage | nul
     <p className={`${className} text-center text-sm text-txt-black-secondary`}>
       {usage.coursesLeft
         ? `Plus · 새 코스 ${usage.coursesLeft}개 남음 · ${usage.resetLabel}에 다시 3개`
-        : `Plus · 이번 달 새 코스를 다 만들었어요 · ${usage.resetLabel}에 다시 3개`}
+        : `Plus · 새 코스를 다 만들었어요 · ${usage.resetLabel}에 다시 3개`}
     </p>
   );
 }
