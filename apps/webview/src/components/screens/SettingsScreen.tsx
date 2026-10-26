@@ -119,7 +119,7 @@ export function SettingsScreen(props: {
           </Link>
           {props.plus ? (
             <p className="mt-1 text-sm text-txt-black-secondary">
-              해지는 아이폰 설정 &gt; 내 이름 &gt; 구독에서 할 수 있어요. 해지해도 만든 코스와 읽은 Drop은 그대로 남아요.
+              해지는 아이폰 설정 &gt; 내 이름 &gt; 구독에서 할 수 있어요. 해지해도 만든 코스와 읽은 Drop은 그대로 남고, 진행 중인 코스도 계속 받아요.
             </p>
           ) : null}
         </section>

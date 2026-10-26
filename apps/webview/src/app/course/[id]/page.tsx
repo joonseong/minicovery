@@ -32,7 +32,8 @@ export default async function CoursePage({ params }: { params: { id: string } })
       nextId={course.status === 'active' ? next?.id : undefined}
       doneToday={Boolean(doneToday)}
       isPicked={picked === course.id}
-      isTomorrow={user.tomorrowCourseId === course.id}
+      isTomorrow={isTomorrow}
+      multiple={items.filter(i => !i.course.openedAllAt).length > 1}
       completed={course.status === 'completed'}
       openedAll={Boolean(course.openedAllAt)}
       canOpenAll={openAll.available}

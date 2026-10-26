@@ -5,7 +5,7 @@ import type { Level, TaskType } from '@/lib/types';
 export const maxDuration = 300;
 
 /**
- * 코스 만들기. 무료는 1개, Plus는 한 달 3개.
+ * 코스 만들기. 무료는 진행 중 1개, Plus는 구독 한 달 3개, 바꾸기·새 코스는 하루 1번.
  * 무료 사용자가 replace=true로 보내면 지금 코스를 지우고 새로 만든다 (학습 기록은 남음).
  */
 export async function POST(request: Request) {

@@ -52,7 +52,7 @@ export function TodayScreen({ dateLabel, cards, pickedId, doneToday, tomorrow, w
       <Main className="pb-8 pt-4">
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 flex-col gap-1">
-            <p className="text-sm text-txt-black-tertiary">
+            <p className="text-sm text-txt-black-secondary">
               {dateLabel}
               {weekDays ? ` · 이번 주 ${weekDays}일째` : ''}
             </p>
@@ -162,7 +162,7 @@ export function TodayScreen({ dateLabel, cards, pickedId, doneToday, tomorrow, w
                 </button>
               ))}
               {others.length ? (
-                <p className="text-sm text-txt-black-secondary">오늘 한 편을 읽기 전까지 바꿀 수 있어요. 내일 받을 코스는 다 읽은 뒤 골라요.</p>
+                <p className="text-sm text-txt-black-secondary">위 카드가 오늘 읽을 Drop이에요. 읽기 전까지 다른 코스로 바꿀 수 있어요. 어제 고른 ‘내일 받을 코스’가 기본으로 와요.</p>
               ) : null}
               <OutlineButton href="/start" className="mt-4">
                 새 주제로 코스 만들기

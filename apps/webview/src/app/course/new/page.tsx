@@ -45,7 +45,9 @@ function Generating() {
         }),
       });
       if (res.status === 402) {
-        router.replace('/plus?from=keep');
+        // 하루 1번·진행 중 코스 초과는 새 코스 화면이 안내한다. 무료 한도·Plus 한 달 한도는 Plus 안내로
+        const { reason } = (await res.json().catch(() => ({}))) as { reason?: string };
+        router.replace(reason === 'daily' || reason === 'over' ? '/start' : '/plus?from=keep');
         return;
       }
       if (!res.ok) {

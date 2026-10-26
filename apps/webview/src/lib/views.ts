@@ -109,11 +109,13 @@ export async function mapData(user: User) {
     const left = c.outline.length - done;
     if (!closest || left < closest.total - closest.done) closest = { course: c, done, total: c.outline.length };
   }
+  // 무료 사용자가 진행 중 코스를 가진 채 누르면 지금 코스와 바뀐다
+  const fogStatus = !isPlus(user) && going > 0 ? '다음 추천 · 누르면 지금 코스와 바뀌어요' : '다음 추천 · 눌러서 코스 만들기';
   let fog = 0;
   for (const c of courses) {
     for (const r of c.related) {
       const before = regions.get(c.category)?.length ?? 0;
-      add(c.category, { name: r, state: 'fog', status: '다음 추천 · 눌러서 코스 만들기', href: `/start?topic=${encodeURIComponent(r)}` });
+      add(c.category, { name: r, state: 'fog', status: fogStatus, href: `/start?topic=${encodeURIComponent(r)}` });
       if ((regions.get(c.category)?.length ?? 0) > before) fog++;
     }
   }

@@ -8,13 +8,13 @@ import { josa } from '@/lib/josa';
 
 import Link from 'next/link';
 
-import { MonthlySheet, ReplaceSheet } from '../QuotaSheets';
+import { LimitSheet, MonthlySheet, ReplaceSheet } from '../QuotaSheets';
 import { AppHeader, BottomNav, Main, PrimaryButton, Screen } from '../ui';
 
 type Props = {
   initialTopic: string;
   suggestions: string[];
-  quota: 'ok' | 'free' | 'monthly';
+  quota: 'ok' | 'free' | 'over' | 'monthly' | 'daily';
   currentTopic?: string;
   replace?: boolean;
   /** Plus 새 코스가 다시 채워지는 날 */
@@ -26,8 +26,18 @@ export function StartScreen({ initialTopic, suggestions, quota, currentTopic, re
   const [topic, setTopic] = useState(initialTopic);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<{ message: string; suggestions: string[] } | null>(null);
-  const [sheet, setSheet] = useState<null | { kind: 'free' | 'monthly'; replaceHref: string }>(null);
+  const [sheet, setSheet] = useState<null | { kind: 'free' | 'monthly' | 'daily' | 'over'; replaceHref: string }>(null);
   const trimmed = topic.trim();
+  const limitNote =
+    quota === 'free' && currentTopic && !replace
+      ? `무료는 한 번에 코스 1개를 배울 수 있어요. 지금 ‘${currentTopic}’${josa(currentTopic, '을/를').slice(currentTopic.length)} 배우는 중이라, 새 코스를 만들면 지금 코스는 지워져요. 단계와 다 배운 주제는 남아요.`
+      : quota === 'daily'
+        ? resetLabel
+          ? '새 코스는 하루에 1개까지 만들 수 있어요. 오늘은 이미 만들었어요.'
+          : '주제 바꾸기는 하루에 1번까지 할 수 있어요. 내일 다시 바꿀 수 있어요.'
+        : quota === 'over'
+          ? '진행 중인 코스가 여러 개예요. 무료는 진행 중인 코스가 1개 이하일 때 새 코스를 만들 수 있어요.'
+          : '';
 
   const go = async (input: string) => {
     if (!input.trim() || busy) return;
@@ -55,8 +65,8 @@ export function StartScreen({ initialTopic, suggestions, quota, currentTopic, re
       setSheet({ kind: 'free', replaceHref: levelHref(r, true) });
       return;
     }
-    if (quota === 'monthly') {
-      setSheet({ kind: 'monthly', replaceHref: '' });
+    if (quota === 'monthly' || quota === 'daily' || quota === 'over') {
+      setSheet({ kind: quota, replaceHref: '' });
       return;
     }
     router.push(levelHref(r));
@@ -75,18 +85,20 @@ export function StartScreen({ initialTopic, suggestions, quota, currentTopic, re
           <p className="text-base text-txt-black-secondary">입력한 주제를 하루 한 편씩 읽는 코스로 만들어 드려요.</p>
         </div>
 
-        {quota === 'free' && currentTopic && !replace ? (
-          // 무료 한도를 주제를 다 입력하기 전에 알린다
+        {limitNote ? (
+          // 한도를 주제를 다 입력하기 전에 알린다
           <p className="mt-6 rounded-2xl bg-shape-depth1 px-5 py-4 text-sm text-txt-black-secondary">
-            무료는 한 번에 코스 1개를 배울 수 있어요. 지금 ‘{currentTopic}’{josa(currentTopic, '을/를').slice(currentTopic.length)} 배우는 중이라, 새 코스를 만들면 지금 코스는 지워져요.{' '}
-            <Link href="/plus?from=keep" className="font-semibold text-txt-point">
-              Plus로 함께 배우기
-            </Link>
+            {limitNote}{' '}
+            {quota === 'free' || quota === 'over' ? (
+              <Link href="/plus?from=keep" className="font-semibold text-txt-point">
+                Plus로 여러 코스 함께 배우기
+              </Link>
+            ) : null}
           </p>
         ) : null}
 
         <form
-          className={quota === 'free' && currentTopic && !replace ? 'mt-6 flex flex-col gap-3' : 'mt-8 flex flex-col gap-3'}
+          className={limitNote ? 'mt-6 flex flex-col gap-3' : 'mt-8 flex flex-col gap-3'}
           onSubmit={e => {
             e.preventDefault();
             void go(topic);
@@ -152,6 +164,11 @@ export function StartScreen({ initialTopic, suggestions, quota, currentTopic, re
         replaceHref={sheet?.replaceHref ?? '/start'}
       />
       <MonthlySheet open={sheet?.kind === 'monthly'} onClose={() => setSheet(null)} resetLabel={resetLabel} />
+      <LimitSheet
+        kind={sheet?.kind === 'daily' || sheet?.kind === 'over' ? sheet.kind : null}
+        onClose={() => setSheet(null)}
+        plus={Boolean(resetLabel)}
+      />
     </Screen>
   );
 }

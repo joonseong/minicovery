@@ -91,6 +91,8 @@ export interface Course {
   lastReadAt?: string;
   /** Plus '전체 열기'를 쓴 시각. 이 코스는 하루 한 편 제한 없이 읽는다 */
   openedAllAt?: string;
+  /** 무료 사용자가 새 주제로 바꾸며 지운 시각 (바꾸기는 하루 1번) */
+  deletedAt?: string;
 }
 
 export interface DropBody {

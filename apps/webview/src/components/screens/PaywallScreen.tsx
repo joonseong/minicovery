@@ -12,7 +12,7 @@ import type { PlusUsage } from '@/lib/service';
 import { AppHeader, CHARACTER, Footer, IconCheck, Main, PrimaryButton, Screen } from '../ui';
 
 const BENEFITS = [
-  { title: '새 코스 한 달 3개', desc: '구독 시작일부터 한 달마다 3개가 다시 채워져요.' },
+  { title: '새 코스 한 달 3개', desc: '체험을 시작한 날부터 한 달마다 3개가 다시 채워져요. 하루에 1개까지 만들 수 있어요.' },
   { title: '한 달에 한 코스는 전체 열기', desc: '기다리지 않고 끝까지 읽어요. 해지해도 열린 코스는 계속 읽을 수 있어요.' },
   { title: '여러 코스를 함께 배우기', desc: '진행 중인 코스 중 내일 받을 하나를 골라요.' },
 ];
@@ -133,7 +133,7 @@ export function PaywallScreen({
           ))}
         </ul>
         <p className="mt-6 rounded-2xl bg-shape-depth1 px-5 py-4 text-sm text-txt-black-secondary">
-          무료는 한 번에 코스 1개를 배울 수 있어요. 해지해도 만든 코스와 읽은 Drop은 그대로 남고, 새 코스 만들기와 전체 열기만 멈춰요.
+          무료는 한 번에 코스 1개를 배울 수 있어요. 해지해도 만든 코스와 읽은 Drop은 그대로 남고, 진행 중인 코스도 계속 받아요. 새 코스는 진행 중인 코스가 1개 이하일 때 만들 수 있어요.
         </p>
         {beta && !plus ? <p className="mt-6 text-center text-sm text-txt-black-tertiary">베타 기간에는 결제 없이 Plus를 써 볼 수 있어요.</p> : null}
         {message ? <p className="mt-4 text-center text-sm text-txt-black-secondary">{message}</p> : null}
@@ -157,7 +157,7 @@ export function PaywallScreen({
         ) : (
           <PrimaryButton onClick={() => void start()}>{busy ? '처리하는 중…' : trialDays ? `${trialDays}일 무료로 시작하기` : 'Plus 시작하기'}</PrimaryButton>
         )}
-        <p className="text-center text-sm text-txt-black-tertiary">
+        <p className="text-center text-sm text-txt-black-secondary">
           {trialDays && !plus
             ? `${trialDays}일 뒤 ${PLUS_PRICE_LABEL}이 결제돼요. 체험 중에 해지하면 결제되지 않아요.`
             : '언제든 해지할 수 있어요.'}
