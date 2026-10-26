@@ -35,6 +35,8 @@ export function TodayScreen({ dateLabel, cards, pickedId, doneToday, tomorrow, w
   const cur = cards.find(c => c.id === picked);
   const others = cards.filter(c => c.id !== picked);
   const ch = CHARACTER[stage.key];
+  // 토·일 (KST)
+  const weekend = [0, 6].includes(new Date(Date.now() + 9 * 3600_000).getUTCDay());
   const upcoming = cards
     .filter(c => c.nextTitle)
     .map(c => ({ id: c.id, topic: c.topic, index: c.done, total: c.total, title: c.nextTitle! }));
@@ -63,6 +65,18 @@ export function TodayScreen({ dateLabel, cards, pickedId, doneToday, tomorrow, w
             <img src={ch.still} alt="" className="h-24 w-24 object-contain" />
           </Link>
         </div>
+
+        {weekend && weekDays ? (
+          <Link href="/review" className="mt-5 flex items-center justify-between gap-3 rounded-2xl border border-border-button py-4 pl-5 pr-4">
+            <span className="flex flex-col gap-0.5">
+              <span className="text-sm font-bold text-txt-point">주말 복습</span>
+              <span className="text-base font-semibold">이번 주에 배운 한 문장 다시 보기</span>
+            </span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="flex-shrink-0">
+              <path d="m9 5 7 7-7 7" stroke="#B4B5C1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Link>
+        ) : null}
 
         {banner ? (
           <div className="mt-5 flex items-center justify-between gap-2 rounded-2xl bg-shape-depth1 py-3 pl-4 pr-1">

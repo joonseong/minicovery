@@ -28,8 +28,31 @@ export function CourseDoneScreen(props: {
   plus: boolean;
   first: boolean;
   answer: ExplainAnswer | null;
+  /** 추천 코스로 내놓기를 켰는지 */
+  shared: boolean;
+  /** 추천 코스를 받아 읽은 코스면 다시 추천에 내놓지 않는다 */
+  copied: boolean;
 }) {
   const [answer, setAnswer] = useState(props.answer);
+  const [shared, setShared] = useState(props.shared);
+  const [notice, setNotice] = useState('');
+
+  const share = async () => {
+    const res = await postJson<{ url?: string }>(`/api/courses/${props.courseId}/share-link`);
+    const url = res.data.url;
+    if (!url) return;
+    const text = '하루 한 편씩 끝까지 읽었어요. 미니커버리';
+    try {
+      if (navigator.share) {
+        await navigator.share({ url, text });
+        return;
+      }
+    } catch {
+      return; // 공유 창을 닫음
+    }
+    await navigator.clipboard?.writeText(url).catch(() => undefined);
+    setNotice('링크를 복사했어요. 카톡이나 인스타에 붙여 넣어 보세요.');
+  };
   const ch = CHARACTER[props.stageKey];
   const nextKey = props.stageKey === 'rabbit' ? 'cat' : null;
 
@@ -54,6 +77,10 @@ export function CourseDoneScreen(props: {
             </div>
           ) : null}
         </section>
+        <OutlineButton className="mt-3" onClick={() => void share()}>
+          완주 카드 공유하기
+        </OutlineButton>
+        {notice ? <p className="mt-2 text-center text-sm text-txt-black-secondary">{notice}</p> : null}
 
         <section className="mt-8 flex flex-col">
           <p className="text-base font-semibold">이제 이 주제를 남에게 대략 설명할 수 있나요?</p>
@@ -100,6 +127,24 @@ export function CourseDoneScreen(props: {
             </div>
           </section>
         ) : null}
+
+        {props.copied ? null : (
+          <label className="mt-8 flex cursor-pointer items-start gap-3 rounded-2xl bg-shape-depth1 px-5 py-4">
+            <input
+              type="checkbox"
+              checked={shared}
+              onChange={e => {
+                setShared(e.target.checked);
+                void postJson(`/api/courses/${props.courseId}/share`, { on: e.target.checked });
+              }}
+              className="mt-0.5 h-5 w-5 flex-shrink-0 accent-[#20967A]"
+            />
+            <span className="flex flex-col gap-0.5">
+              <span className="text-base font-semibold">이 코스를 다른 사람에게 추천하기</span>
+              <span className="text-sm text-txt-black-secondary">내 이름 없이 코스 목차와 Drop만 추천 코스로 보여 줘요. 언제든 끌 수 있어요.</span>
+            </span>
+          </label>
+        )}
 
         <section className="mt-8 flex flex-col">
           <OutlineButton href="/start">{props.plus ? '새 주제로 코스 만들기' : '무료로 새 주제 시작하기'}</OutlineButton>

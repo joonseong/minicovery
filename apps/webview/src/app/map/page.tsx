@@ -28,6 +28,16 @@ export default async function MapPage() {
     <Screen>
       <AppHeader layout="large" title="내 학습" />
       <Main className="pb-10 pt-2">
+        <Link href="/review" className="mt-4 flex items-center gap-3 rounded-2xl border border-border-button py-4 pl-5 pr-4">
+          <span className="flex flex-1 flex-col gap-0.5">
+            <span className="text-sm font-bold text-txt-point">이번 주 복습</span>
+            <span className="text-base font-semibold">이번 주에 배운 한 문장 다시 보기</span>
+          </span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="m9 5 7 7-7 7" stroke="#B4B5C1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </Link>
+
         <section className="mt-4 flex flex-col gap-4 rounded-2xl bg-shape-depth1 p-5">
           <div className="flex items-center gap-4">
             <div className="flex w-full flex-col gap-1">

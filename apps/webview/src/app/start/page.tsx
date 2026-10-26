@@ -1,5 +1,6 @@
 import { StartScreen } from '@/components/screens/StartScreen';
 import { SUGGESTED_TOPICS } from '@/lib/constants';
+import { recommendedCourses } from '@/lib/learning';
 import { courseQuota, plusUsage } from '@/lib/service';
 import { currentUser } from '@/lib/session';
 import { getStore } from '@/lib/store';
@@ -17,6 +18,7 @@ export default async function StartPage({ searchParams }: { searchParams: { topi
       quota={quota.ok ? 'ok' : quota.reason}
       currentTopic={current?.topic}
       resetLabel={(await plusUsage(user))?.resetLabel}
+      recommended={await recommendedCourses(user)}
       replace={searchParams.replace === '1'}
     />
   );

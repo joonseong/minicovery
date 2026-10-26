@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import { checkTopic, levelHref } from '@/lib/client/start';
 import { josa } from '@/lib/josa';
+import type { Recommended } from '@/lib/learning';
 
 import Link from 'next/link';
 
@@ -19,9 +20,11 @@ type Props = {
   replace?: boolean;
   /** Plus 새 코스가 다시 채워지는 날 */
   resetLabel?: string;
+  /** 다른 사람들이 만든 추천 코스 */
+  recommended?: Recommended[];
 };
 
-export function StartScreen({ initialTopic, suggestions, quota, currentTopic, replace, resetLabel }: Props) {
+export function StartScreen({ initialTopic, suggestions, quota, currentTopic, replace, resetLabel, recommended = [] }: Props) {
   const router = useRouter();
   const [topic, setTopic] = useState(initialTopic);
   const [busy, setBusy] = useState(false);
@@ -137,8 +140,31 @@ export function StartScreen({ initialTopic, suggestions, quota, currentTopic, re
           </div>
         ) : null}
 
-        <section className="mt-12 flex flex-col gap-3">
-          <h2 className="text-sm font-bold text-txt-black-secondary">이런 주제는 어때요?</h2>
+        {recommended.length ? (
+          <section className="mt-10 flex flex-col gap-3">
+            <div className="flex flex-col gap-0.5">
+              <h2 className="text-sm font-bold text-txt-black-secondary">다른 사람들이 만든 코스</h2>
+              <p className="text-sm text-txt-black-secondary">바로 받아서 첫 Drop을 읽을 수 있어요.</p>
+            </div>
+            {recommended.map(r => (
+              <Link key={r.id} href={`/recommend/${r.id}`} className="mc-press flex items-center gap-3 rounded-2xl border border-border-button py-4 pl-5 pr-4">
+                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span className="text-sm font-semibold text-txt-black-tertiary">
+                    {r.category} · {r.total}편
+                  </span>
+                  <span className="text-base font-semibold">{r.title}</span>
+                  {r.copies ? <span className="text-sm text-txt-point">{r.copies}명이 받았어요</span> : null}
+                </span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="flex-shrink-0">
+                  <path d="m9 5 7 7-7 7" stroke="#B4B5C1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </Link>
+            ))}
+          </section>
+        ) : null}
+
+        <section className={recommended.length ? 'mt-8 flex flex-col gap-3' : 'mt-12 flex flex-col gap-3'}>
+          <h2 className="text-sm font-bold text-txt-black-secondary">{recommended.length ? '직접 만들 주제 예시' : '이런 주제는 어때요?'}</h2>
           <div className="flex flex-wrap gap-2">
             {suggestions.map(s => (
               <button

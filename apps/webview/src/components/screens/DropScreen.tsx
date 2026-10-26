@@ -6,7 +6,10 @@ import { postJson, readNdjson, trackClient } from '@/lib/client/ndjson';
 import { parseDropText } from '@/lib/drop-format';
 import type { Drop, DropBody } from '@/lib/types';
 
+import type { Recall } from '@/lib/learning';
+
 import { AfterComplete, type CompleteResult } from '../AfterComplete';
+import { RecallCard } from '../RecallCard';
 import { AppHeader, Footer, Loading, Main, OutlineButton, PrimaryButton, Screen, TextButton } from '../ui';
 
 type StreamEv =
@@ -25,7 +28,18 @@ const SECTIONS: { key: keyof DropBody; label: string }[] = [
   { key: 'connection', label: '이어서 생각하기' },
 ];
 
-export function DropScreen({ initialDrop, courseTitle, total }: { initialDrop: Drop; courseTitle: string; total: number }) {
+export function DropScreen({
+  initialDrop,
+  courseTitle,
+  total,
+  recall,
+}: {
+  initialDrop: Drop;
+  courseTitle: string;
+  total: number;
+  /** 2편째부터: 어제 읽은 Drop의 한 문장 */
+  recall?: Recall | null;
+}) {
   const [drop, setDrop] = useState(initialDrop);
   const [phase, setPhase] = useState<Phase>(initialDrop.status === 'ready' ? 'ready' : 'generating');
   const [stream, setStream] = useState('');
@@ -110,6 +124,7 @@ export function DropScreen({ initialDrop, courseTitle, total }: { initialDrop: D
     <Screen className="relative">
       <AppHeader layout="nav" title={courseTitle} close="/today" divider />
       <Main className="pb-8 pt-6">
+        {recall ? <RecallCard recall={recall} /> : null}
         <p className="text-sm font-semibold text-txt-black-tertiary">
           Drop {drop.index + 1} / {total}
         </p>
