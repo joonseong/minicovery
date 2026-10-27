@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { postJson, readNdjson, trackClient } from '@/lib/client/ndjson';
-import { parseDropText } from '@/lib/drop-format';
+import { parseDropText, splitPoints } from '@/lib/drop-format';
 import type { Drop, DropBody } from '@/lib/types';
 
 import type { Recall } from '@/lib/learning';
@@ -102,6 +102,7 @@ export function DropScreen({
 
   // 첫 Drop: 수준 선택 → 첫 문단까지 걸린 시간
   const body: Partial<DropBody> = phase === 'ready' && drop.body ? drop.body : parseDropText(stream);
+  const points = splitPoints(body.points);
   useEffect(() => {
     if (!body.hook || drop.index !== 0) return;
     const start = Number(sessionStorage.getItem('ttfd_start'));
@@ -154,8 +155,18 @@ export function DropScreen({
             )}
             {body.takeaway ? (
               <section className="flex flex-col gap-2 rounded-2xl bg-shape-depth1 p-5">
-                <h2 className="text-sm font-bold text-txt-black-secondary">한 문장으로</h2>
-                <p className={streaming ? 'streaming-caret text-lg font-semibold' : 'text-lg font-semibold'}>{body.takeaway}</p>
+                <h2 className="text-sm font-bold text-txt-black-secondary">정리하기</h2>
+                <p className={streaming && !body.points ? 'streaming-caret text-lg font-semibold' : 'text-lg font-semibold'}>{body.takeaway}</p>
+                {points.length ? (
+                  <ul className="mt-2 flex flex-col gap-2 border-t border-border-div pt-4">
+                    {points.map((pt, i) => (
+                      <li key={i} className="flex gap-2 text-base leading-6">
+                        <span aria-hidden className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-txt-black-primary" />
+                        <span className={streaming && i === points.length - 1 ? 'streaming-caret' : undefined}>{pt}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
               </section>
             ) : null}
           </article>

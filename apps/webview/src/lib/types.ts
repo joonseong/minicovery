@@ -111,6 +111,8 @@ export interface DropBody {
   example: string;
   connection?: string;
   takeaway: string;
+  /** 주요 내용 개조식, 줄마다 "- " (이 필드가 생기기 전 Drop에는 없다) */
+  points?: string;
 }
 
 export interface Source {
