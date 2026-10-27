@@ -161,7 +161,7 @@ export function DropScreen({
                   <ul className="mt-2 flex flex-col gap-2 border-t border-border-div pt-4">
                     {points.map((pt, i) => (
                       <li key={i} className="flex gap-2 text-base leading-6">
-                        <span aria-hidden className="mt-[9px] h-1 w-1 shrink-0 rounded-full bg-txt-black-primary" />
+                        <span aria-hidden className="shrink-0 text-txt-black-tertiary">–</span>
                         <span className={streaming && i === points.length - 1 ? 'streaming-caret' : undefined}>{pt}</span>
                       </li>
                     ))}
