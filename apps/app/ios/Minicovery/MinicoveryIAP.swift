@@ -44,7 +44,7 @@ final class MinicoveryIAP: RCTEventEmitter {
     MinicoveryIAP.shared = self
   }
 
-  @objc static func requiresMainQueueSetup() -> Bool { false }
+  @objc override static func requiresMainQueueSetup() -> Bool { false }
 
   override func supportedEvents() -> [String]! { [MinicoveryIAP.transactionEvent] }
 
