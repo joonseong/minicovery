@@ -16,13 +16,15 @@ export type NativeRequest =
   | { type: 'googleSignIn'; id: string };
 
 export type NativeResponse =
-  | { type: 'pushPermission'; id: string; granted: boolean; token?: string }
-  | { type: 'appleSignIn'; id: string; identityToken?: string; error?: string }
+  /** denied: OS가 명시적으로 거부 (없으면 granted===false를 거부로 본다) */
+  | { type: 'pushPermission'; id: string; granted: boolean; token?: string; denied?: boolean }
+  | { type: 'appleSignIn'; id: string; identityToken?: string; authorizationCode?: string; error?: string }
   | { type: 'iapPurchase'; id: string; jws?: string; error?: IapError }
   | { type: 'iapRestore'; id: string; jws?: string[]; error?: IapError }
   | { type: 'kakaoSignIn'; id: string; accessToken?: string; error?: string }
   | { type: 'googleSignIn'; id: string; idToken?: string; error?: string }
-  | { type: 'iapTrial'; id: string; eligible: boolean; days?: number };
+  /** price: StoreKit displayPrice (예 '₩3,900') */
+  | { type: 'iapTrial'; id: string; eligible: boolean; days?: number; price?: string };
 
 /** canceled: 사용자가 닫음, pending: 승인 대기(자녀 보호 등), unsupported: 결제 기능이 없는 옛 앱 버전 */
 export type IapError = 'canceled' | 'pending' | 'unsupported' | 'not_found' | 'failed';
@@ -41,42 +43,54 @@ export function postNative(message: NativeRequest) {
   window.ReactNativeWebView?.postMessage(JSON.stringify(message));
 }
 
+export interface PushPermissionResult {
+  granted: boolean;
+  token?: string;
+  /** OS가 명시적으로 거부했을 때만 (서버에 'denied'로 저장해도 되는 경우) */
+  denied?: boolean;
+  /** 결과를 못 받음: 네이티브가 아니거나, 60초 안에 답이 없거나, Notification 미지원. 거부로 저장하면 안 된다 */
+  unavailable?: boolean;
+}
+
 /** 알림 권한 요청. 앱에서는 OS 권한, 웹에서는 브라우저 권한(개발 확인용) */
-export async function requestPushPermission(): Promise<{ granted: boolean; token?: string }> {
+export async function requestPushPermission(): Promise<PushPermissionResult> {
   if (isNative()) {
     const id = Math.random().toString(36).slice(2);
     return new Promise(resolve => {
+      const timer = setTimeout(() => {
+        window.removeEventListener('minicovery-native', handler);
+        resolve({ granted: false, unavailable: true });
+      }, 60_000);
       const handler = (e: Event) => {
         const detail = (e as CustomEvent<NativeResponse>).detail;
         if (detail?.type === 'pushPermission' && detail.id === id) {
           window.removeEventListener('minicovery-native', handler);
-          resolve({ granted: detail.granted, token: detail.token });
+          clearTimeout(timer);
+          // 앱이 denied를 따로 주지 않으면 granted===false를 거부로 본다
+          resolve({ granted: detail.granted, token: detail.token, denied: detail.granted ? false : detail.denied ?? true });
         }
       };
       window.addEventListener('minicovery-native', handler);
       postNative({ type: 'requestPushPermission', id });
-      setTimeout(() => {
-        window.removeEventListener('minicovery-native', handler);
-        resolve({ granted: false });
-      }, 60_000);
     });
   }
-  if (typeof Notification === 'undefined') return { granted: false };
+  if (typeof Notification === 'undefined') return { granted: false, unavailable: true };
   const result = await Notification.requestPermission();
-  return { granted: result === 'granted' };
+  if (result === 'granted') return { granted: true };
+  return result === 'denied' ? { granted: false, denied: true } : { granted: false, unavailable: true };
 }
 
 /** iOS 앱에서만: Apple로 계속하기. 앱이 Apple 로그인 창을 띄우고 identity token을 돌려준다 */
 export const canAppleSignIn = () => isNative() && /iPhone|iPad|iPod/.test(navigator.userAgent);
 
-export function nativeAppleSignIn(): Promise<{ identityToken?: string; error?: string }> {
+export function nativeAppleSignIn(): Promise<{ identityToken?: string; authorizationCode?: string; error?: string }> {
   const id = Math.random().toString(36).slice(2);
   return new Promise(resolve => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<NativeResponse>).detail;
       if (detail?.type === 'appleSignIn' && detail.id === id) {
         window.removeEventListener('minicovery-native', handler);
-        resolve({ identityToken: detail.identityToken, error: detail.error });
+        resolve({ identityToken: detail.identityToken, authorizationCode: detail.authorizationCode, error: detail.error });
       }
     };
     window.addEventListener('minicovery-native', handler);
@@ -151,10 +165,13 @@ export function openAppSettings() {
   if (isNative()) postNative({ type: 'openSettings' });
 }
 
-/** iOS 앱에서만 (빌드 6부터): 이 Apple 계정이 첫 구독 무료 체험을 받을 수 있는지. 모르면 false */
-export async function nativeTrialEligible(productId: string): Promise<{ eligible: boolean; days?: number }> {
-  if (!isNative() || !window.minicoveryNative?.trial) return { eligible: false };
+/**
+ * iOS 앱에서만 (빌드 6부터): 이 Apple 계정이 첫 구독 무료 체험을 받을 수 있는지.
+ * known=false면 확인하지 못한 것(웹·옛 앱·시간 초과)이라 자격이 없다고 단정하면 안 된다. price는 StoreKit 표시 가격
+ */
+export async function nativeTrialEligible(productId: string): Promise<{ eligible: boolean; known: boolean; days?: number; price?: string }> {
+  if (!isNative() || !window.minicoveryNative?.trial) return { eligible: false, known: false };
   const id = Math.random().toString(36).slice(2);
   const res = await askNative<Extract<NativeResponse, { type: 'iapTrial' }>>({ type: 'iapTrial', id, productId }, 10_000);
-  return res ? { eligible: res.eligible, days: res.days } : { eligible: false };
+  return res ? { eligible: res.eligible, known: true, days: res.days, price: res.price } : { eligible: false, known: false };
 }

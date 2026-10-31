@@ -9,10 +9,14 @@ import { canPurchase, isNative, nativePurchase, nativeRestore, nativeTrialEligib
 import { postJson } from '@/lib/client/ndjson';
 import type { PlusUsage } from '@/lib/service';
 
+import { plusLeftText } from '../PlusLeft';
 import { AppHeader, CHARACTER, Footer, IconCheck, Main, PrimaryButton, Screen } from '../ui';
 
 const BENEFITS = [
-  { title: '새 코스 한 달 3개', desc: '체험을 시작한 날부터 한 달마다 3개가 다시 채워져요. 하루에 1개까지 만들 수 있어요.' },
+  {
+    title: '새 코스 한 달 3개',
+    desc: '구독을 시작한 날부터 한 달마다 3개가 다시 채워져요. 하루에 1개까지 만들 수 있어요. 지금 진행 중인 코스도 이번 달 3개에 들어가요.',
+  },
   { title: '한 달에 한 코스는 전체 열기', desc: '기다리지 않고 끝까지 읽어요. 해지해도 열린 코스는 계속 읽을 수 있어요.' },
   { title: '여러 코스를 함께 배우기', desc: '진행 중인 코스 중 내일 받을 하나를 골라요.' },
 ];
@@ -46,12 +50,21 @@ export function PaywallScreen({
   const [message, setMessage] = useState('');
   const ch = CHARACTER[stageKey];
   const head = plus ? HEADS.profile : HEADS[from];
-  // 첫 구독 무료 체험: 받을 수 있는 계정인지는 Apple이 정한다 (체험 기간도 App Store Connect 설정값)
-  const [trialDays, setTrialDays] = useState(0);
+  // 첫 구독 무료 체험: 받을 수 있는 계정인지는 Apple이 정한다 (체험 기간도 App Store Connect 설정값).
+  // 확인 전(unknown)과 자격 있음은 같은 문구, 자격 없음이 확인됐을 때만 체험 문구를 뺀다 (심사 3.1.2)
+  const [trial, setTrial] = useState<{ state: 'unknown' | 'eligible' | 'ineligible'; days: number }>({ state: 'unknown', days: 7 });
+  // StoreKit 표시 가격이 오면 그대로, 없으면 기본 가격
+  const [price, setPrice] = useState<string | null>(null);
   useEffect(() => {
     if (plus || beta) return;
-    void nativeTrialEligible(PLUS_PRODUCT_ID).then(r => setTrialDays(r.eligible ? (r.days ?? 7) : 0));
+    void nativeTrialEligible(PLUS_PRODUCT_ID).then(r => {
+      if (r.price) setPrice(r.price);
+      if (!r.known) return;
+      setTrial({ state: r.eligible ? 'eligible' : 'ineligible', days: r.days ?? 7 });
+    });
   }, [plus, beta]);
+  const priceLabel = price ? `월 ${price}` : PLUS_PRICE_LABEL;
+  const trialOn = trial.state !== 'ineligible';
 
   const verify = (jws: string | string[]) => postJson<{ plus?: boolean }>('/api/iap/verify', { jws });
 
@@ -113,11 +126,7 @@ export function PaywallScreen({
             <br />
             {head.line2}
           </h1>
-          {plus && usage ? (
-            <p className="mt-2 text-sm text-txt-black-secondary">
-              새 코스 {usage.coursesLeft}개 · 전체 열기 {usage.openAllLeft}번 남음 · {usage.resetLabel}에 다시 채워져요
-            </p>
-          ) : null}
+          {plus && usage ? <p className="mt-2 text-sm text-txt-black-secondary">{plusLeftText(usage).replace(/^Plus · /, '')}</p> : null}
         </section>
         <ul className="mt-8 flex flex-col gap-5">
           {BENEFITS.map(b => (
@@ -135,32 +144,35 @@ export function PaywallScreen({
         <p className="mt-6 rounded-2xl bg-shape-depth1 px-5 py-4 text-sm text-txt-black-secondary">
           무료는 한 번에 코스 1개를 배울 수 있어요. 해지해도 만든 코스와 읽은 Drop은 그대로 남고, 진행 중인 코스도 계속 받아요. 새 코스는 진행 중인 코스가 1개 이하일 때 만들 수 있어요.
         </p>
+        {plus ? <p className="mt-4 text-center text-sm text-txt-black-secondary">구독 관리 · 아이폰 설정 &gt; 내 이름 &gt; 구독</p> : null}
         {beta && !plus ? <p className="mt-6 text-center text-sm text-txt-black-tertiary">베타 기간에는 결제 없이 Plus를 써 볼 수 있어요.</p> : null}
         {message ? <p className="mt-4 text-center text-sm text-txt-black-secondary">{message}</p> : null}
       </Main>
       <Footer className="gap-3">
-        <div className="flex items-center justify-between gap-3 rounded-2xl border-2 border-border-brand bg-shape-depth1 px-5 py-4">
-          <span className="flex flex-col gap-0.5">
-            <span className="text-base font-semibold">미니커버리 Plus</span>
-            {trialDays ? (
-              <span className="text-sm text-txt-point">처음 {trialDays}일 무료</span>
-            ) : (
-              <span className="text-sm text-txt-black-tertiary">매달 자동 갱신</span>
-            )}
-          </span>
-          <span className="text-lg font-semibold">{PLUS_PRICE_LABEL}</span>
+        <div className="flex flex-col gap-2 rounded-2xl border-2 border-border-brand bg-shape-depth1 px-5 py-4">
+          <div className="flex items-center justify-between gap-3">
+            <span className="flex flex-col gap-0.5">
+              <span className="text-base font-semibold">미니커버리 Plus</span>
+              <span className="text-sm text-txt-black-tertiary">{plus ? '이용 중' : trialOn ? `첫 구독 ${trial.days}일 무료` : '매달 자동 갱신'}</span>
+            </span>
+            <span className="text-lg font-semibold">{priceLabel}</span>
+          </div>
+          {/* 체험 조건·가격·해지는 자격 확인 전·후 모두 한 줄로 고정 (심사 3.1.2) */}
+          {plus ? null : (
+            <p className="text-sm text-txt-black-secondary">
+              {trialOn ? `첫 구독은 ${trial.days}일 무료 · 이후 ${priceLabel} 자동 갱신 · 언제든 해지할 수 있어요` : `${priceLabel} 자동 갱신 · 언제든 해지할 수 있어요`}
+            </p>
+          )}
         </div>
         {plus ? (
           <PrimaryButton href="/start" replace>
             새 코스 만들기
           </PrimaryButton>
         ) : (
-          <PrimaryButton onClick={() => void start()}>{busy ? '처리하는 중…' : trialDays ? `${trialDays}일 무료로 시작하기` : 'Plus 시작하기'}</PrimaryButton>
+          <PrimaryButton onClick={() => void start()}>{busy ? '처리하는 중…' : trial.state === 'eligible' ? `${trial.days}일 무료로 시작하기` : 'Plus 시작하기'}</PrimaryButton>
         )}
         <p className="text-center text-sm text-txt-black-secondary">
-          {trialDays && !plus
-            ? `${trialDays}일 뒤 ${PLUS_PRICE_LABEL}이 결제돼요. 체험 중에 해지하면 결제되지 않아요.`
-            : '언제든 해지할 수 있어요.'}
+          {trialOn && !plus ? `체험 중에 해지하면 결제되지 않아요.` : '언제든 해지할 수 있어요.'}
           <br />
           {plus && !beta ? (
             <a href="https://apps.apple.com/account/subscriptions" className="underline">

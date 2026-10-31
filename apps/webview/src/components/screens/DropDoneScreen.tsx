@@ -8,10 +8,11 @@ import type { PlusUsage } from '@/lib/service';
 import { PlusLeft } from '../PlusLeft';
 import { ReplaceConfirm } from '../QuotaSheets';
 import { TomorrowList, type TomorrowItem } from '../TomorrowList';
-import { CHARACTER, Footer, Main, OutlineButton, PrimaryButton, Screen, Sheet, AppHeader } from '../ui';
+import { CHARACTER, Footer, Main, OutlineButton, PrimaryButton, Screen, Sheet, AppHeader, TextButton } from '../ui';
 const LABELS = ['월', '화', '수', '목', '금', '토', '일'];
 
 export function DropDoneScreen(props: {
+  courseId: string;
   courseTitle: string;
   dropTitle: string;
   week: boolean[];
@@ -20,11 +21,20 @@ export function DropDoneScreen(props: {
   plus: boolean;
   usage: PlusUsage | null;
   currentTopic: string;
+  /** 이 코스에서 지금까지 읽은 편 수 (3편 이상이면 '다른 주제로 바꾸기'를 숨긴다) */
+  courseDone: number;
+  /** 전체 열린 코스: 하루 한 편과 상관없이 바로 다음 편으로 */
+  openedAll?: boolean;
+  /** 방금 읽은 Drop 번호 (0부터) */
+  dropIndex?: number;
+  /** 전체 열린 코스에서 이어서 읽을 다음 Drop */
+  nextDropId?: string;
 }) {
   const [confirm, setConfirm] = useState(false);
   const days = props.week.filter(Boolean).length;
   // 오늘 요일 (KST, 월=0)
   const todayIdx = (new Date(Date.now() + 9 * 3600_000).getUTCDay() + 6) % 7;
+  const n = (props.dropIndex ?? 0) + 1;
 
   return (
     <Screen className="relative">
@@ -33,7 +43,8 @@ export function DropDoneScreen(props: {
         <section className="flex flex-col items-center text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={CHARACTER.rabbit.full} alt="기뻐하는 토끼 캐릭터" className="mc-pop aspect-square w-[min(160px,40vw)] object-contain" />
-          <h1 className="mt-4 text-[28px] font-bold leading-9 tracking-[-1px]">오늘의 Drop 완료!</h1>
+          <h1 className="mt-4 text-[28px] font-bold leading-9 tracking-[-1px]">{props.openedAll ? `Drop ${n} 완료` : '오늘의 Drop 완료!'}</h1>
+          {props.openedAll ? <p className="mt-1 text-sm font-semibold text-txt-point">이어서 읽을 수 있어요</p> : null}
           <p className="mt-2 text-base text-txt-black-secondary">
             <b>{props.courseTitle}</b>
             {josa(props.courseTitle, '을/를').slice(props.courseTitle.length)} 통해
@@ -56,7 +67,9 @@ export function DropDoneScreen(props: {
               </div>
             ))}
           </div>
-          <p className="mt-1 text-center text-sm text-txt-black-secondary">이번 주 {days}일째 학습했어요. 내일도 한 편이 기다려요.</p>
+          <p className="mt-1 text-center text-sm text-txt-black-secondary">
+            이번 주 {days}일째 학습했어요.{props.openedAll ? '' : ' 내일도 한 편이 기다려요.'}
+          </p>
         </section>
 
         {props.courses.length ? (
@@ -70,7 +83,8 @@ export function DropDoneScreen(props: {
                 </OutlineButton>
                 <PlusLeft usage={props.usage} />
               </>
-            ) : (
+            ) : props.courseDone < 3 ? (
+              // 3편 이상 읽은 코스는 매일 바꾸기를 권하지 않는다 (코스 페이지에는 남아 있다)
               <>
                 <button
                   type="button"
@@ -81,14 +95,25 @@ export function DropDoneScreen(props: {
                 </button>
                 <p className="text-center text-sm text-txt-black-secondary">무료는 한 번에 코스 1개를 배울 수 있어요.</p>
               </>
-            )}
+            ) : null}
           </section>
         ) : null}
       </Main>
-      <Footer>
-        <PrimaryButton href="/today" replace>
-          오늘 학습 마치기
-        </PrimaryButton>
+      <Footer className={props.openedAll ? 'gap-1' : undefined}>
+        {props.openedAll ? (
+          <>
+            <PrimaryButton href={props.nextDropId ? `/drop/${props.nextDropId}` : `/course/${props.courseId}`} replace>
+              {props.nextDropId ? `Drop ${n + 1} 이어서 읽기` : '코스로 돌아가기'}
+            </PrimaryButton>
+            <TextButton href="/today" replace>
+              오늘 학습 마치기
+            </TextButton>
+          </>
+        ) : (
+          <PrimaryButton href="/today" replace>
+            오늘 학습 마치기
+          </PrimaryButton>
+        )}
       </Footer>
 
       <Sheet open={confirm} onClose={() => setConfirm(false)} labelledBy="replaceTitle">

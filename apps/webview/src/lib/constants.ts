@@ -43,6 +43,21 @@ export const PLUS_MONTHLY_COURSES = 3;
 
 /** 알림이 꺼진 사용자에게 Drop 완료 뒤 다시 물어보는 간격 */
 export const NOTIFY_ASK_INTERVAL_DAYS = 3;
+/** 재질문 간격(일): '나중에'·거절 횟수 0 → 3일, 1 → 7일, 2회 이상 → 30일 (2026-10-31 대표 결정 D3) */
+export const NOTIFY_ASK_INTERVALS_DAYS = [NOTIFY_ASK_INTERVAL_DAYS, 7, 30] as const;
+
+/** 주제 입력 최대 길이 (StartScreen maxLength와 같다) */
+export const TOPIC_MAX_LENGTH = 100;
+/** 주제 검사를 통과한 주제를 코스 만들기에 쓸 수 있는 시간·개수 */
+export const APPROVED_TOPIC_HOURS = 24;
+export const APPROVED_TOPIC_MAX = 10;
+/** 같은 IP에서 하루에 코스를 만들 수 있는 익명 사용자 수 */
+export const ANON_IP_DAILY_LIMIT = 5;
+/** 로그인 실패 잠금: 15분에 10회 */
+export const LOGIN_FAIL_LIMIT = 10;
+export const LOGIN_FAIL_WINDOW_MIN = 15;
+/** 실시간 생성이 이 시간을 넘기면 멈춘 것으로 보고 다른 요청이 넘겨받는다 */
+export const GENERATING_STALE_MIN = 6;
 /** App Store 리뷰를 요청하는 누적 완료 편수 */
 export const REVIEW_AT_DROPS = [3, 10, 30];
 export const PLUS_PRICE_LABEL = '월 3,900원';

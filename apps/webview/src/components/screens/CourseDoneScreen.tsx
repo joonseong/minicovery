@@ -114,10 +114,11 @@ export function CourseDoneScreen(props: {
           <section className="mt-10 flex flex-col gap-3">
             <h2 className="text-lg font-semibold">다음엔 이걸 알아볼까요?</h2>
             <div className="flex flex-col gap-2">
+              {/* go=1: 새 코스 화면이 주제 검사→수준 선택까지 바로 진행한다 */}
               {props.related.map(r => (
                 <a
                   key={r}
-                  href={`/start?topic=${encodeURIComponent(r)}`}
+                  href={`/start?topic=${encodeURIComponent(r)}&go=1`}
                   className="mc-press flex items-center justify-between gap-3 rounded-2xl border border-border-button px-5 py-4"
                 >
                   <span className="text-lg font-semibold">{r}</span>

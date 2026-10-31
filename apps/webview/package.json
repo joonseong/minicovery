@@ -14,7 +14,7 @@
     "@repo/ui": "workspace:*",
     "@supabase/supabase-js": "^2.45.0",
     "jose": "5.9.6",
-    "next": "14.2.6",
+    "next": "14.2.35",
     "react": "catalog:",
     "react-dom": "catalog:",
     "tailwind-merge": "catalog:"

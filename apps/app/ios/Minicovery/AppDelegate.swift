@@ -17,6 +17,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
+    // 구독 갱신·Ask to Buy 승인 거래는 앱이 켜지자마자 받아야 하므로 RN 모듈보다 먼저 StoreKit 리스너를 켠다
+    MinicoveryIAP.startTransactionListener()
+
     // 푸시 알림: ios/Minicovery/GoogleService-Info.plist가 있을 때만 Firebase를 켠다
     // (Firebase 콘솔에서 받음, git에는 올리지 않음). 없으면 알림만 빠지고 앱은 그대로 동작한다
     if Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil {

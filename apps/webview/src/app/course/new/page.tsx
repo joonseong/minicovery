@@ -91,7 +91,8 @@ function Generating() {
       </Main>
       {done ? (
         <Footer className="mc-in gap-2">
-          <p className="text-center text-sm text-txt-black-secondary">하루 한 편씩 열려요. 첫 Drop은 지금 바로 읽을 수 있어요.</p>
+          {/* D1: 오늘 만든 코스의 첫 Drop은 오늘 Drop과 별개로 바로 읽는다 (대표 결정 유지) */}
+          <p className="text-center text-sm text-txt-black-secondary">하루 한 편씩 열려요. 첫 Drop은 오늘 Drop과 별도로 지금 바로 읽을 수 있어요.</p>
           <PrimaryButton href={`/drop/${firstDropId}`} replace>
             첫 Drop 읽기
           </PrimaryButton>

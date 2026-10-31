@@ -1,9 +1,9 @@
 import { randomBytes } from 'node:crypto';
 
-import { courseQuota, deleteFreeCourses, isPlus, type Quota, track } from './service';
+import { courseQuota, deleteFreeCourses, isPlus, kstDayLabel, type Quota, track } from './service';
 import { getStore } from './store';
 import type { Course, Drop, User } from './types';
-import { kstDate, newId, nowIso } from './util';
+import { daysBetween, kstDate, kstWeekday, newId, nowIso, pickRecallDrop } from './util';
 
 /* ---------- 기억에 남게: 어제 되짚기 · 이번 주 복습 ---------- */
 
@@ -11,18 +11,46 @@ import { kstDate, newId, nowIso } from './util';
 const conceptOf = (title: string) => (title.includes(':') ? title.slice(title.lastIndexOf(':') + 1).trim() : title);
 
 export interface Recall {
+  /** 제목의 콜론 뒤 조각 (없으면 제목 전체) */
   concept: string;
+  /** Drop 제목 전체 */
+  title: string;
   takeaway: string;
+  courseTopic: string;
+  /** 지금 열려는 Drop과 같은 코스의 Drop인지 */
+  sameCourse: boolean;
+  /** 어제(KST) 읽었으면 'yesterday', 아니면 'M월 D일' */
+  when: 'yesterday' | string;
 }
 
-/** 새 Drop을 열 때 맨 위에 보여 줄 '어제 되짚기': 오늘 전에 마지막으로 읽은 Drop의 '한 문장으로' */
+/**
+ * 되짚을 Drop: 오늘 전에 완료한 Drop 중 (지운 코스 제외) 같은 코스의 직전 완료 Drop, 없으면 가장 최근 완료 Drop
+ */
+async function recallFrom(user: User, current: { id?: string; courseId?: string } | null): Promise<(Recall & { dropId: string }) | null> {
+  const store = getStore();
+  const courses = await store.listCourses(user.id);
+  const last = pickRecallDrop(await store.listDropsByUser(user.id), courses, current);
+  if (!last) return null;
+  return {
+    dropId: last.id,
+    concept: conceptOf(last.title),
+    title: last.title,
+    takeaway: last.body!.takeaway!,
+    courseTopic: courses.find(c => c.id === last.courseId)?.topic ?? '',
+    sameCourse: Boolean(current?.courseId && last.courseId === current.courseId),
+    when: daysBetween(last.completedAt!, nowIso()) === 1 ? 'yesterday' : kstDayLabel(last.completedAt!),
+  };
+}
+
+/** 새 Drop을 열 때 맨 위에 보여 줄 '어제 되짚기' */
 export async function recallFor(user: User, drop: Drop): Promise<Recall | null> {
   if (drop.completedAt) return null;
-  const today = kstDate();
-  const last = (await getStore().listDropsByUser(user.id))
-    .filter(d => d.completedAt && d.id !== drop.id && kstDate(d.completedAt) < today && d.body?.takeaway)
-    .sort((a, b) => b.completedAt!.localeCompare(a.completedAt!))[0];
-  return last ? { concept: conceptOf(last.title), takeaway: last.body!.takeaway } : null;
+  return recallFrom(user, drop);
+}
+
+/** 홈 카드용: 오늘 Drop을 읽기 전에 마지막으로 읽은 Drop의 한 문장 */
+export async function recallForToday(user: User): Promise<(Recall & { dropId: string }) | null> {
+  return recallFrom(user, null);
 }
 
 export interface ReviewItem {
@@ -32,26 +60,40 @@ export interface ReviewItem {
   takeaway: string;
 }
 
-/** 이번 주(월~일, KST)에 읽은 Drop의 '한 문장으로' */
-export async function weekReview(user: User): Promise<{ range: string; items: ReviewItem[] }> {
+export interface WeekReviewData {
+  range: string;
+  items: ReviewItem[];
+  /** 월·화요일(KST)에는 지난주(월~일)에 읽은 것도 함께 (없으면 없음) */
+  lastWeek?: { range: string; items: ReviewItem[] };
+}
+
+/** 이번 주(월~일, KST)에 읽은 Drop의 '한 문장으로'. 지운 코스의 Drop은 빼고, 월·화에는 지난주도 채운다 */
+export async function weekReview(user: User): Promise<WeekReviewData> {
   const store = getStore();
+  const courses = await store.listCourses(user.id);
+  const alive = new Set(courses.filter(c => c.status === 'active' || c.status === 'completed').map(c => c.id));
+  const topicOf = new Map(courses.map(c => [c.id, c.topic]));
+  const drops = (await store.listDropsByUser(user.id))
+    .filter(d => d.completedAt && d.body?.takeaway && alive.has(d.courseId))
+    .sort((a, b) => a.completedAt!.localeCompare(b.completedAt!));
+  const label = (d: Date) => `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일`;
+  const week = (monday: Date) => {
+    const sunday = new Date(monday);
+    sunday.setUTCDate(monday.getUTCDate() + 6);
+    const from = monday.toISOString().slice(0, 10);
+    const to = sunday.toISOString().slice(0, 10);
+    const items: ReviewItem[] = drops
+      .filter(d => kstDate(d.completedAt!) >= from && kstDate(d.completedAt!) <= to)
+      .map(d => ({ dropId: d.id, meta: `${topicOf.get(d.courseId) ?? ''} · Drop ${d.index + 1}`, title: d.title, takeaway: d.body!.takeaway }));
+    return { range: `${label(monday)} ~ ${label(sunday)}`, items };
+  };
   const today = new Date(kstDate());
   const monday = new Date(today);
   monday.setUTCDate(today.getUTCDate() - ((today.getUTCDay() + 6) % 7));
-  const sunday = new Date(monday);
-  sunday.setUTCDate(monday.getUTCDate() + 6);
-  const from = monday.toISOString().slice(0, 10);
-  const drops = (await store.listDropsByUser(user.id))
-    .filter(d => d.completedAt && kstDate(d.completedAt) >= from && d.body?.takeaway)
-    .sort((a, b) => a.completedAt!.localeCompare(b.completedAt!));
-  const topics = new Map<string, string>();
-  const items: ReviewItem[] = [];
-  for (const d of drops) {
-    if (!topics.has(d.courseId)) topics.set(d.courseId, (await store.getCourse(d.courseId))?.topic ?? '');
-    items.push({ dropId: d.id, meta: `${topics.get(d.courseId)} · Drop ${d.index + 1}`, title: d.title, takeaway: d.body!.takeaway });
-  }
-  const label = (d: Date) => `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일`;
-  return { range: `${label(monday)} ~ ${label(sunday)}`, items };
+  const lastMonday = new Date(monday);
+  lastMonday.setUTCDate(monday.getUTCDate() - 7);
+  const lastWeek = [1, 2].includes(kstWeekday()) ? week(lastMonday) : undefined;
+  return { ...week(monday), lastWeek: lastWeek?.items.length ? lastWeek : undefined };
 }
 
 /* ---------- 완주 공유 카드 ---------- */
@@ -134,18 +176,22 @@ export async function setCourseShared(user: User, courseId: string, on: boolean)
   return true;
 }
 
+export type CopyResult =
+  | { ok: true; courseId: string; firstDropId: string }
+  | { ok: false; reason: Exclude<Quota, { ok: true }>['reason'] | 'missing' }
+  /** 이미 받았거나 내가 만든 코스. 그 코스로 바로 갈 수 있게 id를 준다 */
+  | { ok: false; reason: 'already'; courseId: string };
+
 /**
  * 추천 코스 받기: 목차와 다 만든 Drop을 그대로 복사해 내 코스로 만든다 (AI 생성 없음).
  * 새 코스 만들기와 같은 한도를 쓴다. 무료 사용자가 replace로 보내면 지금 코스를 지우고 받는다
  */
-export async function copyRecommended(
-  user: User,
-  sourceId: string,
-  replace: boolean,
-): Promise<{ ok: true; courseId: string; firstDropId: string } | { ok: false; reason: Exclude<Quota, { ok: true }>['reason'] | 'missing' }> {
+export async function copyRecommended(user: User, sourceId: string, replace: boolean): Promise<CopyResult> {
   const store = getStore();
   const source = await store.getCourse(sourceId);
   if (!source || source.status !== 'completed' || !source.shared || !source.featured) return { ok: false, reason: 'missing' };
+  const already = (await store.listCourses(user.id)).find(c => c.status !== 'deleted' && (c.id === sourceId || c.copiedFrom === sourceId));
+  if (already) return { ok: false, reason: 'already', courseId: already.id };
   const quota = await courseQuota(user);
   if (!quota.ok) {
     if (quota.reason === 'free' && replace && !isPlus(user)) await deleteFreeCourses(user);
@@ -182,6 +228,7 @@ export async function copyRecommended(
       readAt: undefined,
       reportedAt: undefined,
       batchId: undefined,
+      generatingAt: undefined,
     };
     await store.saveDrop(copy);
     if (copy.index === 0) firstDropId = copy.id;

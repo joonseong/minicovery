@@ -9,17 +9,17 @@ export const UID_COOKIE = 'mc_uid';
 /**
  * 가입 전에는 기기 임시 계정(쿠키)으로 학습 기록을 저장한다 (PRD §17.1).
  * 앱 껍데기의 웹뷰도 같은 쿠키를 쓴다.
+ * 저장소에 없는 id는 저장하지 않고 메모리 객체만 돌려준다 — 처음 무언가를 쓸 때(saveUser) 만들어진다.
+ * 그냥 둘러보기만 하는 방문(크롤러·열어만 본 사람)으로 사용자 행이 쌓이지 않게
  */
 export async function currentUser(): Promise<User> {
   const store = getStore();
   const jar = cookies();
-  // 쿠키는 middleware가 첫 방문에 심는다. 저장소에 기록이 없으면 그 id로 만든다
+  // 쿠키는 middleware가 첫 방문에 심는다
   const id = jar.get(UID_COOKIE)?.value ?? newId();
   const existing = await store.getUser(id);
   if (existing) return existing;
-  const user: User = { id, anon: true, createdAt: nowIso(), notifyPermission: 'unknown' };
-  await store.saveUser(user);
-  return user;
+  return { id, anon: true, createdAt: nowIso(), notifyPermission: 'unknown' };
 }
 
 export const UID_COOKIE_OPTIONS = {

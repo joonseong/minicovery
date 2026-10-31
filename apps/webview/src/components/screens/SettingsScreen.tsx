@@ -4,10 +4,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-import { requestPushPermission } from '@/lib/client/bridge';
+import { openAppSettings, requestPushPermission } from '@/lib/client/bridge';
 import { postJson } from '@/lib/client/ndjson';
+import { SUPPORT_EMAIL } from '@/lib/constants';
+import type { PlusUsage } from '@/lib/service';
 
-import { AppHeader, IconArrow, Main, PrimaryButton, Screen, Sheet, TextButton } from '../ui';
+import { AppHeader, IconArrow, Main, PrimaryButton, Screen, Sheet, TextButton, Toast, useToast } from '../ui';
 
 // 21시~08시는 고를 수 없다
 const TIMES: string[] = [];
@@ -38,12 +40,17 @@ export function SettingsScreen(props: {
   plus: boolean;
   /** 다음 결제일 'M월 D일' (Plus일 때) */
   renewLabel?: string;
+  /** 자동 갱신을 껐으면 '갱신' 대신 '까지 이용' */
+  autoRenew?: boolean;
+  /** Plus 남은 횟수 */
+  usage?: PlusUsage | null;
   version: string;
 }) {
   const router = useRouter();
   const [on, setOn] = useState(props.notifyOn);
   const [time, setTime] = useState(props.notifyTime);
   const [notice, setNotice] = useState('');
+  const [toast, showToast] = useToast();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
 
@@ -55,10 +62,31 @@ export function SettingsScreen(props: {
       return;
     }
     const r = await requestPushPermission();
-    await postJson('/api/me/notify', { permission: r.granted ? 'granted' : 'denied', pushToken: r.token });
-    setOn(r.granted);
-    if (!r.granted) setNotice('휴대폰 설정에서 미니커버리 알림을 켜 주세요.');
+    if (r.granted) {
+      setOn(true);
+      await postJson('/api/me/notify', { permission: 'granted', pushToken: r.token });
+      return;
+    }
+    setOn(false);
+    if (r.unavailable) {
+      // 결과를 못 받은 건 거부가 아니다 (C3): 서버에는 '나중에'로만 남긴다
+      await postJson('/api/me/notify', { later: true });
+      showToast('지금은 알림을 켤 수 없어요. 설정에서 다시 시도해 주세요');
+      return;
+    }
+    await postJson('/api/me/notify', { permission: 'denied' });
+    setNotice('휴대폰 설정에서 미니커버리 알림을 켜 주세요.');
   };
+
+  const plusSub = !props.plus
+    ? '무료 · 한 번에 코스 1개'
+    : [
+        '이용 중',
+        props.usage ? `새 코스 ${props.usage.coursesLeft}개 · 전체 열기 ${props.usage.openAllLeft}번 남음 · ${props.usage.resetLabel}에 다시 채워져요` : '',
+        props.renewLabel ? (props.autoRenew === false ? `${props.renewLabel}까지 이용` : `${props.renewLabel} 갱신`) : '',
+      ]
+        .filter(Boolean)
+        .join(' · ');
 
   return (
     <Screen className="relative">
@@ -73,7 +101,14 @@ export function SettingsScreen(props: {
             </div>
             <Switch on={on} onChange={v => void toggle(v)} label="다음 Drop 알림" />
           </div>
-          {notice ? <p className="text-sm text-txt-black-secondary">{notice}</p> : null}
+          {notice ? (
+            <p className="text-sm text-txt-black-secondary">
+              {notice}{' '}
+              <button type="button" className="font-semibold text-txt-point underline" onClick={openAppSettings}>
+                설정 열기
+              </button>
+            </p>
+          ) : null}
           {on ? (
             <>
               <label htmlFor="notify-time" className={`${ROW} border-t border-border-div`}>
@@ -109,11 +144,9 @@ export function SettingsScreen(props: {
         <section className="flex flex-col">
           <h2 className="mb-1 text-sm font-bold text-txt-black-secondary">구독</h2>
           <Link href="/plus" className={ROW}>
-            <span className="flex flex-col gap-0.5">
+            <span className="flex min-w-0 flex-col gap-0.5">
               <span className="text-base font-semibold">미니커버리 Plus</span>
-              <span className="text-sm text-txt-black-secondary">
-                {props.plus ? `이용 중${props.renewLabel ? ` · ${props.renewLabel} 갱신` : ''}` : '무료 · 한 번에 코스 1개'}
-              </span>
+              <span className="text-sm text-txt-black-secondary">{plusSub}</span>
             </span>
             <IconArrow />
           </Link>
@@ -159,8 +192,15 @@ export function SettingsScreen(props: {
             개인정보 처리방침
             <IconArrow />
           </Link>
+          <a href={`mailto:${SUPPORT_EMAIL}`} className={`${ROW} border-t border-border-div text-base font-semibold`}>
+            <span className="flex min-w-0 flex-col gap-0.5">
+              문의하기
+              <span className="truncate text-sm font-normal text-txt-black-tertiary">{SUPPORT_EMAIL}</span>
+            </span>
+            <IconArrow />
+          </a>
           <Link href="/support" className={`${ROW} border-t border-border-div text-base font-semibold`}>
-            문의하기
+            자주 묻는 질문
             <IconArrow />
           </Link>
           <div className={`${ROW} border-t border-border-div`}>
@@ -182,7 +222,7 @@ export function SettingsScreen(props: {
           className="mt-6 !bg-[#B82637]"
           onClick={async () => {
             await postJson('/api/me/delete');
-            router.replace('/start');
+            router.replace('/start?deleted=1');
             router.refresh();
           }}
         >
@@ -200,7 +240,7 @@ export function SettingsScreen(props: {
           className="mt-6"
           onClick={async () => {
             await postJson('/api/auth/logout');
-            router.replace('/start');
+            router.replace('/start?logout=1');
             router.refresh();
           }}
         >
@@ -208,6 +248,7 @@ export function SettingsScreen(props: {
         </PrimaryButton>
         <TextButton onClick={() => setConfirmLogout(false)}>취소</TextButton>
       </Sheet>
+      <Toast message={toast} />
     </Screen>
   );
 }

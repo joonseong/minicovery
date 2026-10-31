@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 import { PLUS_PRICE_LABEL } from '@/lib/constants';
 
-import { PrimaryButton, Sheet } from './ui';
+import { PrimaryButton, Sheet, TextButton } from './ui';
 
 /** 무료 사용자가 새 주제로 바꿀 때: 진행 중인 코스는 지움(단계·다 배운 주제·주간 기록은 남음) + Plus 안내 */
 export function ReplaceConfirm({ courseTopic, replaceHref, onClose }: { courseTopic?: string; replaceHref: string; onClose?: () => void }) {
@@ -28,6 +28,7 @@ export function ReplaceConfirm({ courseTopic, replaceHref, onClose }: { courseTo
       <Link href={replaceHref} onClick={onClose} className="mt-1 flex h-12 w-full items-center justify-center text-base font-semibold text-txt-error">
         지우고 새 주제로 바꾸기
       </Link>
+      {onClose ? <TextButton onClick={onClose}>지금 코스 계속할게요</TextButton> : null}
     </>
   );
 }
@@ -62,9 +63,14 @@ export function LimitSheet({ kind, onClose, plus }: { kind: 'daily' | 'over' | n
           </Link>
         </div>
       ) : (
-        <PrimaryButton className="mt-6" onClick={onClose}>
-          확인
-        </PrimaryButton>
+        <div className="mt-6 flex flex-col gap-1 pb-2">
+          <PrimaryButton onClick={onClose}>확인</PrimaryButton>
+          {kind === 'daily' && !plus ? (
+            <Link href="/plus?from=keep" onClick={onClose} className="flex min-h-11 items-center justify-center px-3 text-center text-sm font-semibold text-txt-point">
+              Plus면 지금 코스를 두고 새 코스를 만들 수 있어요
+            </Link>
+          ) : null}
+        </div>
       )}
     </Sheet>
   );

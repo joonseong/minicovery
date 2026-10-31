@@ -24,6 +24,9 @@ export function RecommendScreen(props: {
   const { course } = props;
   const [busy, setBusy] = useState(false);
   const [sheet, setSheet] = useState<Reason | null>(null);
+  // 이미 받은 코스면 지우고 다시 받는 대신 이어 읽기로
+  const [already, setAlready] = useState<string | null>(null);
+  const [notice, setNotice] = useState('');
 
   const take = async () => {
     if (busy) return;
@@ -32,10 +35,17 @@ export function RecommendScreen(props: {
       return;
     }
     setBusy(true);
-    const res = await postJson<{ firstDropId?: string; reason?: Reason }>('/api/courses/copy', { sourceId: course.id, replace: props.replace });
+    setNotice('');
+    const res = await postJson<{ firstDropId?: string; reason?: Reason | 'already' | 'missing'; courseId?: string }>('/api/courses/copy', {
+      sourceId: course.id,
+      replace: props.replace,
+    });
     setBusy(false);
     if (res.data.firstDropId) router.replace(`/drop/${res.data.firstDropId}`);
+    else if (res.status === 409 || res.data.reason === 'already') setAlready(res.data.courseId ?? null);
+    else if (res.data.reason === 'missing') setNotice('지금은 받을 수 없는 코스예요.');
     else if (res.data.reason) setSheet(res.data.reason);
+    else setNotice('코스를 받지 못했어요. 잠시 뒤 다시 시도해 주세요.');
   };
 
   return (
@@ -61,10 +71,22 @@ export function RecommendScreen(props: {
         <p className="mt-3 text-sm text-txt-black-secondary">
           다른 사람이 만든 코스를 그대로 받아요. 첫 Drop은 바로 읽을 수 있고, 다음 편부터 하루 한 편씩 열려요.
         </p>
+        {notice ? <p className="mt-3 text-sm text-txt-error">{notice}</p> : null}
       </Main>
       <Footer className="gap-2">
-        <PrimaryButton onClick={() => void take()}>{busy ? '받는 중…' : '이 코스 받기'}</PrimaryButton>
-        <p className="text-center text-sm text-txt-black-secondary">새 코스 만들기 1번으로 세요</p>
+        {already !== null ? (
+          <>
+            <p className="text-center text-sm font-semibold text-txt-point">이미 받은 코스예요</p>
+            <PrimaryButton href={already ? `/course/${already}` : '/library'} replace>
+              이어 읽기
+            </PrimaryButton>
+          </>
+        ) : (
+          <>
+            <PrimaryButton onClick={() => void take()}>{busy ? '받는 중…' : '이 코스 받기'}</PrimaryButton>
+            <p className="text-center text-sm text-txt-black-secondary">새 코스 만들기 1번으로 세요</p>
+          </>
+        )}
       </Footer>
       <ReplaceSheet
         open={sheet === 'free'}

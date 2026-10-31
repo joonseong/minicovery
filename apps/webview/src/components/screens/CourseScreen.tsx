@@ -8,7 +8,7 @@ import { postJson } from '@/lib/client/ndjson';
 
 import { AppHeader, Footer, IconCheck, Main, PrimaryButton, Progress, Screen, Sheet, TextButton } from '../ui';
 
-type D = { id: string; index: number; title: string; done: boolean };
+type D = { id: string; index: number; title: string; done: boolean; skipped?: boolean };
 
 export function CourseScreen(props: {
   courseId: string;
@@ -25,18 +25,28 @@ export function CourseScreen(props: {
   canOpenAll: boolean;
   /** 전체 열기를 쓰면 다시 쓸 수 있는 날 = 다음 결제일 (예: 11월 27일) */
   openAllNext: string;
+  /** Plus인데 이번 달 전체 열기를 이미 썼을 때: 다시 쓸 수 있는 날 */
+  openAllUsedUntil?: string;
   /** 이 코스를 열면 내일 대신 받게 될 코스 (이 코스가 내일 받을 코스일 때만) */
   nextTomorrowTopic?: string;
   /** 하루 한 편으로 받는 코스가 2개 이상 (받아요/쉬는 중 배지) */
   multiple: boolean;
+  /** 다 배운 코스: 다른 사람에게 추천 중인지 */
+  shared?: boolean;
+  /** 추천 코스를 받아 읽은 코스면 다시 추천에 내놓지 않는다 */
+  copied?: boolean;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [sheet, setSheet] = useState(false);
   const [tomorrow, setTomorrow] = useState(props.isTomorrow);
+  const [shared, setShared] = useState(Boolean(props.shared));
   const done = props.drops.filter(d => d.done).length;
+  // 다음에 읽을 Drop 번호: 건너뛴 Drop이 있으면 done+1과 다르다
+  const nextNo = (props.drops.find(d => !d.done && !d.skipped)?.index ?? done) + 1;
+  const skipped = props.drops.filter(d => d.skipped && !d.done).length;
   const total = props.drops.length;
-  const remaining = total - done;
+  const remaining = total - done - skipped;
 
   const openAll = async () => {
     if (busy) return;
@@ -57,6 +67,12 @@ export function CourseScreen(props: {
     setBusy(true);
     await postJson('/api/today/pick', { courseId: props.courseId });
     router.push(`/drop/${props.nextId}`);
+  };
+
+  const toggleShare = async (on: boolean) => {
+    setShared(on);
+    const res = await postJson(`/api/courses/${props.courseId}/share`, { on });
+    if (!res.ok) setShared(!on);
   };
 
   return (
@@ -81,6 +97,7 @@ export function CourseScreen(props: {
           <Progress value={done / Math.max(1, total)} />
           <span className="flex-shrink-0 text-sm font-semibold text-txt-black-secondary">
             {done} / {total}편 읽음
+            {skipped ? <span className="font-normal text-txt-black-tertiary"> · 건너뜀 {skipped}</span> : null}
           </span>
         </div>
 
@@ -97,14 +114,43 @@ export function CourseScreen(props: {
               전체 열기
             </button>
           </section>
+        ) : props.openAllUsedUntil && !props.openedAll && !props.completed && remaining > 1 ? (
+          // 이번 달 전체 열기를 이미 썼어도 기능이 사라진 것처럼 보이지 않게 비활성 줄로 남긴다
+          <p aria-disabled="true" className="mt-6 rounded-2xl bg-shape-depth1 px-5 py-4 text-sm font-semibold text-txt-black-tertiary">
+            Plus · 전체 열기는 {props.openAllUsedUntil}부터 다시 쓸 수 있어요
+          </p>
         ) : null}
         {props.openedAll && !props.completed ? (
           <p className="mt-6 text-sm font-semibold text-txt-point">전체 열린 코스예요 · 원하는 만큼 이어서 읽어요</p>
         ) : null}
 
+        {props.completed && !props.copied ? (
+          <label className="mt-6 flex cursor-pointer items-center justify-between gap-3 rounded-2xl bg-shape-depth1 px-5 py-4">
+            <span className="flex flex-col gap-0.5">
+              <span className="text-base font-semibold">{shared ? '다른 사람에게 추천 중' : '다른 사람에게 추천하기'}</span>
+              <span className="text-sm text-txt-black-secondary">내 이름 없이 코스 목차와 Drop만 보여 줘요. 언제든 끌 수 있어요.</span>
+            </span>
+            <span className="flex flex-shrink-0 items-center gap-2 text-sm font-semibold text-txt-point">
+              {shared ? '끄기' : '켜기'}
+              <input type="checkbox" checked={shared} onChange={e => void toggleShare(e.target.checked)} className="h-5 w-5 accent-[#20967A]" />
+            </span>
+          </label>
+        ) : null}
+
         <ol className="mt-8 flex flex-col gap-2">
           {props.drops.map(d => {
             const isNext = d.id === props.nextId;
+            if (d.skipped && !d.done) {
+              return (
+                <li key={d.id}>
+                  <div className="flex min-h-14 items-center gap-3 rounded-2xl bg-shape-depth1 p-4">
+                    <span className="w-6 flex-shrink-0 text-center text-sm font-bold text-txt-black-tertiary">{d.index + 1}</span>
+                    <span className="flex-1 text-sm text-txt-black-tertiary line-through">{d.title}</span>
+                    <span className="flex-shrink-0 text-sm font-semibold text-txt-black-tertiary">건너뜀</span>
+                  </div>
+                </li>
+              );
+            }
             if (props.openedAll && !d.done && !isNext) {
               return (
                 <li key={d.id}>
@@ -154,6 +200,7 @@ export function CourseScreen(props: {
             : props.isTomorrow
               ? 'Drop은 하루 한 편씩 열려요. 오늘 Drop을 읽으면 이 코스의 다음 편이 내일 0시에 열려요. 읽은 Drop은 언제든 다시 볼 수 있어요.'
               : 'Drop은 하루 한 편씩 열려요. 내일 받을 코스로 고르면 다음 편이 0시에 열려요. 읽은 Drop은 언제든 다시 볼 수 있어요.'}
+          {skipped ? ' 건너뛴 Drop은 만들 수 없는 내용이라 진도에서 빠져요.' : ''}
         </p>
       </Main>
       {!props.completed && props.nextId ? (
@@ -167,7 +214,7 @@ export function CourseScreen(props: {
               <PrimaryButton onClick={() => void receiveTomorrow()}>내일은 이 코스로 받기</PrimaryButton>
             )
           ) : (
-            <PrimaryButton onClick={() => void receive()}>{props.isPicked ? `Drop ${done + 1} 읽기` : '오늘은 이 코스 읽기'}</PrimaryButton>
+            <PrimaryButton onClick={() => void receive()}>{props.isPicked ? `Drop ${nextNo} 읽기` : '오늘은 이 코스 읽기'}</PrimaryButton>
           )}
         </Footer>
       ) : null}

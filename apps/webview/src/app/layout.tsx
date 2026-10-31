@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 
+import { FlashToast } from '@/components/FlashToast';
+
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -20,7 +22,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko">
       <body className="font-sans antialiased">
-        <div className="relative mx-auto flex h-dvh w-full max-w-[480px] flex-col overflow-hidden bg-shape-white">{children}</div>
+        <div className="relative mx-auto flex h-dvh w-full max-w-[480px] flex-col overflow-hidden bg-shape-white">
+          {children}
+          <FlashToast />
+        </div>
       </body>
     </html>
   );

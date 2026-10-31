@@ -46,6 +46,15 @@ export class FileStore implements Store {
   async findUserBySocial(field: SocialField, id: string) {
     return Object.values(this.db.users).find(u => u[field] === id) ?? null;
   }
+  async findUserByPlusTx(originalTxId: string) {
+    return Object.values(this.db.users).find(u => u.plusOriginalTxId === originalTxId) ?? null;
+  }
+  async findUserByResetHash(hash: string) {
+    return Object.values(this.db.users).find(u => u.passwordReset?.hash === hash) ?? null;
+  }
+  async countAnonUsersByIpSince(ipHash: string, sinceIso: string) {
+    return Object.values(this.db.users).filter(u => u.ipHash === ipHash && u.createdAt >= sinceIso).length;
+  }
   async listUsers() {
     return Object.values(this.db.users);
   }
@@ -54,6 +63,16 @@ export class FileStore implements Store {
     for (const d of Object.values(this.db.drops)) if (d.userId === fromUserId) d.userId = toUserId;
     for (const e of this.db.events) if (e.userId === fromUserId) e.userId = toUserId;
     for (const u of this.db.usage) if (u.userId === fromUserId) u.userId = toUserId;
+    this.persist();
+  }
+  async deleteUserData(userId: string) {
+    // 사용량 로그는 비용 집계용으로 남긴다
+    for (const [id, c] of Object.entries(this.db.courses)) if (c.userId === userId) delete this.db.courses[id];
+    for (const [id, d] of Object.entries(this.db.drops)) if (d.userId === userId) delete this.db.drops[id];
+    this.db.events = this.db.events.filter(e => e.userId !== userId);
+    this.db.reports = this.db.reports.filter(r => r.userId !== userId);
+    this.db.failures = this.db.failures.filter(f => f.userId !== userId);
+    delete this.db.users[userId];
     this.persist();
   }
 
@@ -94,6 +113,16 @@ export class FileStore implements Store {
     this.db.drops[drop.id] = drop;
     this.persist();
   }
+  async claimDrop(id: string, from: Drop['status'][], patch: Partial<Drop>) {
+    const current = this.db.drops[id];
+    if (!current || !from.includes(current.status)) return null;
+    const next: Record<string, unknown> = { ...current, ...patch };
+    // undefined로 넘긴 키는 지운다 (batchId 해제 등) — Supabase 쪽 jsonb_strip_nulls와 같은 뜻
+    for (const [key, value] of Object.entries(patch)) if (value === undefined) delete next[key];
+    this.db.drops[id] = next as unknown as Drop;
+    this.persist();
+    return this.db.drops[id]!;
+  }
 
   async addUsage(log: UsageLog) {
     this.db.usage.push(log);
@@ -108,6 +137,9 @@ export class FileStore implements Store {
   }
   async listEvents(sinceIso?: string) {
     return sinceIso ? this.db.events.filter(e => e.at >= sinceIso) : this.db.events;
+  }
+  async listEventsByName(name: string, sinceIso: string) {
+    return this.db.events.filter(e => e.name === name && e.at >= sinceIso);
   }
   async addReport(report: Report) {
     this.db.reports.push(report);
