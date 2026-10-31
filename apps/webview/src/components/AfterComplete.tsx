@@ -50,8 +50,13 @@ export function AfterComplete({ result, dropId }: { result: CompleteResult | nul
     router.replace(next);
   }, [step, next, router, result]);
 
+  // 알림 시트 다음은 가입 시트(첫 Drop, 임시 계정), 없으면 완료 화면 (2026-11-01 대표 결정: 둘 다 띄운다)
+  const afterNotify = () => {
+    setBusy(false);
+    setStep(result?.askSignup ? 'signup' : 'go');
+  };
   // 토스트를 읽을 시간을 주고 넘어간다
-  const goSoon = (ms: number) => setTimeout(() => setStep('go'), ms);
+  const goSoon = (ms: number) => setTimeout(afterNotify, ms);
 
   const allow = async () => {
     if (busy) return;
@@ -80,7 +85,7 @@ export function AfterComplete({ result, dropId }: { result: CompleteResult | nul
     if (busy) return;
     setBusy(true);
     await postJson('/api/me/notify', never ? { never: true } : { later: true });
-    setStep('go');
+    afterNotify();
   };
 
   return (
