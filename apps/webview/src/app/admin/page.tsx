@@ -2,6 +2,7 @@ import { cookies, headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 
 import { FeatureToggle } from '@/components/admin/FeatureToggle';
+import { IapTestButton } from '@/components/admin/IapTestButton';
 import { ADMIN_COOKIE, adminTokenOk } from '@/lib/auth';
 import { sharedCandidates } from '@/lib/learning';
 import { adminSummary } from '@/lib/metrics';
@@ -53,6 +54,11 @@ export default async function AdminPage({ searchParams }: { searchParams: { toke
           </div>
         ))}
       </div>
+      <h2 className="mt-8 font-bold">App Store 서버 알림 점검</h2>
+      <p className="mt-1 text-xs text-txt-black-tertiary">
+        Apple에 테스트 알림을 요청해 /api/iap/notify가 서명 검증을 통과하고 200을 돌려주는지 확인해요 (App Store Connect에는 버튼이 없어요)
+      </p>
+      <IapTestButton />
       <h2 className="mt-8 font-bold">오류 신고 ({s.reports.length})</h2>
       <ul className="mt-2 flex flex-col gap-1">
         {reported.map(({ r, drop }) => (

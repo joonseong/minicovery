@@ -279,3 +279,42 @@ export async function handleNotification(signedPayload: string) {
   await track(owner?.id ?? 'system', 'iap_notification', { uuid, type, subtype, applied });
   return { type, applied };
 }
+
+/* ---------- 어드민: App Store 테스트 알림 ---------- */
+
+export type IapEnv = 'production' | 'sandbox';
+const hostOf = (env: IapEnv) => (env === 'production' ? HOSTS[0] : HOSTS[1]);
+
+/**
+ * Apple에 테스트 알림을 요청한다 (App Store Connect에는 버튼이 없고 API로만 가능).
+ * Apple이 App Store Connect에 적힌 서버 URL(/api/iap/notify)로 TEST 알림을 보내므로 서명 검증·배포 상태를 확인할 수 있다.
+ * 출시 전에는 운영 API가 401이라 샌드박스로 넘어간다 (fetchTransaction과 같은 규칙)
+ */
+export async function requestTestNotification(): Promise<{ env: IapEnv; token: string } | null> {
+  const jwt = await apiToken();
+  for (const env of ['production', 'sandbox'] as IapEnv[]) {
+    const res = await fetch(`${hostOf(env)}/inApps/v1/notifications/test`, { method: 'POST', headers: { Authorization: `Bearer ${jwt}` } });
+    if (res.status === 404 || (res.status === 401 && env === 'production')) continue;
+    if (!res.ok) throw new Error(`app store ${res.status}`);
+    const { testNotificationToken } = (await res.json()) as { testNotificationToken: string };
+    return { env, token: testNotificationToken };
+  }
+  return null;
+}
+
+export interface TestNotificationAttempt {
+  attemptDate: number;
+  /** SUCCESS | TIMED_OUT | SSL_ISSUE | NO_RESPONSE | UNSUCCESSFUL_HTTP_RESPONSE_CODE | … */
+  sendAttemptResult: string;
+}
+
+/** 테스트 알림을 우리 서버에 보낸 시도와 결과. Apple이 보내기까지 몇 초 걸려 처음엔 비어 있을 수 있다 */
+export async function testNotificationStatus(env: IapEnv, token: string): Promise<TestNotificationAttempt[]> {
+  const jwt = await apiToken();
+  const res = await fetch(`${hostOf(env)}/inApps/v1/notifications/test/${encodeURIComponent(token)}`, {
+    headers: { Authorization: `Bearer ${jwt}` },
+  });
+  if (!res.ok) throw new Error(`app store ${res.status}`);
+  const data = (await res.json()) as { sendAttempts?: TestNotificationAttempt[] };
+  return data.sendAttempts ?? [];
+}
