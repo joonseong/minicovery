@@ -6,7 +6,6 @@ import { useEffect, useState } from 'react';
 import { nativeRequestReview, openAppSettings, requestPushPermission } from '@/lib/client/bridge';
 import { postJson } from '@/lib/client/ndjson';
 
-import { SocialButtons } from './Social';
 import { PrimaryButton, Sheet, TextButton, Toast, useToast } from './ui';
 
 export interface CompleteResult {
@@ -34,14 +33,17 @@ export function afterCompleteHref(r: CompleteResult, dropId: string) {
  */
 export function AfterComplete({ result, dropId }: { result: CompleteResult | null; dropId: string }) {
   const router = useRouter();
-  const [step, setStep] = useState<'notify' | 'signup' | 'go' | null>(null);
+  const [step, setStep] = useState<'notify' | 'go' | null>(null);
   const [busy, setBusy] = useState(false);
   const [toast, showToast] = useToast(2500);
-  const next = result ? afterCompleteHref(result, dropId) : '/today';
+  // 가입 권유는 완료 화면 위에서 띄운다 (?signup=1). 코스 완주·레벨업 화면으로 갈 때는 생략
+  const next = result
+    ? afterCompleteHref(result, dropId) + (result.askSignup && !result.courseCompleted && !result.levelUp ? '?signup=1' : '')
+    : '/today';
 
   useEffect(() => {
     if (!result) return;
-    setStep(result.askNotify ? 'notify' : result.askSignup ? 'signup' : 'go');
+    setStep(result.askNotify ? 'notify' : 'go');
   }, [result]);
 
   useEffect(() => {
@@ -50,10 +52,10 @@ export function AfterComplete({ result, dropId }: { result: CompleteResult | nul
     router.replace(next);
   }, [step, next, router, result]);
 
-  // 알림 시트 다음은 가입 시트(첫 Drop, 임시 계정), 없으면 완료 화면 (2026-11-01 대표 결정: 둘 다 띄운다)
+  // 알림 시트 다음은 완료 화면. 가입 시트는 거기서 뜬다 (2026-11-01 대표 결정)
   const afterNotify = () => {
     setBusy(false);
-    setStep(result?.askSignup ? 'signup' : 'go');
+    setStep('go');
   };
   // 토스트를 읽을 시간을 주고 넘어간다
   const goSoon = (ms: number) => setTimeout(afterNotify, ms);
@@ -109,24 +111,6 @@ export function AfterComplete({ result, dropId }: { result: CompleteResult | nul
         </div>
       </Sheet>
 
-      <Sheet open={step === 'signup'} labelledBy="signupTitle">
-        <div className="mt-6 flex flex-col gap-1 text-center">
-          <p className="text-sm font-semibold text-txt-black-tertiary">첫 Drop을 읽었어요</p>
-          <h2 id="signupTitle" className="text-2xl font-bold tracking-[-1px]">
-            학습 기록을 저장할까요?
-          </h2>
-        </div>
-        <p className="mt-3 text-center text-base text-txt-black-secondary">
-          가입하면 진도와 내 학습 기록이 저장되고,
-          <br />
-          다른 기기에서도 이어서 읽을 수 있어요.
-        </p>
-        <div className="mt-6 flex flex-col gap-2 pb-2">
-          <SocialButtons height={52} next={next} onDone={() => setStep('go')} />
-          <TextButton onClick={() => setStep('go')}>나중에</TextButton>
-          <p className="text-center text-sm text-txt-black-secondary">지금은 이 기기에만 저장돼요. 나중에 가입해도 그대로 옮겨져요.</p>
-        </div>
-      </Sheet>
       <Toast message={toast} />
     </>
   );

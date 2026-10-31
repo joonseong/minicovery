@@ -1,17 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { josa } from '@/lib/josa';
 import type { PlusUsage } from '@/lib/service';
 
 import { PlusLeft } from '../PlusLeft';
 import { ReplaceConfirm } from '../QuotaSheets';
+import { SignupSheet } from '../SignupSheet';
 import { TomorrowList, type TomorrowItem } from '../TomorrowList';
 import { CHARACTER, Footer, Main, OutlineButton, PrimaryButton, Screen, Sheet, AppHeader, TextButton } from '../ui';
 const LABELS = ['월', '화', '수', '목', '금', '토', '일'];
 
 export function DropDoneScreen(props: {
+  /** 첫 Drop을 마친 임시 계정: 완료 화면이 보인 뒤 가입 시트를 띄운다 */
+  askSignup?: boolean;
   courseId: string;
   courseTitle: string;
   dropTitle: string;
@@ -31,6 +34,16 @@ export function DropDoneScreen(props: {
   nextDropId?: string;
 }) {
   const [confirm, setConfirm] = useState(false);
+  const [signup, setSignup] = useState(false);
+  useEffect(() => {
+    if (!props.askSignup) return;
+    // 완료 화면을 먼저 보여 주고 띄운다. 주소의 ?signup=1은 지워 새로고침 때 다시 뜨지 않게
+    const t = setTimeout(() => {
+      setSignup(true);
+      window.history.replaceState(null, '', window.location.pathname);
+    }, 700);
+    return () => clearTimeout(t);
+  }, [props.askSignup]);
   const days = props.week.filter(Boolean).length;
   // 오늘 요일 (KST, 월=0)
   const todayIdx = (new Date(Date.now() + 9 * 3600_000).getUTCDay() + 6) % 7;
@@ -119,6 +132,7 @@ export function DropDoneScreen(props: {
       <Sheet open={confirm} onClose={() => setConfirm(false)} labelledBy="replaceTitle">
         <ReplaceConfirm courseTopic={props.currentTopic} replaceHref="/start?replace=1" onClose={() => setConfirm(false)} />
       </Sheet>
+      <SignupSheet open={signup} next="/today" onClose={() => setSignup(false)} />
     </Screen>
   );
 }
