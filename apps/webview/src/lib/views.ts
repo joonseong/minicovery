@@ -74,6 +74,7 @@ export async function todayData(user: User) {
     pickedId: pickedCourseId(user, items),
     doneToday: doneDrop ? { dropId: doneDrop.id, title: doneDrop.title, courseId: doneDrop.courseId } : null,
     tomorrow: cards.find(c => c.id === tomorrowId) ?? null,
+    anon: user.anon,
     weekDays: week.filter(Boolean).length,
     weekDrops: await weekDropCount(user.id),
     stage: stageOf(user),

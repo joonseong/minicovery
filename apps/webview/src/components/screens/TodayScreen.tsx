@@ -35,6 +35,8 @@ type Props = {
   recall?: RecallLike | null;
   /** 로그인 때 이 기기의 코스를 계정에 합쳤음 (1회만 온다) */
   mergeNotice?: { topics: string[] } | null;
+  /** 가입 전 임시 계정이면 가입 카드를 보여 준다 */
+  anon?: boolean;
 };
 
 const CHIPS = ['행동경제학', '진화론', '와인'];
@@ -56,6 +58,7 @@ export function TodayScreen({
   daysSinceLastRead,
   recall,
   mergeNotice,
+  anon,
 }: Props) {
   const router = useRouter();
   const [picked, setPicked] = useState(pickedId ?? cards[0]?.id);
@@ -109,6 +112,16 @@ export function TodayScreen({
               <IconClose size={20} color="#9FA0AA" />
             </button>
           </div>
+        ) : null}
+
+        {anon && (doneToday || cards.some(c => c.done > 0)) ? (
+          <Link href="/signup?next=/today" className="mt-5 flex items-center justify-between gap-3 rounded-2xl bg-shape-depth1 py-4 pl-5 pr-4">
+            <span className="flex flex-col gap-0.5">
+              <span className="text-sm font-bold text-txt-point">가입하고 기록 저장하기</span>
+              <span className="text-base font-semibold">기기를 바꿔도 읽던 코스를 이어 가요</span>
+            </span>
+            <span aria-hidden="true" className="text-txt-black-tertiary">›</span>
+          </Link>
         ) : null}
 
         {weekend && weekDays ? (

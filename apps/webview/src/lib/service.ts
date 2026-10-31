@@ -668,7 +668,8 @@ export async function completeDrop(user: User, dropId: string, signal: Understan
     !user.notifyNever &&
     (!user.notifyAskedAt || Date.now() - Date.parse(user.notifyAskedAt) > notifyAskIntervalMs(user));
   if (askNotify) user.notifyAskedAt = nowIso();
-  const askSignup = firstEver && user.anon;
+  // 가입 권유는 처음 두 번의 완료에서. 첫 완료에 알림 시트를 띄우면 화면이 가입 시트를 다음 완료로 미룬다 (팝업 두 개 연속 방지)
+  const askSignup = !already && user.anon && doneBefore + 1 <= 2;
   await store.saveUser(user);
 
   return {
