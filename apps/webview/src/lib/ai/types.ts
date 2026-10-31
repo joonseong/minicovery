@@ -36,6 +36,8 @@ export interface DropOutput {
   sources: Source[];
   evidence: string[];
   refused: boolean;
+  /** max_tokens·pause_turn 한도에 걸려 끝까지 쓰지 못함. 이때 text는 비워 발행 검사(isCompleteBody)에 걸리게 한다 */
+  truncated?: boolean;
 }
 
 export interface VerifyOutput {
