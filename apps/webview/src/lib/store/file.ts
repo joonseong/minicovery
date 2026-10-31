@@ -68,6 +68,12 @@ export class FileStore implements Store {
   async listActiveCourses() {
     return Object.values(this.db.courses).filter(c => c.status === 'active');
   }
+  async listSharedCourses() {
+    return Object.values(this.db.courses).filter(c => c.status === 'completed' && c.shared);
+  }
+  async findCourseByShareId(shareId: string) {
+    return Object.values(this.db.courses).find(c => c.shareId === shareId) ?? null;
+  }
   async saveCourse(course: Course) {
     this.db.courses[course.id] = course;
     this.persist();

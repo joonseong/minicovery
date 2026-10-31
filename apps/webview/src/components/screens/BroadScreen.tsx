@@ -5,15 +5,15 @@ import { useState } from 'react';
 
 import { checkTopic, levelHref } from '@/lib/client/start';
 
-import { MonthlySheet, ReplaceSheet } from '../QuotaSheets';
+import { LimitSheet, MonthlySheet, ReplaceSheet } from '../QuotaSheets';
 import { AppHeader, BottomNav, Main, Screen } from '../ui';
 
-type Props = { topic: string; suggestions: string[]; quota: 'ok' | 'free' | 'monthly'; currentTopic?: string; replace?: boolean };
+type Props = { topic: string; suggestions: string[]; quota: 'ok' | 'free' | 'over' | 'monthly' | 'daily'; currentTopic?: string; replace?: boolean; resetLabel?: string };
 
-export function BroadScreen({ topic, suggestions, quota, currentTopic, replace }: Props) {
+export function BroadScreen({ topic, suggestions, quota, currentTopic, replace, resetLabel }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
-  const [sheet, setSheet] = useState<null | { kind: 'free' | 'monthly'; replaceHref: string }>(null);
+  const [sheet, setSheet] = useState<null | { kind: 'free' | 'monthly' | 'daily' | 'over'; replaceHref: string }>(null);
 
   const pick = async (s: string) => {
     if (busy) return;
@@ -25,7 +25,7 @@ export function BroadScreen({ topic, suggestions, quota, currentTopic, replace }
     if (r.status === 'blocked') return;
     if (quota === 'free' && replace) return router.push(levelHref(ok, true));
     if (quota === 'free') return setSheet({ kind: 'free', replaceHref: levelHref(ok, true) });
-    if (quota === 'monthly') return setSheet({ kind: 'monthly', replaceHref: '' });
+    if (quota === 'monthly' || quota === 'daily' || quota === 'over') return setSheet({ kind: quota, replaceHref: '' });
     router.push(levelHref(ok));
   };
 
@@ -77,7 +77,12 @@ export function BroadScreen({ topic, suggestions, quota, currentTopic, replace }
       </Main>
       <BottomNav active="explore" />
       <ReplaceSheet open={sheet?.kind === 'free'} onClose={() => setSheet(null)} courseTopic={currentTopic} replaceHref={sheet?.replaceHref ?? '/start'} />
-      <MonthlySheet open={sheet?.kind === 'monthly'} onClose={() => setSheet(null)} />
+      <MonthlySheet open={sheet?.kind === 'monthly'} onClose={() => setSheet(null)} resetLabel={resetLabel} />
+      <LimitSheet
+        kind={sheet?.kind === 'daily' || sheet?.kind === 'over' ? sheet.kind : null}
+        onClose={() => setSheet(null)}
+        plus={Boolean(resetLabel)}
+      />
     </Screen>
   );
 }

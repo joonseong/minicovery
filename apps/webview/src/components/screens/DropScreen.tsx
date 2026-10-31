@@ -3,10 +3,13 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { postJson, readNdjson, trackClient } from '@/lib/client/ndjson';
-import { parseDropText } from '@/lib/drop-format';
+import { parseDropText, splitPoints } from '@/lib/drop-format';
 import type { Drop, DropBody } from '@/lib/types';
 
+import type { Recall } from '@/lib/learning';
+
 import { AfterComplete, type CompleteResult } from '../AfterComplete';
+import { RecallCard } from '../RecallCard';
 import { AppHeader, Footer, Loading, Main, OutlineButton, PrimaryButton, Screen, TextButton } from '../ui';
 
 type StreamEv =
@@ -25,7 +28,18 @@ const SECTIONS: { key: keyof DropBody; label: string }[] = [
   { key: 'connection', label: '이어서 생각하기' },
 ];
 
-export function DropScreen({ initialDrop, courseTitle, total }: { initialDrop: Drop; courseTitle: string; total: number }) {
+export function DropScreen({
+  initialDrop,
+  courseTitle,
+  total,
+  recall,
+}: {
+  initialDrop: Drop;
+  courseTitle: string;
+  total: number;
+  /** 2편째부터: 어제 읽은 Drop의 한 문장 */
+  recall?: Recall | null;
+}) {
   const [drop, setDrop] = useState(initialDrop);
   const [phase, setPhase] = useState<Phase>(initialDrop.status === 'ready' ? 'ready' : 'generating');
   const [stream, setStream] = useState('');
@@ -88,6 +102,7 @@ export function DropScreen({ initialDrop, courseTitle, total }: { initialDrop: D
 
   // 첫 Drop: 수준 선택 → 첫 문단까지 걸린 시간
   const body: Partial<DropBody> = phase === 'ready' && drop.body ? drop.body : parseDropText(stream);
+  const points = splitPoints(body.points);
   useEffect(() => {
     if (!body.hook || drop.index !== 0) return;
     const start = Number(sessionStorage.getItem('ttfd_start'));
@@ -110,6 +125,7 @@ export function DropScreen({ initialDrop, courseTitle, total }: { initialDrop: D
     <Screen className="relative">
       <AppHeader layout="nav" title={courseTitle} close="/today" divider />
       <Main className="pb-8 pt-6">
+        {recall ? <RecallCard recall={recall} /> : null}
         <p className="text-sm font-semibold text-txt-black-tertiary">
           Drop {drop.index + 1} / {total}
         </p>
@@ -139,8 +155,18 @@ export function DropScreen({ initialDrop, courseTitle, total }: { initialDrop: D
             )}
             {body.takeaway ? (
               <section className="flex flex-col gap-2 rounded-2xl bg-shape-depth1 p-5">
-                <h2 className="text-sm font-bold text-txt-black-secondary">한 문장으로</h2>
-                <p className={streaming ? 'streaming-caret text-lg font-semibold' : 'text-lg font-semibold'}>{body.takeaway}</p>
+                <h2 className="text-sm font-bold text-txt-black-secondary">정리하기</h2>
+                <p className={streaming && !body.points ? 'streaming-caret text-lg font-semibold' : 'text-lg font-semibold'}>{body.takeaway}</p>
+                {points.length ? (
+                  <ul className="mt-2 flex flex-col gap-2 border-t border-border-div pt-4">
+                    {points.map((pt, i) => (
+                      <li key={i} className="flex gap-2 text-base leading-6">
+                        <span aria-hidden className="shrink-0 text-txt-black-tertiary">–</span>
+                        <span className={streaming && i === points.length - 1 ? 'streaming-caret' : undefined}>{pt}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
               </section>
             ) : null}
           </article>
@@ -166,14 +192,17 @@ export function DropScreen({ initialDrop, courseTitle, total }: { initialDrop: D
                   }}
                   className={reported ? 'min-h-11 text-sm text-txt-black-tertiary' : 'min-h-11 text-sm text-txt-black-tertiary underline'}
                 >
-                  {reported ? '알려 주셔서 고마워요' : '내용이 이상해요'}
+                  {reported ? '알려 주셔서 고마워요. 확인하고 고칠게요' : '내용이 이상해요'}
                 </button>
               </div>
             </section>
             <div ref={sentinel} />
             {!rereading ? (
               <section className="mt-10 flex flex-col gap-4">
-                <h2 className="text-center text-lg font-semibold">오늘 Drop, 어땠어요?</h2>
+                <div className="flex flex-col gap-1 text-center">
+                  <h2 className="text-lg font-semibold">오늘 Drop, 어땠어요?</h2>
+                  <p className="text-sm text-txt-black-secondary">어느 쪽을 눌러도 오늘 Drop을 마쳐요. ‘조금 헷갈려요’는 더 쉽게 다시 설명해 줘요.</p>
+                </div>
                 <div className="grid grid-cols-2 gap-2">
                   <PrimaryButton onClick={() => void complete()}>{completing ? '저장하는 중…' : '이해했어요'}</PrimaryButton>
                   <OutlineButton href={`/drop/${drop.id}/easy`}>조금 헷갈려요</OutlineButton>

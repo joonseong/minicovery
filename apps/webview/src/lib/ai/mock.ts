@@ -34,7 +34,12 @@ function fakeDrop(courseTitle: string, title: string, index: number, learned: st
 예를 들어 출근길 커피를 고를 때를 떠올려 보세요. 메뉴판 맨 위에 비싼 메뉴가 있으면, 그 아래 중간 가격 메뉴가 왠지 합리적으로 보이죠. 이렇게 일상의 장면 하나로 개념을 붙잡아 두면 오래 기억에 남아요.${connection}
 
 @@takeaway
-${title.replace(/[?？]$/, '')}의 핵심은, 낯선 개념도 일상의 장면 하나와 연결하면 이해할 수 있다는 것입니다.`;
+${title.replace(/[?？]$/, '')}의 핵심은, 낯선 개념도 일상의 장면 하나와 연결하면 이해할 수 있다는 것입니다.
+
+@@points
+- 한 Drop에는 핵심 개념 하나
+- 전문용어는 처음 나올 때 풀어 설명
+- 일상 장면 하나로 개념을 붙잡기`;
 }
 
 export class MockGenerator implements Generator {

@@ -15,6 +15,10 @@ export interface Store {
   getCourse(id: string): Promise<Course | null>;
   listCourses(userId: string): Promise<Course[]>;
   listActiveCourses(): Promise<Course[]>;
+  /** 추천 코스 후보: 완주한 사용자가 추천을 켠 코스 */
+  listSharedCourses(): Promise<Course[]>;
+  /** 완주 공유 링크로 코스 찾기 */
+  findCourseByShareId(shareId: string): Promise<Course | null>;
   saveCourse(course: Course): Promise<void>;
 
   getDrop(id: string): Promise<Drop | null>;

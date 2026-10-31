@@ -5,10 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { postJson } from '@/lib/client/ndjson';
+import type { PlusUsage } from '@/lib/service';
 import type { CourseCard } from '@/lib/views';
 
+import { PlusLeft } from '../PlusLeft';
 import { TomorrowList } from '../TomorrowList';
-import { AppHeader, BottomNav, CHARACTER, IconClose, Main, PrimaryButton, Screen } from '../ui';
+import { AppHeader, BottomNav, CHARACTER, IconClose, Main, OutlineButton, PrimaryButton, Screen } from '../ui';
 
 type Props = {
   dateLabel: string;
@@ -18,13 +20,14 @@ type Props = {
   tomorrow: CourseCard | null;
   weekDays: number;
   stage: { key: 'rabbit' | 'cat' };
+  usage: PlusUsage | null;
   showNotifyBanner: boolean;
 };
 
 const CHIPS = ['행동경제학', '진화론', '와인'];
 
 /** 오늘: 한 장 카드(읽을 Drop) · 다 읽음 · 코스 없음 세 상태. 머리(날짜·제목·캐릭터)는 같다 */
-export function TodayScreen({ dateLabel, cards, pickedId, doneToday, tomorrow, weekDays, stage, showNotifyBanner }: Props) {
+export function TodayScreen({ dateLabel, cards, pickedId, doneToday, tomorrow, weekDays, stage, usage, showNotifyBanner }: Props) {
   const router = useRouter();
   const [picked, setPicked] = useState(pickedId ?? cards[0]?.id);
   const [banner, setBanner] = useState(showNotifyBanner);
@@ -32,6 +35,8 @@ export function TodayScreen({ dateLabel, cards, pickedId, doneToday, tomorrow, w
   const cur = cards.find(c => c.id === picked);
   const others = cards.filter(c => c.id !== picked);
   const ch = CHARACTER[stage.key];
+  // 토·일 (KST)
+  const weekend = [0, 6].includes(new Date(Date.now() + 9 * 3600_000).getUTCDay());
   const upcoming = cards
     .filter(c => c.nextTitle)
     .map(c => ({ id: c.id, topic: c.topic, index: c.done, total: c.total, title: c.nextTitle! }));
@@ -49,7 +54,7 @@ export function TodayScreen({ dateLabel, cards, pickedId, doneToday, tomorrow, w
       <Main className="pb-8 pt-4">
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 flex-col gap-1">
-            <p className="text-sm text-txt-black-tertiary">
+            <p className="text-sm text-txt-black-secondary">
               {dateLabel}
               {weekDays ? ` · 이번 주 ${weekDays}일째` : ''}
             </p>
@@ -60,6 +65,18 @@ export function TodayScreen({ dateLabel, cards, pickedId, doneToday, tomorrow, w
             <img src={ch.still} alt="" className="h-24 w-24 object-contain" />
           </Link>
         </div>
+
+        {weekend && weekDays ? (
+          <Link href="/review" className="mt-5 flex items-center justify-between gap-3 rounded-2xl border border-border-button py-4 pl-5 pr-4">
+            <span className="flex flex-col gap-0.5">
+              <span className="text-sm font-bold text-txt-point">주말 복습</span>
+              <span className="text-base font-semibold">이번 주에 배운 한 문장 다시 보기</span>
+            </span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="flex-shrink-0">
+              <path d="m9 5 7 7-7 7" stroke="#B4B5C1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Link>
+        ) : null}
 
         {banner ? (
           <div className="mt-5 flex items-center justify-between gap-2 rounded-2xl bg-shape-depth1 py-3 pl-4 pr-1">
@@ -89,22 +106,23 @@ export function TodayScreen({ dateLabel, cards, pickedId, doneToday, tomorrow, w
               <p className="text-sm font-semibold text-txt-black-secondary">오늘 Drop을 다 읽었어요</p>
             </div>
             <h2 className="mt-3 text-2xl font-bold tracking-[-1px]">
-              내일 아침에
+              다음 Drop은
               <br />
-              다음 Drop이 열려요
+              내일 0시에 열려요
             </h2>
             {upcoming.length ? (
               <div className="mt-4 flex flex-col gap-2">
-                <p className="text-sm font-bold text-txt-black-secondary">내일의 Drop</p>
+                <p className="text-sm font-bold text-txt-black-secondary">{upcoming.length > 1 ? '내일 받을 코스' : '내일 받을 Drop'}</p>
                 <TomorrowList items={upcoming} tomorrowId={tomorrow?.id} size="md" />
               </div>
             ) : null}
-            <Link
-              href={`/drop/${doneToday.dropId}`}
-              className="mc-press mt-5 flex h-14 items-center justify-center rounded-full border border-border-button bg-shape-white text-base font-semibold"
-            >
+            <PrimaryButton href={`/drop/${doneToday.dropId}`} className="mt-5">
               오늘 읽은 Drop 다시 보기
-            </Link>
+            </PrimaryButton>
+            <OutlineButton href="/start" className="mt-2">
+              새 주제로 코스 만들기
+            </OutlineButton>
+            <PlusLeft usage={usage} />
           </section>
         ) : cur ? (
           <>
@@ -125,7 +143,9 @@ export function TodayScreen({ dateLabel, cards, pickedId, doneToday, tomorrow, w
                 <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[rgba(255,255,255,0.3)]">
                   <div className="h-full rounded-full bg-shape-white" style={{ width: `${Math.round((cur.done / Math.max(1, cur.total)) * 100)}%` }} />
                 </div>
-                <span className="text-sm font-semibold">{cur.total - cur.done}편 남음</span>
+                <span className="text-sm font-semibold">
+                  {cur.done} / {cur.total}편 읽음
+                </span>
               </div>
               <button
                 type="button"
@@ -138,7 +158,7 @@ export function TodayScreen({ dateLabel, cards, pickedId, doneToday, tomorrow, w
             {!cur.ready ? <p className="mt-3 text-sm text-txt-black-tertiary">이 코스는 지금 만들어서 30초쯤 걸려요.</p> : null}
 
             <section className="mt-8 flex flex-col gap-2">
-              {others.length ? <h2 className="text-sm font-bold text-txt-black-secondary">다른 코스로 받기</h2> : null}
+              {others.length ? <h2 className="text-sm font-bold text-txt-black-secondary">오늘 다른 코스 읽기</h2> : null}
               {others.map(c => (
                 <button
                   key={c.id}
@@ -152,9 +172,16 @@ export function TodayScreen({ dateLabel, cards, pickedId, doneToday, tomorrow, w
                     </span>
                     <span className="text-base font-semibold">{c.nextTitle}</span>
                   </span>
-                  <span className="flex-shrink-0 text-sm font-semibold text-txt-point">바꾸기</span>
+                  <span className="flex-shrink-0 text-sm font-semibold text-txt-point">이걸로 읽기</span>
                 </button>
               ))}
+              {others.length ? (
+                <p className="text-sm text-txt-black-secondary">위 카드가 오늘 읽을 Drop이에요. 읽기 전까지 다른 코스로 바꿀 수 있어요. 어제 고른 ‘내일 받을 코스’가 기본으로 와요.</p>
+              ) : null}
+              <OutlineButton href="/start" className="mt-4">
+                새 주제로 코스 만들기
+              </OutlineButton>
+              <PlusLeft usage={usage} />
             </section>
           </>
         ) : (
@@ -182,11 +209,6 @@ export function TodayScreen({ dateLabel, cards, pickedId, doneToday, tomorrow, w
           </section>
         )}
 
-        {cur || doneToday ? (
-          <Link href="/start" className="mt-4 flex min-h-11 items-center self-center px-3 text-sm text-txt-black-tertiary underline">
-            새 주제로 코스 만들기
-          </Link>
-        ) : null}
       </Main>
       <BottomNav active="today" />
     </Screen>

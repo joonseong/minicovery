@@ -101,26 +101,84 @@ export const isPlus = (user: User) =>
   (user.plusExpiresAt ? Date.parse(user.plusExpiresAt) + 6 * 3600_000 > Date.now() : false) ||
   (process.env.PLUS_BETA_FREE === 'true' && Boolean(user.plusSince));
 
-export type Quota = { ok: true } | { ok: false; reason: 'free' | 'monthly' };
+/**
+ * free: 진행 중 코스 1개 → 지우고 바꿀 수 있음 / over: 진행 중 코스가 2개 이상 (Plus 해지 뒤) → 새 코스 불가
+ * monthly: Plus 이번 기간 3개를 다 씀 / daily: 오늘 이미 바꿨거나(무료) 만들었음(Plus)
+ */
+export type Quota = { ok: true } | { ok: false; reason: 'free' | 'over' | 'monthly' | 'daily' };
 
-/** 무료는 코스 1개, Plus는 구독 뒤 새 코스 한 달 3개 */
-export async function courseQuota(user: User): Promise<Quota> {
-  const courses = (await getStore().listCourses(user.id)).filter(c => c.status !== 'failed');
-  if (!isPlus(user)) {
-    const kept = courses.filter(c => c.status !== 'deleted');
-    return kept.length < FREE_COURSE_LIMIT ? { ok: true } : { ok: false, reason: 'free' };
-  }
-  const month = kstDate().slice(0, 7);
-  const made = courses.filter(c => c.createdAt >= user.plusSince! && kstDate(c.createdAt).slice(0, 7) === month).length;
-  return made < PLUS_MONTHLY_COURSES ? { ok: true } : { ok: false, reason: 'monthly' };
+const addMonths = (iso: string, n: number) => {
+  const d = new Date(iso);
+  d.setUTCMonth(d.getUTCMonth() + n);
+  return d.toISOString();
+};
+
+/**
+ * Plus 혜택을 세는 한 달: 구독(체험 포함) 시작일부터 한 달씩 (2026-10-27 대표 결정).
+ * 체험 7일도 첫 한 달 안에 들어간다. 결제일과는 따로 돈다
+ */
+export function plusPeriod(user: User): { start: string; end: string } | null {
+  if (!isPlus(user) || !user.plusSince) return null;
+  const now = nowIso();
+  let start = user.plusSince;
+  while (addMonths(start, 1) <= now) start = addMonths(start, 1);
+  return { start, end: addMonths(start, 1) };
 }
 
-/** 무료 사용자가 새 주제로 바꿀 때: 지금 코스와 Drop은 지우고, 다 배운 기록(user.learned)은 남긴다 */
+/** 'M월 D일' (KST) */
+export const kstDayLabel = (iso: string) => {
+  const [, m, d] = kstDate(iso).split('-').map(Number);
+  return `${m}월 ${d}일`;
+};
+
+/**
+ * 무료: 진행 중인 코스 1개(다 배운 코스·전체 열린 코스는 세지 않음). 2개 이상이면(Plus 해지 뒤) 1개 이하가 될 때까지 새 코스 불가.
+ * Plus: 구독 한 달에 새 코스 3개. 바꾸기(무료)·새 코스(Plus)는 하루 1번 (2026-10-27 대표 결정)
+ */
+export async function courseQuota(user: User): Promise<Quota> {
+  const courses = (await getStore().listCourses(user.id)).filter(c => c.status !== 'failed');
+  const today = kstDate();
+  const period = plusPeriod(user);
+  if (!period) {
+    const going = courses.filter(c => (c.status === 'active' || c.status === 'generating') && !c.openedAllAt);
+    if (going.length > FREE_COURSE_LIMIT) return { ok: false, reason: 'over' };
+    if (going.length < FREE_COURSE_LIMIT) return { ok: true };
+    return courses.some(c => c.deletedAt && kstDate(c.deletedAt) === today) ? { ok: false, reason: 'daily' } : { ok: false, reason: 'free' };
+  }
+  const made = courses.filter(c => c.createdAt >= period.start);
+  if (made.length >= PLUS_MONTHLY_COURSES) return { ok: false, reason: 'monthly' };
+  return made.some(c => kstDate(c.createdAt) === today) ? { ok: false, reason: 'daily' } : { ok: true };
+}
+
+export interface PlusUsage {
+  coursesLeft: number;
+  openAllLeft: number;
+  /** 다시 채워지는 날 'M월 D일' */
+  resetLabel: string;
+  /** 오늘 이미 새 코스를 만듦 (하루 1개) */
+  madeToday: boolean;
+}
+
+/** Plus 남은 횟수 (프로필·설정·오늘 화면 표시용) */
+export async function plusUsage(user: User): Promise<PlusUsage | null> {
+  const period = plusPeriod(user);
+  if (!period) return null;
+  const made = (await getStore().listCourses(user.id)).filter(c => c.status !== 'failed' && c.createdAt >= period.start);
+  return {
+    coursesLeft: Math.max(0, PLUS_MONTHLY_COURSES - made.length),
+    openAllLeft: user.openAllAt && user.openAllAt >= period.start ? 0 : 1,
+    resetLabel: kstDayLabel(period.end),
+    madeToday: made.some(c => kstDate(c.createdAt) === kstDate()),
+  };
+}
+
+/** 무료 사용자가 새 주제로 바꿀 때: 진행 중인 코스와 Drop은 지우고, 다 배운 코스·전체 열린 코스와 기록(user.learned)은 남긴다 */
 export async function deleteFreeCourses(user: User) {
   const store = getStore();
   for (const c of await store.listCourses(user.id)) {
-    if (c.status === 'deleted' || c.status === 'failed') continue;
+    if ((c.status !== 'active' && c.status !== 'generating') || c.openedAllAt) continue;
     c.status = 'deleted';
+    c.deletedAt = nowIso();
     await store.saveCourse(c);
   }
   if (user.tomorrowCourseId) {
@@ -526,15 +584,14 @@ export async function completedToday(userId: string): Promise<Drop | null> {
   );
 }
 
-/* ---------- 전체 열기 (Plus, 한 달에 한 코스) ---------- */
+/* ---------- 전체 열기 (Plus, 구독 한 달에 한 코스) ---------- */
 
-/** 이번 달(KST) 전체 열기를 쓸 수 있는지, 썼다면 다시 쓸 수 있는 날 (M월 1일) */
+/** 이번 구독 기간에 전체 열기를 쓸 수 있는지, 썼다면 다시 쓸 수 있는 날 (다음 결제일). 열린 코스는 해지 뒤에도 계속 읽는다 */
 export function openAllStatus(user: User): { available: boolean; nextLabel?: string } {
-  if (!isPlus(user)) return { available: false };
-  const month = kstDate().slice(0, 7);
-  if (!user.openAllAt || kstDate(user.openAllAt).slice(0, 7) !== month) return { available: true };
-  const next = (Number(month.slice(5, 7)) % 12) + 1;
-  return { available: false, nextLabel: `${next}월 1일` };
+  const period = plusPeriod(user);
+  if (!period) return { available: false };
+  if (!user.openAllAt || user.openAllAt < period.start) return { available: true };
+  return { available: false, nextLabel: kstDayLabel(period.end) };
 }
 
 export async function openAllCourse(user: User, courseId: string) {

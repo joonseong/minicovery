@@ -22,6 +22,8 @@ export default async function CourseDonePage({ params }: { params: { id: string 
       plus={isPlus(user)}
       first={stage.learned === 1}
       answer={course.explainAnswer ?? null}
+      shared={Boolean(course.shared)}
+      copied={Boolean(course.copiedFrom)}
     />
   );
 }

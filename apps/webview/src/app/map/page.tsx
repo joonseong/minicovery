@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-import { AppHeader, Badge, BottomNav, Main, Progress, Screen } from '@/components/ui';
+import { AppHeader, BottomNav, Main, Progress, Screen } from '@/components/ui';
 import { CHARACTER } from '@/lib/characters';
 import { currentUser } from '@/lib/session';
 import { type MapPlace, mapData } from '@/lib/views';
@@ -28,6 +28,16 @@ export default async function MapPage() {
     <Screen>
       <AppHeader layout="large" title="내 학습" />
       <Main className="pb-10 pt-2">
+        <Link href="/review" className="mt-4 flex items-center gap-3 rounded-2xl border border-border-button py-4 pl-5 pr-4">
+          <span className="flex flex-1 flex-col gap-0.5">
+            <span className="text-sm font-bold text-txt-point">이번 주 복습</span>
+            <span className="text-base font-semibold">이번 주에 배운 한 문장 다시 보기</span>
+          </span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="m9 5 7 7-7 7" stroke="#B4B5C1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </Link>
+
         <section className="mt-4 flex flex-col gap-4 rounded-2xl bg-shape-depth1 p-5">
           <div className="flex items-center gap-4">
             <div className="flex w-full flex-col gap-1">
@@ -50,36 +60,18 @@ export default async function MapPage() {
               <p className="text-sm font-semibold">
                 주제 {d.stage.next.left}개만 더 다 배우면 <span className="text-txt-point">{d.stage.next.name}</span>로 성장해요
               </p>
+              <p className="text-sm text-txt-black-secondary">코스를 끝까지 읽으면 다 배운 주제가 돼요. ‘조금 헷갈려요’를 눌러도 똑같이 쳐요.</p>
             </div>
           ) : null}
         </section>
 
-        {d.closest ? (
-          <section className="mt-10 flex flex-col gap-3">
-            <h2 className="text-lg font-semibold">배우고 있는 코스</h2>
-            <Link href={`/course/${d.closest.id}`} className="flex flex-col gap-4 rounded-[20px] border-2 border-border-brand p-5">
-              <span className="flex items-start justify-between gap-3">
-                <span className="flex flex-col gap-1">
-                  <span className="text-sm font-semibold text-txt-black-tertiary">{d.closest.category}</span>
-                  <span className="text-lg font-semibold">{d.closest.topic}</span>
-                </span>
-                <Badge>Drop {d.closest.total - d.closest.done}개 남음</Badge>
-              </span>
-              <span className="flex items-center gap-2">
-                <Progress value={d.closest.done / d.closest.total} />
-                <span className="flex-shrink-0 text-sm font-semibold text-txt-black-secondary">
-                  {d.closest.done} / {d.closest.total}
-                </span>
-              </span>
-              <span className="flex h-12 items-center justify-center rounded-full bg-shape-brand text-base font-semibold text-txt-white-primary">코스 보기</span>
-            </Link>
-          </section>
-        ) : null}
-
         <section className="mt-10 flex flex-col gap-3">
           <div className="flex flex-col gap-1">
             <h2 className="text-lg font-semibold">분야별 학습</h2>
-            <p className="text-sm text-txt-black-tertiary">+ 표시는 배운 주제와 이어지는 다음 추천 주제예요. 누르면 새 코스를 만들어요.</p>
+            <p className="text-sm text-txt-black-secondary">
+              + 표시는 배운 주제와 이어지는 다음 추천 주제예요. 누르면 새 코스를 만들어요.
+              {d.usage ? ` (Plus · 새 코스 ${d.usage.coursesLeft}개 남음)` : ' 무료는 한 번에 코스 1개를 배울 수 있어요.'}
+            </p>
           </div>
           {d.regions.length === 0 ? (
             <p className="rounded-2xl bg-shape-depth1 p-5 text-sm text-txt-black-secondary">첫 코스를 만들면 여기에 배운 주제가 쌓여요.</p>

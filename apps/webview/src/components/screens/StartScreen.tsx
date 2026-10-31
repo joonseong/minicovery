@@ -4,19 +4,43 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { checkTopic, levelHref } from '@/lib/client/start';
+import { josa } from '@/lib/josa';
+import type { Recommended } from '@/lib/learning';
 
-import { MonthlySheet, ReplaceSheet } from '../QuotaSheets';
+import Link from 'next/link';
+
+import { LimitSheet, MonthlySheet, ReplaceSheet } from '../QuotaSheets';
 import { AppHeader, BottomNav, Main, PrimaryButton, Screen } from '../ui';
 
-type Props = { initialTopic: string; suggestions: string[]; quota: 'ok' | 'free' | 'monthly'; currentTopic?: string; replace?: boolean };
+type Props = {
+  initialTopic: string;
+  suggestions: string[];
+  quota: 'ok' | 'free' | 'over' | 'monthly' | 'daily';
+  currentTopic?: string;
+  replace?: boolean;
+  /** Plus 새 코스가 다시 채워지는 날 */
+  resetLabel?: string;
+  /** 다른 사람들이 만든 추천 코스 */
+  recommended?: Recommended[];
+};
 
-export function StartScreen({ initialTopic, suggestions, quota, currentTopic, replace }: Props) {
+export function StartScreen({ initialTopic, suggestions, quota, currentTopic, replace, resetLabel, recommended = [] }: Props) {
   const router = useRouter();
   const [topic, setTopic] = useState(initialTopic);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<{ message: string; suggestions: string[] } | null>(null);
-  const [sheet, setSheet] = useState<null | { kind: 'free' | 'monthly'; replaceHref: string }>(null);
+  const [sheet, setSheet] = useState<null | { kind: 'free' | 'monthly' | 'daily' | 'over'; replaceHref: string }>(null);
   const trimmed = topic.trim();
+  const limitNote =
+    quota === 'free' && currentTopic && !replace
+      ? `무료는 한 번에 코스 1개를 배울 수 있어요. 지금 ‘${currentTopic}’${josa(currentTopic, '을/를').slice(currentTopic.length)} 배우는 중이라, 새 코스를 만들면 지금 코스는 지워져요. 단계와 다 배운 주제는 남아요.`
+      : quota === 'daily'
+        ? resetLabel
+          ? '새 코스는 하루에 1개까지 만들 수 있어요. 오늘은 이미 만들었어요.'
+          : '주제 바꾸기는 하루에 1번까지 할 수 있어요. 내일 다시 바꿀 수 있어요.'
+        : quota === 'over'
+          ? '진행 중인 코스가 여러 개예요. 무료는 진행 중인 코스가 1개 이하일 때 새 코스를 만들 수 있어요.'
+          : '';
 
   const go = async (input: string) => {
     if (!input.trim() || busy) return;
@@ -44,8 +68,8 @@ export function StartScreen({ initialTopic, suggestions, quota, currentTopic, re
       setSheet({ kind: 'free', replaceHref: levelHref(r, true) });
       return;
     }
-    if (quota === 'monthly') {
-      setSheet({ kind: 'monthly', replaceHref: '' });
+    if (quota === 'monthly' || quota === 'daily' || quota === 'over') {
+      setSheet({ kind: quota, replaceHref: '' });
       return;
     }
     router.push(levelHref(r));
@@ -64,8 +88,20 @@ export function StartScreen({ initialTopic, suggestions, quota, currentTopic, re
           <p className="text-base text-txt-black-secondary">입력한 주제를 하루 한 편씩 읽는 코스로 만들어 드려요.</p>
         </div>
 
+        {limitNote ? (
+          // 한도를 주제를 다 입력하기 전에 알린다
+          <p className="mt-6 rounded-2xl bg-shape-depth1 px-5 py-4 text-sm text-txt-black-secondary">
+            {limitNote}{' '}
+            {quota === 'free' || quota === 'over' ? (
+              <Link href="/plus?from=keep" className="font-semibold text-txt-point">
+                Plus로 여러 코스 함께 배우기
+              </Link>
+            ) : null}
+          </p>
+        ) : null}
+
         <form
-          className="mt-8 flex flex-col gap-3"
+          className={limitNote ? 'mt-6 flex flex-col gap-3' : 'mt-8 flex flex-col gap-3'}
           onSubmit={e => {
             e.preventDefault();
             void go(topic);
@@ -104,8 +140,31 @@ export function StartScreen({ initialTopic, suggestions, quota, currentTopic, re
           </div>
         ) : null}
 
-        <section className="mt-12 flex flex-col gap-3">
-          <h2 className="text-sm font-bold text-txt-black-secondary">이런 주제는 어때요?</h2>
+        {recommended.length ? (
+          <section className="mt-10 flex flex-col gap-3">
+            <div className="flex flex-col gap-0.5">
+              <h2 className="text-sm font-bold text-txt-black-secondary">다른 사람들이 만든 코스</h2>
+              <p className="text-sm text-txt-black-secondary">바로 받아서 첫 Drop을 읽을 수 있어요.</p>
+            </div>
+            {recommended.map(r => (
+              <Link key={r.id} href={`/recommend/${r.id}`} className="mc-press flex items-center gap-3 rounded-2xl border border-border-button py-4 pl-5 pr-4">
+                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span className="text-sm font-semibold text-txt-black-tertiary">
+                    {r.category} · {r.total}편
+                  </span>
+                  <span className="text-base font-semibold">{r.title}</span>
+                  {r.copies ? <span className="text-sm text-txt-point">{r.copies}명이 받았어요</span> : null}
+                </span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="flex-shrink-0">
+                  <path d="m9 5 7 7-7 7" stroke="#B4B5C1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </Link>
+            ))}
+          </section>
+        ) : null}
+
+        <section className={recommended.length ? 'mt-8 flex flex-col gap-3' : 'mt-12 flex flex-col gap-3'}>
+          <h2 className="text-sm font-bold text-txt-black-secondary">{recommended.length ? '직접 만들 주제 예시' : '이런 주제는 어때요?'}</h2>
           <div className="flex flex-wrap gap-2">
             {suggestions.map(s => (
               <button
@@ -130,7 +189,12 @@ export function StartScreen({ initialTopic, suggestions, quota, currentTopic, re
         courseTopic={currentTopic}
         replaceHref={sheet?.replaceHref ?? '/start'}
       />
-      <MonthlySheet open={sheet?.kind === 'monthly'} onClose={() => setSheet(null)} />
+      <MonthlySheet open={sheet?.kind === 'monthly'} onClose={() => setSheet(null)} resetLabel={resetLabel} />
+      <LimitSheet
+        kind={sheet?.kind === 'daily' || sheet?.kind === 'over' ? sheet.kind : null}
+        onClose={() => setSheet(null)}
+        plus={Boolean(resetLabel)}
+      />
     </Screen>
   );
 }

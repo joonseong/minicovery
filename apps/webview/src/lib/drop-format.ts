@@ -10,11 +10,12 @@ export const SECTION_MARKERS = {
   example: '@@example',
   connection: '@@connection',
   takeaway: '@@takeaway',
+  points: '@@points',
 } as const;
 
 export type SectionKey = keyof typeof SECTION_MARKERS;
 
-const MARKER_RE = /^@@(hook|concept|example|connection|takeaway)\s*$/gm;
+const MARKER_RE = /^@@(hook|concept|example|connection|takeaway|points)\s*$/gm;
 
 export function parseDropText(text: string): Partial<DropBody> {
   const body: Partial<DropBody> = {};
@@ -26,6 +27,14 @@ export function parseDropText(text: string): Partial<DropBody> {
     if (value) body[m[1] as SectionKey] = value;
   });
   return body;
+}
+
+/** '@@points' 본문을 항목 배열로: 줄머리 '-', '•', '*' 는 떼고 빈 줄은 버린다 */
+export function splitPoints(points?: string): string[] {
+  return (points ?? '')
+    .split('\n')
+    .map(l => l.replace(/^\s*[-•*]\s*/, '').trim())
+    .filter(Boolean);
 }
 
 export function isCompleteBody(body: Partial<DropBody>): body is DropBody {

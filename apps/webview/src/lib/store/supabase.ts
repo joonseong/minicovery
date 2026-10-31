@@ -68,6 +68,13 @@ export class SupabaseStore implements Store {
   listActiveCourses() {
     return this.many<Course>(this.db.from('courses').select('data').eq('status', 'active'));
   }
+  listSharedCourses() {
+    return this.many<Course>(this.db.from('courses').select('data').eq('status', 'completed').eq('data->>shared', 'true'));
+  }
+  async findCourseByShareId(shareId: string) {
+    const rows = await this.many<Course>(this.db.from('courses').select('data').eq('data->>shareId', shareId).limit(1));
+    return rows[0] ?? null;
+  }
   saveCourse(course: Course) {
     return this.upsert('courses', {
       id: course.id,

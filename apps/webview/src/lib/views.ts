@@ -1,5 +1,5 @@
 import { CATEGORIES } from './constants';
-import { activeCourses, completedToday, courseQuota, isPlus, pickedCourseId, stageOf, weekDone } from './service';
+import { activeCourses, completedToday, courseQuota, isPlus, pickedCourseId, plusUsage, stageOf, weekDone } from './service';
 import { getStore } from './store';
 import type { Course, User } from './types';
 import { kstDate } from './util';
@@ -52,6 +52,7 @@ export async function todayData(user: User) {
     tomorrow: cards.find(c => c.id === tomorrowId) ?? null,
     weekDays: week.filter(Boolean).length,
     stage: stageOf(user),
+    usage: await plusUsage(user),
     showNotifyBanner:
       user.notifyPermission === 'denied' &&
       (!user.notifyBannerDismissedAt || Date.now() - Date.parse(user.notifyBannerDismissedAt) > 7 * 86_400_000),
@@ -67,7 +68,7 @@ export async function libraryData(user: User) {
     const k = card(c, await store.listDrops(c.id));
     (c.status === 'completed' ? done : active).push(k);
   }
-  return { active, done, stage: stageOf(user), plus: isPlus(user), email: user.email, anon: user.anon, quota: await courseQuota(user) };
+  return { active, done, stage: stageOf(user), plus: isPlus(user), usage: await plusUsage(user), email: user.email, anon: user.anon, quota: await courseQuota(user) };
 }
 
 export type MapPlace = { name: string; state: 'done' | 'going' | 'here' | 'fog'; status: string; href: string };
@@ -88,7 +89,11 @@ export async function mapData(user: User) {
     regions.set(key, list);
   };
 
-  for (const l of learned) add(l.category, { name: l.topic, state: 'done', status: '다 배움', href: '/library' });
+  // 다 배운 코스는 다시 읽을 수 있게 코스로 연결한다 (지운 코스면 프로필로)
+  for (const l of learned) {
+    const kept = courses.some(c => c.id === l.courseId);
+    add(l.category, { name: l.topic, state: 'done', status: kept ? '다 배움 · 다시 읽기' : '다 배움', href: kept ? `/course/${l.courseId}` : '/library' });
+  }
   let going = 0;
   let closest: { course: Course; done: number; total: number } | null = null;
   for (const c of courses.filter(c => c.status === 'active')) {
@@ -98,17 +103,19 @@ export async function mapData(user: User) {
     add(c.category, {
       name: c.topic,
       state: c.id === picked ? 'here' : 'going',
-      status: `배우는 중 · Drop ${Math.min(done + 1, c.outline.length)} / ${c.outline.length}`,
+      status: `배우는 중 · ${done} / ${c.outline.length}편 읽음`,
       href: `/course/${c.id}`,
     });
     const left = c.outline.length - done;
     if (!closest || left < closest.total - closest.done) closest = { course: c, done, total: c.outline.length };
   }
+  // 무료 사용자가 진행 중 코스를 가진 채 누르면 지금 코스와 바뀐다
+  const fogStatus = !isPlus(user) && going > 0 ? '다음 추천 · 누르면 지금 코스와 바뀌어요' : '다음 추천 · 눌러서 코스 만들기';
   let fog = 0;
   for (const c of courses) {
     for (const r of c.related) {
       const before = regions.get(c.category)?.length ?? 0;
-      add(c.category, { name: r, state: 'fog', status: '다음 추천 · 눌러서 코스 만들기', href: `/start?topic=${encodeURIComponent(r)}` });
+      add(c.category, { name: r, state: 'fog', status: fogStatus, href: `/start?topic=${encodeURIComponent(r)}` });
       if ((regions.get(c.category)?.length ?? 0) > before) fog++;
     }
   }
@@ -120,6 +127,7 @@ export async function mapData(user: User) {
   }));
   return {
     stage: stageOf(user),
+    usage: await plusUsage(user),
     learnedCount: learned.length,
     going,
     fog,

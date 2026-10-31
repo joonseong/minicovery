@@ -59,7 +59,7 @@ export function EasyScreen(props: { dropId: string; title: string; courseTitle: 
               <p className="text-base leading-7">{easy.so}</p>
             </section>
             <section className="flex flex-col gap-2 rounded-2xl bg-shape-depth1 p-5">
-              <h2 className="text-sm font-bold text-txt-black-secondary">한 문장으로</h2>
+              <h2 className="text-sm font-bold text-txt-black-secondary">정리하기</h2>
               <p className="text-lg font-semibold">{easy.takeaway}</p>
             </section>
           </article>

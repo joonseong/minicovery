@@ -91,6 +91,18 @@ export interface Course {
   lastReadAt?: string;
   /** Plus '전체 열기'를 쓴 시각. 이 코스는 하루 한 편 제한 없이 읽는다 */
   openedAllAt?: string;
+  /** 무료 사용자가 새 주제로 바꾸며 지운 시각 (바꾸기는 하루 1번) */
+  deletedAt?: string;
+  /** 완주한 사용자가 추천 코스로 내놓기를 켬 (이름 없이, 기본 꺼짐) */
+  shared?: boolean;
+  /** 운영자가 추천 코스로 고름 (shared일 때만 노출) */
+  featured?: boolean;
+  /** 이 코스를 받아 간 횟수 (추천 코스 카드의 'N명이 받았어요') */
+  copies?: number;
+  /** 추천 코스를 받아 만든 코스면 원본 코스 id */
+  copiedFrom?: string;
+  /** 완주 공유 링크 /c/{shareId} */
+  shareId?: string;
 }
 
 export interface DropBody {
@@ -99,6 +111,8 @@ export interface DropBody {
   example: string;
   connection?: string;
   takeaway: string;
+  /** 주요 내용 개조식, 줄마다 "- " (이 필드가 생기기 전 Drop에는 없다) */
+  points?: string;
 }
 
 export interface Source {
