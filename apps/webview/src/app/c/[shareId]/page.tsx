@@ -17,6 +17,8 @@ export async function generateMetadata({ params }: { params: { shareId: string }
 export default async function SharePage({ params }: { params: { shareId: string } }) {
   const card = await shareCard(params.shareId);
   if (!card) notFound();
+  // 앱 스토어 주소가 있을 때만 설치 안내를 붙인다
+  const storeUrl = process.env.NEXT_PUBLIC_APP_STORE_URL;
   return (
     <main className="flex min-h-dvh flex-col bg-shape-brand px-7 pb-8 pt-12 text-txt-white-primary">
       <p className="text-sm font-bold text-txt-white-secondary">코스 완주 · {card.completedLabel}</p>
@@ -33,11 +35,16 @@ export default async function SharePage({ params }: { params: { shareId: string 
         </div>
       ) : null}
       <Link
-        href={`/start?topic=${encodeURIComponent(card.topic)}`}
+        href={`/start?topic=${encodeURIComponent(card.topic)}&go=1`}
         className="mt-5 flex h-14 items-center justify-center rounded-full bg-shape-white text-base font-bold text-txt-point"
       >
         나도 ‘{card.topic}’ 코스 받기
       </Link>
+      {storeUrl ? (
+        <a href={storeUrl} className="mt-2 flex min-h-11 items-center justify-center text-sm font-semibold text-txt-white-primary underline">
+          앱으로 매일 받기
+        </a>
+      ) : null}
       <p className="mt-3 text-center text-sm font-bold">미니커버리 · 하루 한 편 교양</p>
     </main>
   );

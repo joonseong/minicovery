@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import type { ReactNode } from 'react';
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * 디자인 캔버스(미니커버리 앱 디자인)의 공통 요소.
@@ -214,7 +214,14 @@ const OUTLINE =
 type BtnProps = { children: ReactNode; href?: string; onClick?: () => void; disabled?: boolean; replace?: boolean; className?: string };
 
 function Btn({ base, children, href, onClick, disabled, replace, className }: BtnProps & { base: string }) {
-  if (disabled) return <div aria-disabled="true" className={cx(DISABLED, className)}>{children}</div>;
+  // 비활성도 진짜 버튼으로 (보조 기술이 버튼으로 읽고, disabled 상태를 알린다)
+  if (disabled) {
+    return (
+      <button type="button" disabled className={cx(DISABLED, className)}>
+        {children}
+      </button>
+    );
+  }
   if (href) {
     return (
       <Link href={href} replace={replace} className={cx(base, className)} onClick={onClick}>
@@ -274,6 +281,32 @@ export function Loading({ label }: { label: string }) {
     <div className="flex items-center gap-3 py-4">
       <span className="mc-pulse h-2 w-2 rounded-full bg-shape-brand" />
       <span className="text-sm text-txt-black-tertiary">{label}</span>
+    </div>
+  );
+}
+
+/* ---------- 토스트 (짧은 결과 안내, 3초 뒤 사라짐) ---------- */
+
+export function useToast(ms = 3000): [string, (message: string) => void] {
+  const [message, setMessage] = useState('');
+  const timer = useRef<ReturnType<typeof setTimeout>>();
+  const show = useCallback(
+    (m: string) => {
+      setMessage(m);
+      clearTimeout(timer.current);
+      timer.current = setTimeout(() => setMessage(''), ms);
+    },
+    [ms],
+  );
+  useEffect(() => () => clearTimeout(timer.current), []);
+  return [message, show];
+}
+
+export function Toast({ message }: { message: string }) {
+  if (!message) return null;
+  return (
+    <div role="status" aria-live="polite" className="mc-in pointer-events-none absolute inset-x-5 bottom-24 z-50 flex justify-center">
+      <span className="rounded-full bg-shape-black px-5 py-3 text-center text-sm font-semibold text-txt-white-primary">{message}</span>
     </div>
   );
 }

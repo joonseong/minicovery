@@ -69,60 +69,70 @@ export default async function MapPage() {
           <div className="flex flex-col gap-1">
             <h2 className="text-lg font-semibold">분야별 학습</h2>
             <p className="text-sm text-txt-black-secondary">
-              + 표시는 배운 주제와 이어지는 다음 추천 주제예요. 누르면 새 코스를 만들어요.
+              점선 동그라미(+)는 배운 주제와 이어지는 다음 추천 주제예요. 누르면 바로 새 코스를 만들어요.
               {d.usage ? ` (Plus · 새 코스 ${d.usage.coursesLeft}개 남음)` : ' 무료는 한 번에 코스 1개를 배울 수 있어요.'}
             </p>
           </div>
           {d.regions.length === 0 ? (
             <p className="rounded-2xl bg-shape-depth1 p-5 text-sm text-txt-black-secondary">첫 코스를 만들면 여기에 배운 주제가 쌓여요.</p>
           ) : null}
-          {d.regions.map(r => (
-            <article key={r.name} className="flex flex-col gap-4 rounded-[20px] border border-border-div p-5">
-              <div className="flex flex-col gap-2">
-                <div className="flex items-baseline justify-between gap-3">
-                  <h3 className="text-lg font-semibold">{r.name}</h3>
-                  <span className={r.done ? 'flex-shrink-0 text-sm font-bold text-txt-point' : 'flex-shrink-0 text-sm font-bold text-txt-black-tertiary'}>
-                    {r.done} / {r.places.length}개 배움
-                  </span>
+          {d.regions.map(r => {
+            // 진도의 분모에 '다음 추천(안개)'은 넣지 않는다 (목표처럼 보이지 않게)
+            const going = r.places.filter(p => p.state === 'going' || p.state === 'here').length;
+            const fog = r.places.filter(p => p.state === 'fog').length;
+            return (
+              <article key={r.name} className="flex flex-col gap-4 rounded-[20px] border border-border-div p-5">
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <h3 className="text-lg font-semibold">{r.name}</h3>
+                    <span className={r.done ? 'flex-shrink-0 text-sm font-bold text-txt-point' : 'flex-shrink-0 text-sm font-bold text-txt-black-tertiary'}>
+                      다 배움 {r.done}
+                      <span className="font-semibold text-txt-black-tertiary">
+                        {' '}
+                        · 배우는 중 {going} · 다음 추천 {fog}
+                      </span>
+                    </span>
+                  </div>
+                  {r.done + going ? <Progress value={r.done / (r.done + going)} height={6} /> : null}
                 </div>
-                <Progress value={r.done / r.places.length} height={6} />
-              </div>
-              <ul className="flex flex-col gap-2">
-                {r.places.map(p => (
-                  <li key={p.name}>
-                    <Link
-                      href={p.href}
-                      className={
-                        p.state === 'fog'
-                          ? 'flex min-h-14 items-center gap-3 rounded-2xl bg-shape-white py-2 pl-2 pr-4'
-                          : 'flex min-h-14 items-center gap-3 rounded-2xl bg-shape-depth1 py-2 pl-2 pr-4'
-                      }
-                    >
-                      <span
-                        className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-shape-white"
-                        style={{ border: p.state === 'fog' ? '2px dashed #B4B5C1' : undefined }}
+                <ul className="flex flex-col gap-2">
+                  {r.places.map(p => (
+                    <li key={p.name}>
+                      <Link
+                        // 안개 주제는 새 코스 화면이 주제 검사→수준 선택까지 바로 진행한다
+                        href={p.state === 'fog' ? `${p.href}${p.href.includes('?') ? '&' : '?'}go=1` : p.href}
+                        className={
+                          p.state === 'fog'
+                            ? 'flex min-h-14 items-center gap-3 rounded-2xl bg-shape-white py-2 pl-2 pr-4'
+                            : 'flex min-h-14 items-center gap-3 rounded-2xl bg-shape-depth1 py-2 pl-2 pr-4'
+                        }
                       >
-                        <Dot p={p} />
-                      </span>
-                      <span className="flex min-w-0 flex-1 flex-col">
-                        <span className={p.state === 'fog' ? 'text-base text-txt-black-secondary' : 'text-base font-bold'}>{p.name}</span>
                         <span
-                          className={
-                            p.state === 'done' ? 'text-sm text-txt-point' : p.state === 'fog' ? 'text-sm text-txt-black-tertiary' : 'text-sm text-txt-black-secondary'
-                          }
+                          className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-shape-white"
+                          style={{ border: p.state === 'fog' ? '2px dashed #B4B5C1' : undefined }}
                         >
-                          {p.status}
+                          <Dot p={p} />
                         </span>
-                      </span>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                        <path d="m9 5 7 7-7 7" stroke="#B4B5C1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </article>
-          ))}
+                        <span className="flex min-w-0 flex-1 flex-col">
+                          <span className={p.state === 'fog' ? 'text-base text-txt-black-secondary' : 'text-base font-bold'}>{p.name}</span>
+                          <span
+                            className={
+                              p.state === 'done' ? 'text-sm text-txt-point' : p.state === 'fog' ? 'text-sm text-txt-black-tertiary' : 'text-sm text-txt-black-secondary'
+                            }
+                          >
+                            {p.status}
+                          </span>
+                        </span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                          <path d="m9 5 7 7-7 7" stroke="#B4B5C1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            );
+          })}
         </section>
       </Main>
       <BottomNav active="map" />

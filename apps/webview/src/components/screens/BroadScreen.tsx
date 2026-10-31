@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { checkTopic, levelHref } from '@/lib/client/start';
+import { josa } from '@/lib/josa';
 
 import { LimitSheet, MonthlySheet, ReplaceSheet } from '../QuotaSheets';
 import { AppHeader, BottomNav, Main, Screen } from '../ui';
@@ -52,7 +53,10 @@ export function BroadScreen({ topic, suggestions, quota, currentTopic, replace, 
         <section className="mt-6 flex flex-col gap-4 rounded-2xl bg-shape-depth1 p-5">
           <div className="flex flex-col gap-1">
             <h2 className="text-lg font-semibold">조금 좁혀 볼까요?</h2>
-            <p className="text-sm text-txt-black-secondary">‘{topic}’은 범위가 넓어서 한 코스로 담기 어려워요. 이 중에서 골라 주세요.</p>
+            {/* 조사는 따옴표 안 단어의 받침으로 고른다 */}
+            <p className="text-sm text-txt-black-secondary">
+              ‘{topic}’{josa(topic, '은/는').slice(topic.length)} 범위가 넓어서 한 코스로 담기 어려워요. 이 중에서 골라 주세요.
+            </p>
           </div>
           <div className="flex flex-wrap gap-2">
             {suggestions.map(s => (

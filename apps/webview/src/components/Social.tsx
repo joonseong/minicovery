@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import { canAppleSignIn, canSocialSignIn, nativeAppleSignIn, nativeGoogleSignIn, nativeKakaoSignIn } from '@/lib/client/bridge';
+import { setFlash } from '@/lib/client/flash';
 import { postJson } from '@/lib/client/ndjson';
 
 import { cx } from './ui';
@@ -31,21 +32,30 @@ export function SocialButtons({
   const base = 'relative flex items-center justify-center rounded-xl text-base font-semibold';
 
   /** 앱에서 토큰을 받아 서버에 넘긴다. 사용자가 닫은 경우(canceled)는 조용히 둔다 */
-  const signIn = async (name: string, url: string, field: string, getToken: () => Promise<{ token?: string; error?: string }>) => {
+  const signIn = async (
+    name: string,
+    url: string,
+    field: string,
+    getToken: () => Promise<{ token?: string; extra?: Record<string, string | undefined>; error?: string }>,
+  ) => {
     setError('');
     const r = await getToken();
     if (!r.token) {
       if (r.error && r.error !== 'canceled') setError(`${name} 로그인을 하지 못했어요. 다시 시도해 주세요.`);
       return;
     }
-    const res = await postJson(url, { [field]: r.token });
-    if (res.ok) onDone();
-    else setError(`${name} 로그인을 확인하지 못했어요.`);
+    const res = await postJson(url, { ...r.extra, [field]: r.token });
+    if (res.ok) {
+      // 도착한 화면에서 한 번 보여 준다
+      setFlash('학습 기록이 계정에 저장됐어요');
+      onDone();
+    } else setError(`${name} 로그인을 확인하지 못했어요.`);
   };
   const signInApple = () =>
     signIn('Apple', '/api/auth/apple', 'identityToken', async () => {
       const r = await nativeAppleSignIn();
-      return { token: r.identityToken, error: r.error };
+      // authorizationCode는 계정 삭제 때 Apple 토큰을 revoke하는 데 쓴다 (서버가 받으면 저장)
+      return { token: r.identityToken, extra: { authorizationCode: r.authorizationCode }, error: r.error };
     });
   const signInKakao = () =>
     signIn('카카오', '/api/auth/kakao', 'accessToken', async () => {

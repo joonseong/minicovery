@@ -25,15 +25,16 @@ export function EasyScreen(props: { dropId: string; title: string; courseTitle: 
   }, [easy, props.dropId, attempt]);
 
   const done = async () => {
-    if (completing) return;
+    if (completing || result) return;
     if (props.completed) {
       window.location.replace('/today');
       return;
     }
     setCompleting(true);
     const res = await postJson<CompleteResult>(`/api/drops/${props.dropId}/complete`, { signal: 'confused' });
+    // 시트가 떠 있는 동안 뒤 버튼이 '저장하는 중…'으로 남지 않게
+    setCompleting(false);
     if (res.ok) setResult(res.data);
-    else setCompleting(false);
   };
 
   return (
@@ -44,7 +45,7 @@ export function EasyScreen(props: { dropId: string; title: string; courseTitle: 
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4" stroke="#18715B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          더 쉽게 다시 설명했어요
+          {easy ? '더 쉽게 다시 설명했어요' : failed ? '더 쉽게 다시 설명' : '더 쉽게 다시 쓰는 중'}
         </p>
         <h1 className="mt-3 text-2xl font-bold tracking-[-1px]">{props.title}</h1>
         {easy ? (

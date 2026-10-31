@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 
 import { CourseScreen } from '@/components/screens/CourseScreen';
-import { activeCourses, completedToday, openAllStatus, pickedCourseId, plusUsage } from '@/lib/service';
+import { activeCourses, completedToday, isPlus, openAllStatus, pickedCourseId, plusUsage } from '@/lib/service';
 import { currentUser } from '@/lib/session';
 import { getStore } from '@/lib/store';
 import { LEVEL_LABEL } from '@/lib/types';
@@ -14,7 +14,7 @@ export default async function CoursePage({ params }: { params: { id: string } })
   const course = await store.getCourse(params.id);
   if (!course || course.userId !== user.id || course.status === 'deleted') notFound();
   const drops = await store.listDrops(course.id);
-  const next = drops.find(d => !d.completedAt);
+  const next = drops.find(d => !d.completedAt && d.status !== 'skipped');
   const doneToday = await completedToday(user.id);
   const items = await activeCourses(user.id);
   const picked = pickedCourseId(user, items);
@@ -28,7 +28,7 @@ export default async function CoursePage({ params }: { params: { id: string } })
       courseId={course.id}
       title={course.title}
       meta={`${LEVEL_LABEL[course.level]} · ${course.category}`}
-      drops={drops.map(d => ({ id: d.id, index: d.index, title: d.title, done: Boolean(d.completedAt) }))}
+      drops={drops.map(d => ({ id: d.id, index: d.index, title: d.title, done: Boolean(d.completedAt), skipped: d.status === 'skipped' }))}
       nextId={course.status === 'active' ? next?.id : undefined}
       doneToday={Boolean(doneToday)}
       isPicked={picked === course.id}
@@ -38,7 +38,11 @@ export default async function CoursePage({ params }: { params: { id: string } })
       openedAll={Boolean(course.openedAllAt)}
       canOpenAll={openAll.available}
       openAllNext={usage?.resetLabel ?? ''}
+      // Plus인데 이번 달 전체 열기를 이미 썼으면 비활성 줄로 남긴다
+      openAllUsedUntil={isPlus(user) && !openAll.available ? openAll.nextLabel ?? usage?.resetLabel : undefined}
       nextTomorrowTopic={nextTomorrow}
+      shared={Boolean(course.shared)}
+      copied={Boolean(course.copiedFrom)}
     />
   );
 }

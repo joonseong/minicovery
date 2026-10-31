@@ -7,7 +7,7 @@ import { nativeRequestReview, openAppSettings, requestPushPermission } from '@/l
 import { postJson } from '@/lib/client/ndjson';
 
 import { SocialButtons } from './Social';
-import { PrimaryButton, Sheet, TextButton } from './ui';
+import { PrimaryButton, Sheet, TextButton, Toast, useToast } from './ui';
 
 export interface CompleteResult {
   firstEver: boolean;
@@ -28,12 +28,15 @@ export function afterCompleteHref(r: CompleteResult, dropId: string) {
 }
 
 /**
- * Drop을 다 읽은 뒤 순서대로: 알림 권한 안내(알림이 꺼져 있으면 3일에 한 번) → 가입 안내(첫 Drop, 임시 계정) → 완료 화면.
+ * Drop을 다 읽은 뒤: 알림 권한 안내 또는 가입 안내(첫 Drop, 임시 계정) 중 하나만 → 완료 화면.
+ * 한 번의 완료에 시트를 두 개 연속으로 띄우지 않는다. 알림을 물었으면 가입 권유는 다음 완료로 미룬다.
  * 다른 팝업이 없는 날 몇 편째(3·10·30편)에는 완료 화면 위로 App Store 리뷰를 요청한다.
  */
 export function AfterComplete({ result, dropId }: { result: CompleteResult | null; dropId: string }) {
   const router = useRouter();
   const [step, setStep] = useState<'notify' | 'signup' | 'go' | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [toast, showToast] = useToast(2500);
   const next = result ? afterCompleteHref(result, dropId) : '/today';
 
   useEffect(() => {
@@ -47,7 +50,38 @@ export function AfterComplete({ result, dropId }: { result: CompleteResult | nul
     router.replace(next);
   }, [step, next, router, result]);
 
-  const afterNotify = () => setStep(result?.askSignup ? 'signup' : 'go');
+  // 토스트를 읽을 시간을 주고 넘어간다
+  const goSoon = (ms: number) => setTimeout(() => setStep('go'), ms);
+
+  const allow = async () => {
+    if (busy) return;
+    setBusy(true);
+    const r = await requestPushPermission();
+    if (r.granted) {
+      await postJson('/api/me/notify', { permission: 'granted', pushToken: r.token });
+      showToast('알림을 켰어요. 시간은 설정에서 바꿀 수 있어요');
+      goSoon(1200);
+      return;
+    }
+    if (r.unavailable) {
+      // 결과를 못 받은 건 거부가 아니다 (C3): 다음에 다시 묻도록 '나중에'로 둔다
+      await postJson('/api/me/notify', { later: true });
+      showToast('지금은 알림을 켤 수 없어요. 설정에서 다시 시도해 주세요');
+      goSoon(1800);
+      return;
+    }
+    await postJson('/api/me/notify', { permission: 'denied' });
+    if (result?.notifyDenied) openAppSettings();
+    else showToast('휴대폰 설정에서 미니커버리 알림을 켤 수 있어요');
+    goSoon(1200);
+  };
+
+  const later = async (never: boolean) => {
+    if (busy) return;
+    setBusy(true);
+    await postJson('/api/me/notify', never ? { never: true } : { later: true });
+    setStep('go');
+  };
 
   return (
     <>
@@ -62,19 +96,11 @@ export function AfterComplete({ result, dropId }: { result: CompleteResult | nul
         <p className="mt-2 text-base text-txt-black-secondary">
           새 Drop은 매일 0시에 열려요. 알림은 하루 한 번, 오늘 읽은 시간쯤 아직 안 읽었을 때만 보내요.
         </p>
-        <p className="mt-1 text-sm text-txt-black-secondary">밤 9시~아침 8시에 읽었다면 아침 8시로 맞춰요. 시간은 설정에서 바꿀 수 있어요.</p>
-        <div className="mt-8 flex flex-col gap-2 pb-2">
-          <PrimaryButton
-            onClick={async () => {
-              const r = await requestPushPermission();
-              await postJson('/api/me/notify', { permission: r.granted ? 'granted' : 'denied', pushToken: r.token });
-              if (!r.granted && result?.notifyDenied) openAppSettings();
-              afterNotify();
-            }}
-          >
-            알림 받기
-          </PrimaryButton>
-          <TextButton onClick={afterNotify}>나중에</TextButton>
+        <p className="mt-1 text-sm text-txt-black-secondary">밤 9시~아침 8시에 읽었다면 아침 8시로 맞춰요.</p>
+        <div className="mt-8 flex flex-col gap-1 pb-2">
+          <PrimaryButton onClick={() => void allow()}>{busy ? '확인하는 중…' : '알림 받기'}</PrimaryButton>
+          <TextButton onClick={() => void later(false)}>나중에</TextButton>
+          <TextButton onClick={() => void later(true)}>다시 묻지 않기</TextButton>
         </div>
       </Sheet>
 
@@ -96,6 +122,7 @@ export function AfterComplete({ result, dropId }: { result: CompleteResult | nul
           <p className="text-center text-sm text-txt-black-secondary">지금은 이 기기에만 저장돼요. 나중에 가입해도 그대로 옮겨져요.</p>
         </div>
       </Sheet>
+      <Toast message={toast} />
     </>
   );
 }
