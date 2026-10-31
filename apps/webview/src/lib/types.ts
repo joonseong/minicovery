@@ -49,6 +49,28 @@ export interface User {
   openAllAt?: string;
   /** 다 배운 주제 기록. 코스를 지워도 남는다 (캐릭터 단계 기준) */
   learned?: LearnedTopic[];
+  /** 알림 재질문: '나중에'·거절 횟수. 1회 뒤 7일, 2회부터 30일 간격으로 다시 묻는다 */
+  notifyDeclines?: number;
+  /** '다시 묻지 않기' — 완료 뒤 알림 시트와 홈 배너를 더 보여 주지 않는다 */
+  notifyNever?: boolean;
+  /** 단계가 올랐는데 아직 /levelup 화면을 보지 않았을 때의 단계 key (한 번 보여 주고 지운다) */
+  pendingLevelUp?: string;
+  /** 로그인 때 기기 임시 계정의 진행 중 코스를 계정에 합쳤음을 홈에서 한 번 알린다 */
+  mergeNotice?: { topics: string[]; at: string };
+  /** App Store 거래 환경. Sandbox(TestFlight·심사)는 어드민에서 구분한다 */
+  plusEnv?: 'Sandbox' | 'Production';
+  /** 자동 갱신 켜짐 여부 (renewalInfo.autoRenewStatus) */
+  plusAutoRenew?: boolean;
+  /** 결제 실패 유예 기간 끝 (renewalInfo.gracePeriodExpiresDate). 이 시각까지는 Plus로 본다 */
+  plusGraceUntil?: string;
+  /** 비밀번호 재설정 토큰의 sha256 해시(base64url)와 만료 시각 */
+  passwordReset?: { hash: string; expiresAt: string };
+  /** Sign in with Apple refresh token (계정 삭제 때 revoke용, Apple 키 환경 변수가 있을 때만 저장) */
+  appleRefreshToken?: string;
+  /** /api/topic/check를 통과한 주제 (24시간, 최근 10개). 코스 만들기는 이 목록에 있는 주제만 받는다 */
+  approvedTopics?: { topic: string; category: string; taskType: TaskType; at: string }[];
+  /** 익명 사용자가 코스를 만들 때의 IP 해시 (IP당 하루 생성 한도) */
+  ipHash?: string;
 }
 
 export interface LearnedTopic {
@@ -126,7 +148,11 @@ export interface Drop {
   userId: string;
   index: number;
   title: string;
-  status: 'pending' | 'generating' | 'ready' | 'failed';
+  /** skipped: 모델이 거절한 Drop. 하루 한 편·완주 계산에서 빠지고 다음 Drop으로 넘어간다 */
+  status: 'pending' | 'generating' | 'ready' | 'failed' | 'skipped';
+  /** generating으로 바꾼 시각. 실시간 6분·배치 20시간이 지나면 멈춘 것으로 보고 다시 만든다 */
+  generatingAt?: string;
+  skipReason?: 'refused';
   body?: DropBody;
   sources: Source[];
   /** 병렬 검증에서 고친 경우 */
@@ -174,6 +200,8 @@ export interface Report {
   userId: string;
   dropId: string;
   at: string;
+  /** 신고 사유 (틀린 사실 / 이해 안 됨 / 부적절) */
+  reason?: 'wrong' | 'unclear' | 'inappropriate';
 }
 
 export interface FailureLog {

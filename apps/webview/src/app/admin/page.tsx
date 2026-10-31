@@ -1,19 +1,31 @@
-import { notFound } from 'next/navigation';
+import { cookies, headers } from 'next/headers';
+import { notFound, redirect } from 'next/navigation';
 
 import { FeatureToggle } from '@/components/admin/FeatureToggle';
+import { ADMIN_COOKIE, adminTokenOk } from '@/lib/auth';
 import { sharedCandidates } from '@/lib/learning';
 import { adminSummary } from '@/lib/metrics';
 import { getStore } from '@/lib/store';
 
 export const dynamic = 'force-dynamic';
 
-/** 최소 어드민: 지표 요약, 오류 신고, 생성 실패, 비용 (PRD §31) */
+/**
+ * 최소 어드민: 지표 요약, 오류 신고, 생성 실패, 비용 (PRD §31).
+ * 접근: 쿠키(mc_admin) 또는 x-admin-token 헤더. /admin?token=… 으로 오면 쿠키를 심는 라우트로 보내 주소에서 토큰을 지운다
+ */
 export default async function AdminPage({ searchParams }: { searchParams: { token?: string } }) {
-  if (!process.env.ADMIN_TOKEN || searchParams.token !== process.env.ADMIN_TOKEN) notFound();
+  if (!process.env.ADMIN_TOKEN) notFound();
+  if (searchParams.token) {
+    if (!adminTokenOk(searchParams.token)) notFound();
+    redirect(`/api/admin/session?token=${encodeURIComponent(searchParams.token)}`);
+  }
+  if (!adminTokenOk(cookies().get(ADMIN_COOKIE)?.value) && !adminTokenOk(headers().get('x-admin-token'))) notFound();
+
   const s = await adminSummary();
   const store = getStore();
   const shared = await sharedCandidates();
   const reported = await Promise.all(s.reports.map(async r => ({ r, drop: await store.getDrop(r.dropId) })));
+  const REASON: Record<string, string> = { wrong: '틀린 사실', unclear: '이해 안 됨', inappropriate: '부적절' };
 
   const cards: [string, string | number][] = [
     ['사용자', s.users],
@@ -27,6 +39,7 @@ export default async function AdminPage({ searchParams }: { searchParams: { toke
     ['오류 신고율 (상한 2%)', `${s.reportRate}%`],
     ['알림 허용', s.notifyGranted],
     ['코스 완료자 / 사전 구독 신청', `${s.courseCompleters} / ${s.presubscribed}`],
+    ['Plus 구독자 (그중 Sandbox)', `${s.plusUsers} (${s.plusSandbox})`],
   ];
 
   return (
@@ -45,6 +58,7 @@ export default async function AdminPage({ searchParams }: { searchParams: { toke
         {reported.map(({ r, drop }) => (
           <li key={r.id} className="rounded-lg border border-border-div p-2">
             {r.at.slice(0, 16)} · {drop?.title ?? r.dropId}
+            {r.reason ? ` · ${REASON[r.reason] ?? r.reason}` : ''}
           </li>
         ))}
       </ul>
@@ -56,7 +70,7 @@ export default async function AdminPage({ searchParams }: { searchParams: { toke
             <span>
               {c.title} · {c.category} · {c.outline.length}편 · 받음 {c.copies ?? 0}
             </span>
-            <FeatureToggle courseId={c.id} featured={Boolean(c.featured)} token={searchParams.token!} />
+            <FeatureToggle courseId={c.id} featured={Boolean(c.featured)} />
           </li>
         ))}
       </ul>

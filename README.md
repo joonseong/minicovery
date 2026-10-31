@@ -31,7 +31,7 @@ pnpm --filter webview dev        # http://localhost:3100
 | 경로 | 주기 | 하는 일 |
 |---|---|---|
 | `POST /api/cron/nightly` | 매일 밤 1회 (예: 02:00 KST) | 진행 중인 코스마다 다음 Drop을 Batch API로 생성 요청 |
-| `POST /api/cron/collect` | 30분마다 | 끝난 Batch 결과 저장 + 사실 검증 |
+| `POST /api/cron/collect` | 10분마다 (Supabase pg_cron, `0006_review_fixes.sql`) | 끝난 Batch 결과 저장 + 사실 검증. 겹쳐 돌아도 이미 저장한 Drop은 건너뛴다 |
 | `POST /api/cron/notify` | 10분마다 | 알림 시각이 된 사용자에게 다음 Drop 푸시 (21~08시 제외) |
 
 ## 앱 껍데기 실행 (아직 빌드 전)

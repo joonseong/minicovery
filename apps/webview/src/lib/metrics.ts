@@ -1,4 +1,5 @@
 import { USD_KRW } from './ai/pricing';
+import { isPlus } from './service';
 import { getStore } from './store';
 import { daysBetween, kstDate } from './util';
 
@@ -48,6 +49,8 @@ export async function adminSummary() {
   const courseCompleters = new Set(events.filter(e => e.name === 'course_completed').map(e => e.userId));
   const presub = new Set(events.filter(e => e.name === 'presubscribe').map(e => e.userId));
   const shown = events.filter(e => e.name === 'drop_read').length;
+  // Plus 구독자. Sandbox(TestFlight·심사 계정)는 매출이 아니라서 따로 센다
+  const plusUsers = users.filter(isPlus);
 
   return {
     users: users.length,
@@ -63,6 +66,8 @@ export async function adminSummary() {
     notifyGranted: users.filter(u => u.notifyPermission === 'granted').length,
     courseCompleters: courseCompleters.size,
     presubscribed: presub.size,
+    plusUsers: plusUsers.length,
+    plusSandbox: plusUsers.filter(u => u.plusEnv === 'Sandbox').length,
     reports: reports.slice(0, 50),
     failures: failures.slice(-50).reverse(),
   };

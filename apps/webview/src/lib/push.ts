@@ -10,6 +10,20 @@ interface ServiceAccount {
   private_key: string;
 }
 
+interface FcmError {
+  error?: {
+    message?: string;
+    details?: { errorCode?: string; fieldViolations?: { field?: string }[] }[];
+  };
+}
+
+export interface PushResult {
+  ok: boolean;
+  error?: string;
+  /** 토큰이 더는 유효하지 않다 (앱 삭제·재설치). 호출자가 user.pushToken을 지운다 */
+  invalidToken?: boolean;
+}
+
 let cachedToken: { token: string; expiresAt: number } | null = null;
 
 function serviceAccount(): ServiceAccount | null {
@@ -46,7 +60,7 @@ async function accessToken(sa: ServiceAccount) {
 export async function sendPush(
   token: string,
   message: { title: string; body: string; data?: Record<string, string> },
-): Promise<{ ok: boolean; error?: string }> {
+): Promise<PushResult> {
   const sa = serviceAccount();
   if (!sa) return { ok: false, error: 'FIREBASE_SERVICE_ACCOUNT not set' };
   try {
@@ -58,9 +72,15 @@ export async function sendPush(
       }),
     });
     if (res.ok) return { ok: true };
-    // 예: THIRD_PARTY_AUTH_ERROR(APNs 키 문제), UNREGISTERED(앱 삭제로 토큰 만료)
-    const detail = (await res.json().catch(() => null)) as { error?: { details?: { errorCode?: string }[] } } | null;
-    return { ok: false, error: `fcm ${res.status} ${detail?.error?.details?.find(d => d.errorCode)?.errorCode ?? ''}`.trim() };
+    // 예: THIRD_PARTY_AUTH_ERROR(APNs 키 문제), UNREGISTERED(앱 삭제로 토큰 만료), INVALID_ARGUMENT(토큰 형식이 틀림)
+    const detail = (await res.json().catch(() => null)) as FcmError | null;
+    const details = detail?.error?.details ?? [];
+    const code = details.find(d => d.errorCode)?.errorCode ?? '';
+    // INVALID_ARGUMENT는 본문 오류일 수도 있으니 토큰 필드를 지목했을 때만 토큰 무효로 본다
+    const aboutToken =
+      details.some(d => d.fieldViolations?.some(v => /token/i.test(v.field ?? ''))) || /token/i.test(detail?.error?.message ?? '');
+    const invalidToken = code === 'UNREGISTERED' || (code === 'INVALID_ARGUMENT' && aboutToken);
+    return { ok: false, error: `fcm ${res.status} ${code}`.trim(), invalidToken };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : String(error) };
   }
