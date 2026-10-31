@@ -7,7 +7,7 @@ import { getStore } from '@/lib/store';
 
 export const dynamic = 'force-dynamic';
 
-export default async function DropDonePage({ params }: { params: { id: string } }) {
+export default async function DropDonePage({ params, searchParams }: { params: { id: string }; searchParams: { signup?: string } }) {
   const user = await currentUser();
   const store = getStore();
   const drop = await store.getDrop(params.id);
@@ -38,6 +38,7 @@ export default async function DropDonePage({ params }: { params: { id: string } 
       openedAll={Boolean(course.openedAllAt)}
       dropIndex={drop.index}
       nextDropId={next?.id}
+      askSignup={searchParams.signup === '1' && user.anon}
     />
   );
 }

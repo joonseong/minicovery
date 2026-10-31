@@ -668,6 +668,7 @@ export async function completeDrop(user: User, dropId: string, signal: Understan
     !user.notifyNever &&
     (!user.notifyAskedAt || Date.now() - Date.parse(user.notifyAskedAt) > notifyAskIntervalMs(user));
   if (askNotify) user.notifyAskedAt = nowIso();
+  // 첫 Drop을 마친 임시 계정에는 알림 시트 다음에 가입 시트도 띄운다 (2026-11-01 대표 결정)
   const askSignup = firstEver && user.anon;
   await store.saveUser(user);
 
