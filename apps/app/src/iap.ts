@@ -1,14 +1,17 @@
-import { NativeModules, Platform } from 'react-native';
+import { NativeEventEmitter, NativeModules, Platform } from 'react-native';
 
 /** ios/Minicovery/MinicoveryIAP.swift (StoreKit 2). 거래 확인은 서버가 한다 */
 type IapResult<T> = T & { error?: 'canceled' | 'pending' | 'not_found' | 'failed' };
 
 const native = Platform.OS === 'ios' ? NativeModules.MinicoveryIAP : null;
 
+/** Swift가 Transaction.updates 거래를 알리는 이벤트 이름 (MinicoveryIAP.transactionEvent와 같아야 한다). body는 { jws } */
+const TRANSACTION_EVENT = 'minicoveryTransaction';
+
 export const iapAvailable = () => Boolean(native);
 
-/** 첫 구독 무료 체험을 받을 수 있는지 (Apple이 계정 기준으로 판단) */
-export async function trialEligible(productId: string): Promise<{ eligible: boolean; days?: number }> {
+/** 첫 구독 무료 체험을 받을 수 있는지 (Apple이 계정 기준으로 판단). price는 표시용 현지 가격 (예: ₩3,900) */
+export async function trialEligible(productId: string): Promise<{ eligible: boolean; days?: number; price?: string }> {
   if (!native?.trialEligible) return { eligible: false };
   try {
     return await native.trialEligible(productId);
@@ -39,4 +42,13 @@ export async function entitlements(sync: boolean): Promise<IapResult<{ jws?: str
   } catch {
     return { error: 'failed' };
   }
+}
+
+/** 자동 갱신·Ask to Buy 승인 등 앱 밖에서 완료된 거래의 JWS. 돌려주는 함수로 구독을 해제한다 */
+export function onTransaction(listener: (jws: string) => void): () => void {
+  if (!native) return () => {};
+  const sub = new NativeEventEmitter(native).addListener(TRANSACTION_EVENT, (event: { jws?: unknown }) => {
+    if (typeof event?.jws === 'string') listener(event.jws);
+  });
+  return () => sub.remove();
 }

@@ -17,3 +17,6 @@ export const WEB_URL = __DEV__ ? DEV_URL : PROD_URL;
  */
 export const KAKAO_LOGIN = true;
 export const GOOGLE_IOS_CLIENT_ID = '578253666147-i5kof2k35nb9ucvsjohskp4bcnnij45u.apps.googleusercontent.com';
+
+/** App Store 구독 상품. 웹 메시지 검증용으로 apps/webview/src/lib/constants.ts의 PLUS_PRODUCT_ID와 같아야 한다 */
+export const PLUS_PRODUCT_ID = 'com.minicovery.plus.monthly';
