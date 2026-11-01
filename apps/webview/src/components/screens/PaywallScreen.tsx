@@ -9,6 +9,7 @@ import { canPurchase, isNative, nativePurchase, nativeRestore, nativeTrialEligib
 import { postJson } from '@/lib/client/ndjson';
 import type { PlusUsage } from '@/lib/service';
 
+import { Doodle } from '../Doodle';
 import { plusLeftText } from '../PlusLeft';
 import { AppHeader, CHARACTER, Footer, IconCheck, Main, PrimaryButton, Screen } from '../ui';
 
@@ -118,8 +119,7 @@ export function PaywallScreen({
       <AppHeader layout="nav" close="/today" />
       <Main className="pb-6 pt-2">
         <section className="flex flex-col items-center text-center">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={ch.face} alt={`${ch.name} 단계 캐릭터`} className="h-[72px] w-[72px] object-contain" />
+          <Doodle animal={stageKey} act={plus ? 'idle' : 'tilt'} label={`${ch.name} 단계 캐릭터`} className="h-[72px] w-[72px]" />
           <p className="mt-3 text-sm font-bold text-txt-point">{plus ? '지금 Plus를 쓰고 있어요' : head.sub}</p>
           <h1 className="mt-1 text-[28px] font-bold leading-9 tracking-[-1px]">
             {head.line1}

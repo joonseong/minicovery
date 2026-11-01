@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+import { Doodle, type DoodleAnimal } from '@/components/Doodle';
 import { AppHeader, BottomNav, Main, Progress, Screen } from '@/components/ui';
 import { CHARACTER } from '@/lib/characters';
 import { currentUser } from '@/lib/session';
@@ -7,10 +8,10 @@ import { type MapPlace, mapData } from '@/lib/views';
 
 export const dynamic = 'force-dynamic';
 
-function Dot({ p }: { p: MapPlace }) {
+function Dot({ p, animal }: { p: MapPlace; animal: DoodleAnimal }) {
   /* eslint-disable @next/next/no-img-element */
   if (p.state === 'done') return <img src="/img/flag.png" alt="다 배움" className="h-7 w-7 object-contain" />;
-  if (p.state === 'here') return <img src={CHARACTER.rabbit.still} alt="오늘 받는 코스" className="h-9 w-9 object-contain" />;
+  if (p.state === 'here') return <Doodle animal={animal} act="hop" label="오늘 받는 코스" className="h-9 w-9" />;
   if (p.state === 'going') return <img src="/img/pin.png" alt="배우는 중" className="h-7 w-7 object-contain" />;
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" role="img" aria-label="다음 추천">
@@ -47,15 +48,13 @@ export default async function MapPage() {
                 배우는 중 {d.going}개 · 다음 추천 {d.fog}개
               </span>
             </div>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={ch.full} alt={`${ch.name} 캐릭터`} className="-my-3 -mr-2 h-[120px] w-[120px] flex-shrink-0 object-contain" />
+            <Doodle animal={d.stage.key} label={`${ch.name} 캐릭터`} className="-my-3 -mr-2 h-[120px] w-[120px] flex-shrink-0" />
           </div>
           {d.stage.next ? (
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
                 <Progress value={d.learnedCount / d.stage.next.min} track="bg-shape-white" />
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={CHARACTER.cat.still} alt="다음 단계 고양이" className="h-8 w-8 flex-shrink-0 object-contain opacity-50 grayscale" />
+                <Doodle animal="cat" still label="다음 단계 고양이" className="h-8 w-8 flex-shrink-0 opacity-50 grayscale" />
               </div>
               <p className="text-sm font-semibold">
                 주제 {d.stage.next.left}개만 더 다 배우면 <span className="text-txt-point">{d.stage.next.name}</span>로 성장해요
@@ -111,7 +110,7 @@ export default async function MapPage() {
                           className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-shape-white"
                           style={{ border: p.state === 'fog' ? '2px dashed #B4B5C1' : undefined }}
                         >
-                          <Dot p={p} />
+                          <Dot p={p} animal={d.stage.key} />
                         </span>
                         <span className="flex min-w-0 flex-1 flex-col">
                           <span className={p.state === 'fog' ? 'text-base text-txt-black-secondary' : 'text-base font-bold'}>{p.name}</span>

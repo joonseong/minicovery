@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 
+import { Doodle } from '@/components/Doodle';
 import { AppHeader, Footer, Main, PrimaryButton, Screen, TextButton } from '@/components/ui';
 import { CHARACTER } from '@/lib/characters';
 import { consumeLevelUp } from '@/lib/service';
@@ -24,8 +25,7 @@ export default async function LevelUpPage({ searchParams }: { searchParams: { ne
       <AppHeader layout="nav" close={next} />
       <Main className="items-center justify-center pb-6 pt-4 text-center">
         <div className="mc-pop mt-4 flex aspect-square w-[min(224px,56vw)] items-center justify-center">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={ch.full} alt={`${ch.name} 캐릭터`} className="block h-full w-full object-contain" />
+          <Doodle animal={up.stage.key} act="cheer" label={`${ch.name} 캐릭터`} className="block h-full w-full" />
         </div>
         <h1 className="mt-4 text-[28px] font-bold leading-9 tracking-[-1px]">{up.stage.name} 단계가 됐어요!</h1>
         <p className="mt-2 text-base text-txt-black-secondary">

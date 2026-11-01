@@ -5,11 +5,12 @@ import { useEffect, useState } from 'react';
 import { josa } from '@/lib/josa';
 import type { PlusUsage } from '@/lib/service';
 
+import { Doodle } from '../Doodle';
 import { PlusLeft } from '../PlusLeft';
 import { ReplaceConfirm } from '../QuotaSheets';
 import { SignupSheet } from '../SignupSheet';
 import { TomorrowList, type TomorrowItem } from '../TomorrowList';
-import { CHARACTER, Footer, Main, OutlineButton, PrimaryButton, Screen, Sheet, AppHeader, TextButton } from '../ui';
+import { Footer, Main, OutlineButton, PrimaryButton, Screen, Sheet, AppHeader, TextButton } from '../ui';
 const LABELS = ['월', '화', '수', '목', '금', '토', '일'];
 
 export function DropDoneScreen(props: {
@@ -54,8 +55,7 @@ export function DropDoneScreen(props: {
       <AppHeader layout="nav" close="/today" />
       <Main className="pb-6 pt-2">
         <section className="flex flex-col items-center text-center">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={CHARACTER.rabbit.full} alt="기뻐하는 토끼 캐릭터" className="mc-pop aspect-square w-[min(160px,40vw)] object-contain" />
+          <Doodle animal="rabbit" act="hop" label="기뻐하는 토끼 캐릭터" className="mc-pop aspect-square w-[min(160px,40vw)]" />
           <h1 className="mt-4 text-[28px] font-bold leading-9 tracking-[-1px]">{props.openedAll ? `Drop ${n} 완료` : '오늘의 Drop 완료!'}</h1>
           {props.openedAll ? <p className="mt-1 text-sm font-semibold text-txt-point">이어서 읽을 수 있어요</p> : null}
           <p className="mt-2 text-base text-txt-black-secondary">

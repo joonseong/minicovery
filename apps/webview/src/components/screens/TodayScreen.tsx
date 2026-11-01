@@ -11,6 +11,7 @@ import type { CourseCard } from '@/lib/views';
 
 import { PlusLeft } from '../PlusLeft';
 import { RecallCard, type RecallLike } from '../RecallCard';
+import { Doodle } from '../Doodle';
 import { TomorrowList } from '../TomorrowList';
 import { AppHeader, BottomNav, CHARACTER, IconClose, Main, OutlineButton, PrimaryButton, Screen } from '../ui';
 
@@ -97,8 +98,7 @@ export function TodayScreen({
             <h1 className="text-[28px] font-bold leading-9 tracking-[-1px]">오늘의 Drop</h1>
           </div>
           <Link href="/map" aria-label={`${ch.name} 단계 · 내 학습 보기`} className="-my-5 -mr-2 flex-shrink-0">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={ch.still} alt="" className="h-24 w-24 object-contain" />
+            <Doodle animal={stage.key} act={noCourse ? 'look' : doneToday ? 'hello' : 'idle'} className="h-24 w-24" />
           </Link>
         </div>
 
