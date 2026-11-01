@@ -13,7 +13,7 @@
 2. **Vercel 환경 변수**
    - 추가: `NEXT_PUBLIC_APP_URL=https://minicovery.vercel.app`, `DAILY_AI_BUDGET_USD=50`(하루 AI 비용 상한, 달러. 넘으면 새 생성을 잠시 막는다)
    - 확인: `APPLE_IAP_KEY_ID`, `APPLE_IAP_ISSUER_ID`, `APPLE_IAP_PRIVATE_KEY`(기존 결제 검증용), `CRON_SECRET`(비어 있으면 이제 cron이 401)
-   - 출시 뒤: `IAP_ALLOW_SANDBOX=false` (TestFlight·샌드박스 구독이 운영 Plus를 켜지 못하게. 심사 중에는 비워 둔다)
+   - 출시 뒤: `IAP_ALLOW_SANDBOX=false` (TestFlight·샌드박스 구독이 운영 Plus를 켜지 못하게. 심사 중에는 비워 둔다), `ANON_IP_DAILY_LIMIT` 기본값 30 → 5로 되돌리기(코드)
    - 선택: `RESEND_API_KEY`, `MAIL_FROM`(예: `Minicovery <noreply@도메인>`) — Resend에서 보내는 도메인을 인증해야 한다. 없으면 비밀번호 재설정 화면이 "지금은 메일을 보낼 수 없어요"를 보여 준다.
    - 선택: `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY`(개발자 포털 Sign in with Apple 키 .p8) — 있으면 계정 삭제 때 Apple 토큰을 revoke한다(심사 5.1.1(v) 대비).
 3. **웹 배포**: 이 브랜치를 master에 합치면 Vercel이 배포한다. 배포 뒤 `/api/cron/collect`·`/api/cron/notify` 응답의 `took_ms`와 집계를 한 번 본다. App Store Connect › 앱 › App Store Server Notifications에서 "테스트 알림 요청"을 보내 200이 오는지 확인(서명 검증이 새로 들어감).
@@ -23,7 +23,7 @@
 ## 확인해 주실 것 (구현하며 정한 것)
 - 넓은 주제(/start/broad)의 제안 주제는 다시 검사하지 않고 바로 코스로 만들 수 있게 승인 목록에 넣었다.
 - 마지막 남은 Drop이 모델 거절로 건너뛰어지면 코스를 자동 완료(다 배운 주제에 추가)한다.
-- 익명 사용자는 같은 IP에서 하루 5명까지만 코스를 만들 수 있다(사무실·학교 Wi-Fi면 막힐 수 있음 — `ANON_IP_DAILY_LIMIT`).
+- 익명 사용자는 같은 IP에서 하루 5명까지만 코스를 만들 수 있다(사무실·학교 Wi-Fi면 막힐 수 있음). Vercel 환경 변수 `ANON_IP_DAILY_LIMIT`로도 바꿀 수 있다. **심사 중에는 코드 기본값을 30으로 올려 두었다**(애플 심사팀이 같은 IP에서 여러 기기·재설치로 테스트해도 막히지 않게). 승인 뒤 기본값을 5로 되돌린다(PR 하나).
 - Plus 월 창은 시작일 기준으로 고정하고 말일을 맞춘다(10/31 시작 → 11/30 → 12/31).
 - 모델 배분(Opus/Sonnet)은 바꾸지 않았다. Sonnet 전환 비용 추정은 리뷰 대화 참고.
 
