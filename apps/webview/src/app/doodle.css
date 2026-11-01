@@ -5,14 +5,14 @@
 .cs-svg {
   --ea: 1;
   --pa: 1;
-  --la: 13px;
+  --la: 24px;
   --ha: 11px;
 }
 .cs-svg g {
   transform-box: view-box;
 }
 .k-owl {
-  --la: 7px;
+  --la: 10px;
 }
 .k-lion {
   --ea: 0.8;
@@ -288,61 +288,157 @@
   }
 }
 .a-look .cs-look {
-  animation: cs-look 5.4s ease-in-out infinite;
+  animation: cs-look 4.6s ease-out infinite;
 }
 @keyframes cs-look {
-  0%,
-  8%,
-  90%,
-  100% {
-    transform: translateX(0);
+  0% {
+    transform: translateX(calc(0 * var(--la)));
   }
-  18%,
-  38% {
+  8% {
+    transform: translateX(calc(0 * var(--la)));
+  }
+  10.5% {
+    transform: translateX(calc(-1.12 * var(--la)));
+  }
+  13% {
     transform: translateX(calc(-1 * var(--la)));
   }
-  52%,
-  74% {
-    transform: translateX(var(--la));
+  30% {
+    transform: translateX(calc(-1 * var(--la)));
+  }
+  32.5% {
+    transform: translateX(calc(1.12 * var(--la)));
+  }
+  35% {
+    transform: translateX(calc(1 * var(--la)));
+  }
+  52% {
+    transform: translateX(calc(1 * var(--la)));
+  }
+  54.5% {
+    transform: translateX(calc(-1.12 * var(--la)));
+  }
+  57% {
+    transform: translateX(calc(-1 * var(--la)));
+  }
+  66% {
+    transform: translateX(calc(-1 * var(--la)));
+  }
+  68.5% {
+    transform: translateX(calc(0.08 * var(--la)));
+  }
+  71% {
+    transform: translateX(calc(0 * var(--la)));
+  }
+  100% {
+    transform: translateX(calc(0 * var(--la)));
   }
 }
 .a-look .cs-ear-l,
 .a-look .cs-ear-r {
-  animation: cs-look-ear 5.4s ease-in-out infinite;
+  animation: cs-look-ear 4.6s ease-out infinite;
 }
 @keyframes cs-look-ear {
-  0%,
-  8%,
-  90%,
+  0% {
+    transform: rotate(calc(0deg * var(--ea)));
+  }
+  8% {
+    transform: rotate(calc(0deg * var(--ea)));
+  }
+  10.5% {
+    transform: rotate(calc(-6deg * var(--ea)));
+  }
+  13% {
+    transform: rotate(calc(-13deg * var(--ea)));
+  }
+  15.5% {
+    transform: rotate(calc(-9deg * var(--ea)));
+  }
+  30% {
+    transform: rotate(calc(-9deg * var(--ea)));
+  }
+  32.5% {
+    transform: rotate(calc(6deg * var(--ea)));
+  }
+  35% {
+    transform: rotate(calc(13deg * var(--ea)));
+  }
+  37.5% {
+    transform: rotate(calc(9deg * var(--ea)));
+  }
+  52% {
+    transform: rotate(calc(9deg * var(--ea)));
+  }
+  54.5% {
+    transform: rotate(calc(-6deg * var(--ea)));
+  }
+  57% {
+    transform: rotate(calc(-13deg * var(--ea)));
+  }
+  59.5% {
+    transform: rotate(calc(-9deg * var(--ea)));
+  }
+  66% {
+    transform: rotate(calc(-9deg * var(--ea)));
+  }
+  68.5% {
+    transform: rotate(calc(-2deg * var(--ea)));
+  }
+  71% {
+    transform: rotate(calc(3deg * var(--ea)));
+  }
+  73.5% {
+    transform: rotate(calc(0deg * var(--ea)));
+  }
   100% {
-    transform: rotate(0);
-  }
-  18%,
-  38% {
-    transform: rotate(calc(-5deg * var(--ea)));
-  }
-  52%,
-  74% {
-    transform: rotate(calc(5deg * var(--ea)));
+    transform: rotate(calc(0deg * var(--ea)));
   }
 }
 .a-look .cs-pupils {
-  animation: cs-look-p 5.4s ease-in-out infinite;
+  animation: cs-look-p 4.6s ease-out infinite;
 }
 @keyframes cs-look-p {
-  0%,
-  8%,
-  90%,
+  0% {
+    transform: translateX(0px);
+  }
+  8% {
+    transform: translateX(0px);
+  }
+  10.5% {
+    transform: translateX(-14.56px);
+  }
+  13% {
+    transform: translateX(-13px);
+  }
+  30% {
+    transform: translateX(-13px);
+  }
+  32.5% {
+    transform: translateX(14.56px);
+  }
+  35% {
+    transform: translateX(13px);
+  }
+  52% {
+    transform: translateX(13px);
+  }
+  54.5% {
+    transform: translateX(-14.56px);
+  }
+  57% {
+    transform: translateX(-13px);
+  }
+  66% {
+    transform: translateX(-13px);
+  }
+  68.5% {
+    transform: translateX(1.04px);
+  }
+  71% {
+    transform: translateX(0px);
+  }
   100% {
-    transform: translateX(0);
-  }
-  18%,
-  38% {
-    transform: translateX(-7px);
-  }
-  52%,
-  74% {
-    transform: translateX(7px);
+    transform: translateX(0px);
   }
 }
 .a-tilt .cs-tilt {
