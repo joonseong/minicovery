@@ -1,0 +1,383 @@
+/* 성장 단계 캐릭터(Doodle) 움직임. 생성 파일 — 직접 고치지 말고 ~/Desktop/2026/minicovery/assets/character-anim/make_app.py로 다시 만든다. */
+.cs-svg {
+  overflow: visible;
+}
+.cs-svg {
+  --ea: 1;
+  --pa: 1;
+  --la: 13px;
+  --ha: 11px;
+}
+.cs-svg g {
+  transform-box: view-box;
+}
+.k-owl {
+  --la: 7px;
+}
+.k-lion {
+  --ea: 0.8;
+}
+.k-haetae {
+  --ea: 0.4;
+}
+.k-rabbit {
+  --pa: 0.45;
+}
+.cs-svg .v-happy,
+.cs-svg .v-m1,
+.cs-svg .v-wow {
+  display: none;
+}
+.f-smile .v-m1,
+.f-joy .v-m1,
+.f-joy .v-happy,
+.f-wow .v-wow {
+  display: inline;
+}
+.f-smile .v-m0,
+.f-joy .v-m0,
+.f-joy .v-eyes,
+.f-wow .v-dot {
+  display: none;
+}
+.f-smile .cs-ms {
+  transform: scaleY(1.4);
+}
+.f-joy .cs-ms {
+  transform: scaleY(1.6);
+}
+.f-smile .cs-mg,
+.f-joy .cs-mg {
+  transform: scale(1.12);
+}
+.f-smile .cs-brow,
+.f-joy .cs-brow {
+  transform: translateY(-6px);
+}
+.f-wow .cs-brow {
+  transform: translateY(-11px);
+}
+.cs-blink {
+  animation: cs-blink 7s infinite;
+}
+@keyframes cs-blink {
+  0%,
+  28%,
+  32%,
+  86%,
+  89.5%,
+  93%,
+  100% {
+    transform: scaleY(1);
+  }
+  30%,
+  87.75%,
+  91.25% {
+    transform: scaleY(0.2);
+  }
+}
+.cs-tw-l {
+  animation: cs-tw-l 6.5s ease-in-out infinite;
+}
+.cs-tw-r {
+  animation: cs-tw-r 8.3s ease-in-out infinite;
+}
+@keyframes cs-tw-l {
+  0%,
+  70%,
+  82%,
+  100% {
+    transform: rotate(0);
+  }
+  73% {
+    transform: rotate(calc(-8deg * var(--ea)));
+  }
+  76% {
+    transform: rotate(calc(4deg * var(--ea)));
+  }
+  79% {
+    transform: rotate(calc(-2deg * var(--ea)));
+  }
+}
+@keyframes cs-tw-r {
+  0%,
+  40%,
+  52%,
+  100% {
+    transform: rotate(0);
+  }
+  43% {
+    transform: rotate(calc(8deg * var(--ea)));
+  }
+  46% {
+    transform: rotate(calc(-4deg * var(--ea)));
+  }
+  49% {
+    transform: rotate(calc(2deg * var(--ea)));
+  }
+}
+.cs-bob {
+  animation: cs-bob 3.6s ease-in-out infinite;
+}
+@keyframes cs-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2.5px);
+  }
+}
+.a-hello .cs-ear-r {
+  animation: cs-wave 4.6s ease-in-out infinite;
+}
+@keyframes cs-wave {
+  0%,
+  36%,
+  100% {
+    transform: rotate(0);
+  }
+  6%,
+  18% {
+    transform: rotate(calc(16deg * var(--ea)));
+  }
+  12%,
+  24% {
+    transform: rotate(calc(-5deg * var(--ea)));
+  }
+  30% {
+    transform: rotate(calc(6deg * var(--ea)));
+  }
+}
+.a-hop .cs-hopf {
+  animation: cs-hop 2.8s ease-in-out infinite;
+}
+@keyframes cs-hop {
+  0%,
+  36%,
+  100% {
+    transform: translateY(0);
+  }
+  9% {
+    transform: translateY(calc(-1 * var(--ha)));
+  }
+  18%,
+  32% {
+    transform: translateY(0);
+  }
+  25% {
+    transform: translateY(calc(-0.45 * var(--ha)));
+  }
+}
+.a-hop .cs-ear-l {
+  animation: cs-flop-l 2.8s ease-in-out infinite;
+}
+.a-hop .cs-ear-r {
+  animation: cs-flop-r 2.8s ease-in-out infinite;
+}
+@keyframes cs-flop-l {
+  0%,
+  40%,
+  100% {
+    transform: rotate(0);
+  }
+  8% {
+    transform: rotate(calc(-10deg * var(--ea)));
+  }
+  16% {
+    transform: rotate(calc(6deg * var(--ea)));
+  }
+  24% {
+    transform: rotate(calc(-6deg * var(--ea)));
+  }
+  32% {
+    transform: rotate(calc(3deg * var(--ea)));
+  }
+}
+@keyframes cs-flop-r {
+  0%,
+  40%,
+  100% {
+    transform: rotate(0);
+  }
+  8% {
+    transform: rotate(calc(10deg * var(--ea)));
+  }
+  16% {
+    transform: rotate(calc(-6deg * var(--ea)));
+  }
+  24% {
+    transform: rotate(calc(6deg * var(--ea)));
+  }
+  32% {
+    transform: rotate(calc(-3deg * var(--ea)));
+  }
+}
+.a-cheer .cs-hopf {
+  animation: cs-cheer 1.4s ease-in-out infinite;
+}
+@keyframes cs-cheer {
+  0%,
+  55%,
+  100% {
+    transform: translateY(0);
+  }
+  25% {
+    transform: translateY(calc(-1 * var(--ha)));
+  }
+  78% {
+    transform: translateY(calc(-0.35 * var(--ha)));
+  }
+}
+.a-cheer .cs-ear-l {
+  animation: cs-wig-l 0.7s ease-in-out infinite alternate;
+}
+.a-cheer .cs-ear-r {
+  animation: cs-wig-r 0.7s ease-in-out infinite alternate;
+}
+@keyframes cs-wig-l {
+  from {
+    transform: rotate(calc(-9deg * var(--ea)));
+  }
+  to {
+    transform: rotate(calc(5deg * var(--ea)));
+  }
+}
+@keyframes cs-wig-r {
+  from {
+    transform: rotate(calc(9deg * var(--ea)));
+  }
+  to {
+    transform: rotate(calc(-5deg * var(--ea)));
+  }
+}
+.a-perk .cs-ear-l {
+  animation: cs-perk-l 4.2s ease-in-out infinite;
+}
+.a-perk .cs-ear-r {
+  animation: cs-perk-r 4.2s ease-in-out infinite;
+}
+@keyframes cs-perk-l {
+  0%,
+  92%,
+  100% {
+    transform: rotate(0) scale(1);
+  }
+  10%,
+  22%,
+  78% {
+    transform: rotate(calc(7deg * var(--ea) * var(--pa))) scale(1, 1.07);
+  }
+  16% {
+    transform: rotate(calc(11deg * var(--ea) * var(--pa))) scale(1, 1.1);
+  }
+}
+@keyframes cs-perk-r {
+  0%,
+  92%,
+  100% {
+    transform: rotate(0) scale(1);
+  }
+  10%,
+  22%,
+  78% {
+    transform: rotate(calc(-7deg * var(--ea) * var(--pa))) scale(1, 1.07);
+  }
+  16% {
+    transform: rotate(calc(-11deg * var(--ea) * var(--pa))) scale(1, 1.1);
+  }
+}
+.a-look .cs-look {
+  animation: cs-look 5.4s ease-in-out infinite;
+}
+@keyframes cs-look {
+  0%,
+  8%,
+  90%,
+  100% {
+    transform: translateX(0);
+  }
+  18%,
+  38% {
+    transform: translateX(calc(-1 * var(--la)));
+  }
+  52%,
+  74% {
+    transform: translateX(var(--la));
+  }
+}
+.a-look .cs-ear-l,
+.a-look .cs-ear-r {
+  animation: cs-look-ear 5.4s ease-in-out infinite;
+}
+@keyframes cs-look-ear {
+  0%,
+  8%,
+  90%,
+  100% {
+    transform: rotate(0);
+  }
+  18%,
+  38% {
+    transform: rotate(calc(-5deg * var(--ea)));
+  }
+  52%,
+  74% {
+    transform: rotate(calc(5deg * var(--ea)));
+  }
+}
+.a-look .cs-pupils {
+  animation: cs-look-p 5.4s ease-in-out infinite;
+}
+@keyframes cs-look-p {
+  0%,
+  8%,
+  90%,
+  100% {
+    transform: translateX(0);
+  }
+  18%,
+  38% {
+    transform: translateX(-7px);
+  }
+  52%,
+  74% {
+    transform: translateX(7px);
+  }
+}
+.a-tilt .cs-tilt {
+  animation: cs-tilt 4.8s ease-in-out infinite;
+}
+@keyframes cs-tilt {
+  0%,
+  96%,
+  100% {
+    transform: rotate(0);
+  }
+  16%,
+  72% {
+    transform: rotate(-9deg);
+  }
+}
+.a-tilt .cs-ear-l {
+  animation: cs-droop 4.8s ease-in-out infinite;
+}
+@keyframes cs-droop {
+  0%,
+  96%,
+  100% {
+    transform: rotate(0);
+  }
+  18%,
+  72% {
+    transform: rotate(calc(-7deg * var(--ea)));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cs-svg * {
+    animation: none !important;
+  }
+}
+.cs-still * {
+  animation: none !important;
+}

@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { postJson } from '@/lib/client/ndjson';
 import type { ExplainAnswer } from '@/lib/types';
 
+import { Doodle } from '../Doodle';
 import { AppHeader, CHARACTER, Main, OutlineButton, Screen, cx } from '../ui';
 
 const ANSWERS: [ExplainAnswer, string][] = [
@@ -61,8 +62,7 @@ export function CourseDoneScreen(props: {
       <AppHeader layout="nav" close="/today" />
       <Main className="pb-8 pt-2">
         <section className="flex flex-shrink-0 flex-col items-center rounded-2xl bg-shape-brand px-5 pb-7 pt-6 text-center text-txt-white-primary">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={ch.full} alt={`기뻐하는 ${ch.name} 캐릭터`} className="mc-pop aspect-square w-[min(176px,44vw)] object-contain" />
+          <Doodle animal={props.stageKey} act="cheer" label={`기뻐하는 ${ch.name} 캐릭터`} className="mc-pop aspect-square w-[min(176px,44vw)]" />
           <h1 className="mt-3 text-[28px] font-bold leading-9 tracking-[-1px]">{props.first ? '첫 주제를 다 배웠어요!' : '주제를 하나 더 다 배웠어요!'}</h1>
           <p className="mt-2 text-base font-semibold">
             {props.next ? `주제 ${props.next.left}개를 더 배우면 ${props.next.name}로 성장해요.` : `다 배운 주제가 ${props.learnedCount}개가 됐어요.`}
@@ -72,8 +72,7 @@ export function CourseDoneScreen(props: {
               <div className="h-2 flex-1 overflow-hidden rounded-full bg-[rgba(255,255,255,0.3)]">
                 <div className="h-full rounded-full bg-shape-white" style={{ width: `${Math.round((props.learnedCount / props.next.min) * 100)}%` }} />
               </div>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={CHARACTER[nextKey].still} alt={`다음 단계 ${props.next.name}`} className="h-8 w-8 flex-shrink-0 object-contain opacity-70 brightness-150 grayscale" />
+              <Doodle animal={nextKey} still label={`다음 단계 ${props.next.name}`} className="h-8 w-8 flex-shrink-0 opacity-70 brightness-150 grayscale" />
             </div>
           ) : null}
         </section>
