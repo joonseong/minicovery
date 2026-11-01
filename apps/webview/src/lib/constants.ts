@@ -51,8 +51,9 @@ export const TOPIC_MAX_LENGTH = 100;
 /** 주제 검사를 통과한 주제를 코스 만들기에 쓸 수 있는 시간·개수 */
 export const APPROVED_TOPIC_HOURS = 24;
 export const APPROVED_TOPIC_MAX = 10;
-/** 같은 IP에서 하루에 코스를 만들 수 있는 익명 사용자 수 */
-export const ANON_IP_DAILY_LIMIT = 5;
+/** 같은 IP에서 하루에 코스를 만들 수 있는 익명 사용자 수. 환경 변수 ANON_IP_DAILY_LIMIT로 조정.
+ *  기본값은 심사 기간 동안 30(애플 심사팀이 같은 IP에서 여러 기기·재설치로 테스트해도 막히지 않게) — 승인 뒤 5로 되돌릴 것 */
+export const ANON_IP_DAILY_LIMIT = Number(process.env.ANON_IP_DAILY_LIMIT) || 30;
 /** 로그인 실패 잠금: 15분에 10회 */
 export const LOGIN_FAIL_LIMIT = 10;
 export const LOGIN_FAIL_WINDOW_MIN = 15;

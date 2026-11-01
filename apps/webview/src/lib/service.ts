@@ -154,7 +154,8 @@ export async function anonCourseAllowed(user: User, ip: string | null | undefine
     await store.saveUser(user);
   }
   const count = await store.countAnonUsersByIpSince(ipHash, new Date(Date.now() - 86_400_000).toISOString());
-  if (count < ANON_IP_DAILY_LIMIT) return true;
+  // count에는 이 사용자 자신도 들어 있으므로 N명째까지 허용
+  if (count <= ANON_IP_DAILY_LIMIT) return true;
   await logFailure(user.id, 'anon_limit', `${count} anon users from one ip in 24h`);
   return false;
 }
