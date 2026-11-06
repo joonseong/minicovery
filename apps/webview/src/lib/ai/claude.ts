@@ -17,6 +17,8 @@ import {
   DROP_SYSTEM,
   EASY_SCHEMA,
   EASY_SYSTEM,
+  IMAGE_CHECK_SCHEMA,
+  IMAGE_CHECK_SYSTEM,
   TOPIC_CHECK_SCHEMA,
   TOPIC_CHECK_SYSTEM,
   VERIFY_SCHEMA,
@@ -44,7 +46,7 @@ const WEB_SEARCH_TOOL = {
  * 5.5 모델은 thinking이 항상 켜져 있고 그 토큰도 max_tokens에 들어간다.
  * 가벼운 단계(check·verify·easy)는 effort low로 생각을 짧게 하고, 잘리면 한 번 두 배로 다시 부른다
  */
-const MAX_TOKENS = { check: 2000, curriculum: 4000, drop: 8000, verify: 6000, easy: 4000 } as const;
+const MAX_TOKENS = { check: 2000, curriculum: 4000, drop: 8000, verify: 6000, easy: 4000, imageCheck: 3000 } as const;
 
 function textOf(message: Anthropic.Message): string {
   return message.content
@@ -252,6 +254,29 @@ export class ClaudeGenerator implements Generator {
       usage: usageOf(message),
       result: { verdict: r.verdict, fixedText: r.fixed_text },
     };
+  }
+
+  /** 그림 검사는 정확도가 중요해 Opus(effort low). 거절되면 통과시키지 않는다 */
+  async checkImage(image: string) {
+    const message = await this.createJson({
+      model: MODEL_ID.opus,
+      max_tokens: MAX_TOKENS.imageCheck,
+      system: IMAGE_CHECK_SYSTEM,
+      output_config: { effort: 'low', format: { type: 'json_schema', schema: IMAGE_CHECK_SCHEMA } },
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: 'image/webp', data: image } },
+            { type: 'text', text: 'Check this illustration.' },
+          ],
+        },
+      ],
+    });
+    const usage = usageOf(message);
+    if (message.stop_reason === 'refusal') return { model: 'opus' as const, usage, result: { ok: false, problems: ['refusal'] } };
+    const r = JSON.parse(textOf(message)) as { ok: boolean; problems: string[]; text_found: boolean };
+    return { model: 'opus' as const, usage, result: { ok: r.ok && !r.text_found, problems: r.problems } };
   }
 
   async easy(params: { courseTitle: string; title: string; text: string }) {

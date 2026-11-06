@@ -178,3 +178,32 @@ Drop 제목: ${tag('title', p.title)}
 원문:
 ${p.text}`;
 }
+
+/* ---------- Drop 그림 검사 ---------- */
+
+/** 그림 모델이 가끔 손을 하나 더 그린다 (2026-11 시안에서 손 3개). 손·팔을 먼저 세게 한 뒤 판정한다 */
+export const IMAGE_CHECK_SYSTEM = `You check generated doodle illustrations before they are shown in a learning app. Be strict about anatomy.
+For every person or animal in the image, count the hands (or paws) you can see and the arms they are attached to.
+A person may show at most two hands and two arms; every visible hand must be attached to one of that person's arms.
+Fail the image if any person has a third hand or arm, a floating or duplicated hand, a hand attached to nothing, or clearly wrong fingers or limbs.
+Also fail it if it contains readable text, letters or numbers (simple symbols such as check marks, crosses, arrows, hearts or stars are fine).`;
+
+export const IMAGE_CHECK_SCHEMA = {
+  type: 'object',
+  properties: {
+    figures: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: { who: { type: 'string' }, hands: { type: 'integer' }, arms: { type: 'integer' } },
+        required: ['who', 'hands', 'arms'],
+        additionalProperties: false,
+      },
+    },
+    text_found: { type: 'boolean' },
+    problems: { type: 'array', items: { type: 'string' } },
+    ok: { type: 'boolean' },
+  },
+  required: ['figures', 'text_found', 'problems', 'ok'],
+  additionalProperties: false,
+} as const;

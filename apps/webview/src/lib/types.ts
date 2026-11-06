@@ -180,8 +180,10 @@ export interface DropImage {
   url?: string;
   /** 마지막으로 시도한 시각 */
   at: string;
-  /** 시도 횟수 (3번 실패하면 그만둔다) */
+  /** 시도 횟수 (두 번 실패하면 그만둔다) */
   tries: number;
+  /** 마지막 시도가 실패함 (검사에 두 번 걸렸거나 오류) */
+  failed?: boolean;
 }
 
 export interface UsageLog {

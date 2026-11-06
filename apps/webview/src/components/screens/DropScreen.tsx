@@ -3,19 +3,23 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { postJson, readNdjson, trackClient } from '@/lib/client/ndjson';
-import { parseDropText, splitPoints } from '@/lib/drop-format';
+import { isCompleteBody, parseDropText, splitPoints } from '@/lib/drop-format';
 import type { Drop, DropBody } from '@/lib/types';
 
 import { AfterComplete, type CompleteResult } from '../AfterComplete';
+import type { DoodleAnimal } from '../Doodle';
+import { DropLoading, type DropLoadingStep } from '../DropLoading';
 import { RecallCard, type RecallLike } from '../RecallCard';
-import { AppHeader, Footer, Loading, Main, OutlineButton, PrimaryButton, Screen, Sheet, TextButton, Toast, useToast } from '../ui';
+import { AppHeader, Footer, Main, OutlineButton, PrimaryButton, Screen, Sheet, TextButton, Toast, useToast } from '../ui';
 
 type StreamEv =
   | { type: 'status'; message: string }
   | { type: 'text'; delta: string }
   | { type: 'retry' }
   | { type: 'done' | 'ready' | 'corrected'; drop: Drop }
-  /** 글 다음에 그려진 두들 그림 */
+  /** 글과 함께 그리던 그림이 끝남 (로딩 단계용) */
+  | { type: 'art' }
+  /** 글을 먼저 보여 준 뒤 늦게 끝난 그림 */
   | { type: 'image'; url: string }
   | { type: 'refused' }
   /** 모델이 거절해 이 Drop을 건너뜀. 다음 Drop으로 이어 간다 */
@@ -24,7 +28,11 @@ type StreamEv =
   | { type: 'conflict'; message: string }
   | { type: 'error'; message: string };
 
-type Phase = 'generating' | 'ready' | 'failed' | 'skipped' | 'conflict';
+/** preparing: 글은 있는데 그림이 없어 그림부터 그리는 중 (처음 읽을 때만) */
+type Phase = 'generating' | 'preparing' | 'ready' | 'failed' | 'skipped' | 'conflict';
+
+/** 로딩 막대: 글 길이로 진행을 어림한다 (Drop 한 편은 보통 1,000자 안팎) */
+const TYPICAL_DROP_CHARS = 1100;
 
 const SKIPPED_MESSAGE = '이 Drop은 만들 수 없는 내용이라 건너뛰었어요. 다음 Drop으로 이어 가요.';
 const CONFLICT_MESSAGE = '이 Drop을 다른 곳에서 만들고 있어요. 잠시 뒤 다시 열어 주세요.';
@@ -48,6 +56,7 @@ export function DropScreen({
   recall,
   nextDropId,
   openedAll,
+  stageKey,
 }: {
   initialDrop: Drop;
   courseTitle: string;
@@ -58,14 +67,27 @@ export function DropScreen({
   nextDropId?: string;
   /** 전체 열린 코스: 하루 한 편과 상관없이 읽는 중 */
   openedAll?: boolean;
+  /** 로딩 화면 캐릭터 (지금 단계) */
+  stageKey: DoodleAnimal;
 }) {
   const skippedAtStart = initialDrop.status === 'skipped';
   const [drop, setDrop] = useState(initialDrop);
-  const [phase, setPhase] = useState<Phase>(initialDrop.status === 'ready' ? 'ready' : skippedAtStart ? 'skipped' : 'generating');
+  // 그림이 없는 Drop을 처음 읽을 때는 그림까지 그린 뒤 보여 준다. 다시 읽기면 글 먼저
+  const [phase, setPhase] = useState<Phase>(
+    initialDrop.status === 'ready'
+      ? !initialDrop.image?.url && !initialDrop.completedAt
+        ? 'preparing'
+        : 'ready'
+      : skippedAtStart
+        ? 'skipped'
+        : 'generating',
+  );
   const [notice, setNotice] = useState(skippedAtStart ? SKIPPED_MESSAGE : '');
   const [skipNext, setSkipNext] = useState<string | undefined>(nextDropId);
   const [stream, setStream] = useState('');
-  const [status, setStatus] = useState('Drop을 준비하고 있어요');
+  const [art, setArt] = useState(false);
+  const [loadingFrom] = useState(() => Date.now());
+  const [now, setNow] = useState(() => Date.now());
   const [attempt, setAttempt] = useState(0);
   const [reported, setReported] = useState(Boolean(initialDrop.reportedAt));
   const [reportSheet, setReportSheet] = useState(false);
@@ -92,7 +114,7 @@ export function DropScreen({
       }
       let first = true;
       await readNdjson<StreamEv>(res, e => {
-        if (e.type === 'status') setStatus(e.message);
+        if (e.type === 'art') setArt(true);
         if (e.type === 'retry') setStream('');
         if (e.type === 'text') {
           if (first) {
@@ -121,6 +143,46 @@ export function DropScreen({
     run().catch(() => setPhase(p => (p === 'ready' ? p : 'failed')));
   }, [attempt, drop.id, initialDrop.status, skippedAtStart]);
 
+  // 글은 있는데 그림이 없는 Drop: 열 때 그린다 (처음 읽기는 최대 45초 기다렸다 같이, 다시 읽기는 되면 붙인다)
+  useEffect(() => {
+    if (initialDrop.status !== 'ready' || initialDrop.image?.url) return;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 45_000);
+    fetch(`/api/drops/${initialDrop.id}/image`, { method: 'POST', signal: controller.signal })
+      .then(res => (res.ok ? (res.json() as Promise<{ url?: string | null }>) : null))
+      .then(r => {
+        const url = r?.url;
+        if (url) setDrop(d => ({ ...d, image: { at: d.image?.at ?? '', tries: d.image?.tries ?? 1, url } }));
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        clearTimeout(timer);
+        setPhase(p => (p === 'preparing' ? 'ready' : p));
+      });
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [initialDrop.id, initialDrop.status, initialDrop.image?.url]);
+
+  // 로딩 막대가 멈춰 보이지 않게 1초마다 다시 그린다
+  const loading = phase === 'generating' || phase === 'preparing';
+  useEffect(() => {
+    if (!loading) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [loading]);
+  const textDone = stream ? isCompleteBody(parseDropText(stream)) : false;
+  const loadingStep: DropLoadingStep = phase === 'preparing' ? 2 : !stream ? 0 : !textDone ? 1 : art ? 3 : 2;
+  const waited = (now - loadingFrom) / 1000;
+  const progress =
+    phase === 'preparing'
+      ? Math.min(0.74 + waited * 0.006, 0.95)
+      : Math.min(
+          0.06 + (stream ? 0.12 : Math.min(waited / 20, 1) * 0.12) + Math.min(stream.length / TYPICAL_DROP_CHARS, 1) * 0.5 + (art ? 0.22 : 0),
+          0.96,
+        );
+
   // 끝까지 스크롤하면 읽음
   useEffect(() => {
     if (phase !== 'ready' || !sentinel.current || rereading) return;
@@ -135,7 +197,8 @@ export function DropScreen({
   }, [phase, drop.id, rereading]);
 
   // 첫 Drop: 수준 선택 → 첫 문단까지 걸린 시간
-  const body: Partial<DropBody> = phase === 'ready' && drop.body ? drop.body : parseDropText(stream);
+  // 글과 그림이 둘 다 되기 전에는 본문을 보이지 않는다 (스트림은 로딩 막대에만 쓴다)
+  const body: Partial<DropBody> = phase === 'ready' && drop.body ? drop.body : {};
   const points = splitPoints(body.points);
   useEffect(() => {
     if (!body.hook || drop.index !== 0) return;
@@ -165,7 +228,6 @@ export function DropScreen({
     showToast('알려 주셔서 고마워요. 확인하고 고칠게요');
   };
 
-  const streaming = phase === 'generating';
   const skipHref = skipNext ? `/drop/${skipNext}` : `/course/${drop.courseId}`;
 
   return (
@@ -201,13 +263,11 @@ export function DropScreen({
             <p className="text-base text-txt-black-secondary">Drop을 만들지 못했어요. 잠시 뒤 다시 시도해 주세요.</p>
             <OutlineButton onClick={() => setAttempt(a => a + 1)}>다시 만들기</OutlineButton>
           </div>
+        ) : loading ? (
+          <DropLoading step={loadingStep} progress={progress} animal={stageKey} />
         ) : (
-          <article className={`${phase === 'ready' && drop.image?.url ? 'mt-3' : 'mt-6'} flex flex-col gap-7`}>
-            {body.hook ? (
-              <p className="whitespace-pre-line text-lg font-semibold leading-7">{body.hook}</p>
-            ) : streaming ? (
-              <Loading label={status} />
-            ) : null}
+          <article className={`${drop.image?.url ? 'mt-3' : 'mt-6'} flex flex-col gap-7`}>
+            {body.hook ? <p className="whitespace-pre-line text-lg font-semibold leading-7">{body.hook}</p> : null}
             {SECTIONS.map(s =>
               body[s.key] ? (
                 <section key={s.key} className="flex flex-col gap-2">
@@ -219,13 +279,13 @@ export function DropScreen({
             {body.takeaway ? (
               <section className="flex flex-col gap-2 rounded-2xl bg-shape-depth1 p-5">
                 <h2 className="text-sm font-bold text-txt-black-secondary">정리하기</h2>
-                <p className={streaming && !body.points ? 'streaming-caret text-lg font-semibold' : 'text-lg font-semibold'}>{body.takeaway}</p>
+                <p className="text-lg font-semibold">{body.takeaway}</p>
                 {points.length ? (
                   <ul className="mt-2 flex flex-col gap-2 border-t border-border-div pt-4">
                     {points.map((pt, i) => (
                       <li key={i} className="flex gap-2 text-base leading-6">
                         <span aria-hidden className="shrink-0 text-txt-black-tertiary">–</span>
-                        <span className={streaming && i === points.length - 1 ? 'streaming-caret' : undefined}>{pt}</span>
+                        <span>{pt}</span>
                       </li>
                     ))}
                   </ul>

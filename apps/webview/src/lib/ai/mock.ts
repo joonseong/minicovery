@@ -11,7 +11,7 @@ const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 let instant = false;
 const delay = () => (instant ? 0 : Number(process.env.MOCK_DELAY_MS ?? 25));
 
-export const MOCK_SCENARIOS = ['refusal', 'max_tokens', 'conflict', 'no_sources', 'batch_pending'] as const;
+export const MOCK_SCENARIOS = ['refusal', 'max_tokens', 'conflict', 'no_sources', 'batch_pending', 'bad_image'] as const;
 export type MockScenario = (typeof MOCK_SCENARIOS)[number];
 
 /** "refusal, max_tokens" 같은 쉼표 목록을 읽는다. 모르는 값·빈 값은 무시 */
@@ -172,6 +172,13 @@ export class MockGenerator implements Generator {
     if (scenario('conflict'))
       return { model: 'haiku' as const, usage, result: { verdict: 'conflict' as const, fixedText: '' } };
     return { model: 'haiku' as const, usage, result: { verdict: 'ok' as const, fixedText: '' } };
+  }
+
+  async checkImage() {
+    await sleep(300);
+    const usage = { ...zeroUsage(), inputTokens: 2300, outputTokens: 200 };
+    if (scenario('bad_image')) return { model: 'opus' as const, usage, result: { ok: false, problems: ['third hand'] } };
+    return { model: 'opus' as const, usage, result: { ok: true, problems: [] } };
   }
 
   async easy(params: { courseTitle: string; title: string; text: string }) {

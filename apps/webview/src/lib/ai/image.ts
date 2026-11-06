@@ -14,15 +14,22 @@ export const IMAGE_SIZE = { width: 1536, height: 1024 };
 
 export const imageEnabled = () => Boolean(process.env.OPENAI_API_KEY);
 
-/** 이 시간 안에 시도한 그림은 다른 호출이 만드는 중으로 보고 건너뛴다 */
-const IMAGE_RETRY_MS = 15 * 60_000;
-const IMAGE_MAX_TRIES = 3;
+/** 시작한 지 이 시간이 지나도 끝나지 않은 그림은 멈춘 것으로 본다 */
+const IMAGE_STALE_MS = 15 * 60_000;
+/** 한 번 시도 = 그리기·검사 최대 두 번. 두 번 시도해도 안 되면 그 Drop은 그림 없이 둔다 */
+const IMAGE_MAX_TRIES = 2;
 
-/** 그림을 (다시) 그려도 되는 Drop인지: 아직 없고, 만드는 중이 아니고, 세 번 넘게 실패하지 않았다 */
+/** 다른 호출이 지금 그리고 있는지 */
+export function imageInProgress(drop: Pick<Drop, 'image'>, now = Date.now()) {
+  const image = drop.image;
+  return Boolean(image && !image.url && !image.failed && now - Date.parse(image.at) < IMAGE_STALE_MS);
+}
+
+/** 그림을 (다시) 그려도 되는 Drop인지: 아직 없고, 그리는 중이 아니고, 시도 횟수가 남았다 */
 export function imageRetryable(drop: Pick<Drop, 'image'>, now = Date.now()) {
   if (!drop.image) return true;
   if (drop.image.url) return false;
-  return drop.image.tries < IMAGE_MAX_TRIES && now - Date.parse(drop.image.at) > IMAGE_RETRY_MS;
+  return drop.image.tries < IMAGE_MAX_TRIES && !imageInProgress(drop, now);
 }
 
 export interface AccentColor {
@@ -31,22 +38,34 @@ export interface AccentColor {
   name: string;
 }
 
-/** 참고한 그림은 다른 작가 것이라 넣지 않고 말로만 스타일을 정한다 (캔버스 'Drop 그림 시안'과 같은 지시) */
-export function dropImagePrompt(title: string, point: string, color: AccentColor) {
-  return [
+/**
+ * 참고한 그림은 다른 작가 것이라 넣지 않고 말로만 스타일을 정한다 (캔버스 'Drop 그림 시안'과 같은 지시).
+ * point(정리 한 줄)는 글이 끝난 뒤에만 있다 — 글과 동시에 그릴 때는 제목과 코스 이름으로 그린다.
+ * simpler: 검사에 걸려 다시 그릴 때 사람·손을 줄인다
+ */
+export function dropImagePrompt(input: { title: string; point?: string; course?: string; color: AccentColor; simpler?: boolean }) {
+  const { color } = input;
+  const style = [
     'Minimal hand-drawn doodle illustration on a plain pure white background.',
     'Loose, confident black ink line art with slightly uneven pen strokes, like a quick editorial sketch.',
     `Use exactly one accent color, ${color.name} (${color.hex}), as a flat fill on one or two shapes. Everything else is black line work on white;`,
     'no other colors at all - draw things that usually have another color (wine, sky, leaves) in black line work or in the accent color.',
     'A small area of fine halftone dots is fine. Generous white space: the drawing sits in the middle and fills about 60 percent of the canvas.',
     'Simple stylized people with tiny dot eyes or no facial detail; warm, witty mood.',
+    "Anatomy must be correct: draw at most two people; each person has exactly two arms and two hands, and every hand is clearly attached to one of that person's arms.",
+    'Never draw a third hand or arm, a floating hand, or extra fingers. If an idea would need more hands, simplify the pose (for example one hand on the chin and the other resting) or show an object on its own instead.',
+    input.simpler ? 'Keep this one extra simple: at most one person with both hands clearly visible, or only objects with no people.' : '',
     'No text, no letters, no numbers, no logos, no captions, no frame, no border, no shadows, no gradients, no scenery behind the subject.',
-    '',
+    'Never draw existing characters, mascots or brand logos from anime, games or companies (even if the lesson is about them); use original generic figures or objects instead.',
+  ];
+  const scene = [
     'Draw one simple scene that captures the core idea of this short lesson so a reader gets it at a glance.',
-    `Lesson title: ${title}`,
-    `Key point: ${point}`,
+    input.course ? `Course: ${input.course}` : '',
+    `Lesson title: ${input.title}`,
+    input.point ? `Key point: ${input.point}` : '',
     'Keep it to one main subject and at most two supporting objects.',
-  ].join('\n');
+  ];
+  return [...style.filter(Boolean), '', ...scene.filter(Boolean)].join('\n');
 }
 
 export interface DrawnImage {
@@ -62,10 +81,12 @@ interface ImagesResponse {
 }
 
 /** 1536×1024 webp 한 장. 429·5xx는 한 번 더 시도하고, 그 밖의 실패(검열 등)는 바로 던진다 */
-export async function drawDropImage(input: { title: string; point: string; color: AccentColor; userId: string }): Promise<DrawnImage> {
+export async function drawDropImage(
+  input: { title: string; point?: string; course?: string; color: AccentColor; simpler?: boolean; userId: string },
+): Promise<DrawnImage> {
   const body = JSON.stringify({
     model: MODEL,
-    prompt: dropImagePrompt(input.title, input.point, input.color),
+    prompt: dropImagePrompt(input),
     size: `${IMAGE_SIZE.width}x${IMAGE_SIZE.height}`,
     quality: 'medium',
     background: 'opaque',
