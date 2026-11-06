@@ -1,10 +1,12 @@
 import { getGenerator } from './ai';
+import { drawDropImage, imageEnabled, imageRetryable } from './ai/image';
 import { costUsd } from './ai/pricing';
 import type { Metered } from './ai/types';
 import {
   ANON_IP_DAILY_LIMIT,
   APPROVED_TOPIC_HOURS,
   APPROVED_TOPIC_MAX,
+  CATEGORY_COLOR,
   DAILY_PREMIUM_REALTIME,
   FREE_COURSE_LIMIT,
   GENERATING_STALE_MIN,
@@ -539,7 +541,60 @@ export async function generateDrop(user: User, dropId: string, mode: GenerationM
 
   const verified = await verifyDrop(user.id, drop.id);
   if (verified?.corrected) send({ type: 'corrected', drop: verified });
-  if (verified?.status === 'failed') send({ type: 'conflict', message: CONFLICT_MESSAGE });
+  if (verified?.status === 'failed') {
+    send({ type: 'conflict', message: CONFLICT_MESSAGE });
+    return;
+  }
+  // 그림은 글을 다 보여 준 뒤에 그린다: 읽는 사람은 기다리지 않고, 다 되면 제목 아래에 나타난다
+  const url = await ensureDropImage(drop.id);
+  if (url) send({ type: 'image', url });
+}
+
+/* ---------- Drop 그림 ---------- */
+
+/**
+ * 글이 준비된 Drop에 두들 그림 한 장을 붙이고 주소를 돌려준다 (포인트 색은 분야 색).
+ * 키가 없거나 하루 AI 예산을 넘었거나 실패하면 null — 그림 없이도 읽기는 그대로다
+ */
+export async function ensureDropImage(dropId: string): Promise<string | null> {
+  if (!imageEnabled()) return null;
+  const store = getStore();
+  const drop = await store.getDrop(dropId);
+  if (!drop || drop.status !== 'ready' || !drop.body?.takeaway) return null;
+  if (drop.image?.url) return drop.image.url;
+  if (!imageRetryable(drop)) return null;
+  try {
+    await assertAiBudget();
+  } catch {
+    return null;
+  }
+  const course = await store.getCourse(drop.courseId);
+  const tries = (drop.image?.tries ?? 0) + 1;
+  // 시도부터 적어 둔다 (수거 주기와 실시간 생성이 같은 그림을 두 번 그리지 않게). image 키만 합친다
+  if (!(await store.claimDrop(drop.id, ['ready'], { image: { at: nowIso(), tries } }))) return null;
+  try {
+    const color = CATEGORY_COLOR[course?.category ?? ''] ?? CATEGORY_COLOR['기타']!;
+    const drawn = await drawDropImage({ title: drop.title, point: drop.body.takeaway, color, userId: drop.userId });
+    await store.addUsage({
+      id: newId(),
+      userId: drop.userId,
+      at: nowIso(),
+      purpose: 'image',
+      model: 'image',
+      mode: 'realtime',
+      inputTokens: drawn.inputTokens,
+      outputTokens: drawn.outputTokens,
+      cacheReadTokens: 0,
+      searches: 0,
+      costUsd: drawn.costUsd,
+    });
+    const url = await store.putImage(`drops/${drop.id}.webp`, drawn.bytes, 'image/webp');
+    await store.claimDrop(drop.id, ['ready'], { image: { url, at: nowIso(), tries } });
+    return url;
+  } catch (error) {
+    await logFailure(drop.userId, 'image', error);
+    return null;
+  }
 }
 
 export async function verifyDrop(userId: string, dropId: string): Promise<Drop | null> {

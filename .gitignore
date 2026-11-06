@@ -10,6 +10,8 @@ node_modules
 
 # Local dev data (file store)
 .data/
+# 로컬 저장소(FileStore)가 쓰는 Drop 그림
+public/generated/
 
 # Firebase local app config
 apps/app/android/app/google-services.json

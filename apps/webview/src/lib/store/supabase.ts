@@ -7,6 +7,8 @@ type Rows = PromiseLike<{ data: { data: unknown }[] | null; error: unknown }>;
 
 /** PostgREST는 한 번에 최대 1,000행(max-rows)만 주므로 이 크기로 나눠 받는다 */
 const PAGE = 1000;
+/** Drop 그림 공개 버킷. 없으면 처음 올릴 때 만든다 */
+const IMAGE_BUCKET = 'drop-images';
 
 /**
  * 운영용 저장소. 테이블 구조는 supabase/migrations 참고.
@@ -166,6 +168,20 @@ export class SupabaseStore implements Store {
     const { data, error } = await this.db.rpc('claim_drop', { drop_id: id, from_status: from, patch: jsonPatch });
     if (error) throw error;
     return (data as Drop | null) ?? null;
+  }
+
+  async putImage(path: string, bytes: Uint8Array, contentType: string) {
+    const bucket = this.db.storage.from(IMAGE_BUCKET);
+    const upload = () => bucket.upload(path, bytes, { contentType, upsert: true, cacheControl: '31536000' });
+    let { error } = await upload();
+    if (error && /not found/i.test(error.message)) {
+      // 처음 한 번: 공개 버킷을 만든다 (들어가는 건 Drop 삽화뿐, 개인 정보 없음)
+      const created = await this.db.storage.createBucket(IMAGE_BUCKET, { public: true, fileSizeLimit: '2MB', allowedMimeTypes: ['image/webp'] });
+      if (created.error && !/already exists/i.test(created.error.message)) throw created.error;
+      ({ error } = await upload());
+    }
+    if (error) throw error;
+    return bucket.getPublicUrl(path).data.publicUrl;
   }
 
   addUsage(log: UsageLog) {

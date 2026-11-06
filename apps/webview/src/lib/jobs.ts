@@ -1,10 +1,11 @@
 import { getGenerator } from './ai';
+import { imageEnabled, imageRetryable } from './ai/image';
 import { costUsd } from './ai/pricing';
 import type { BatchPoll } from './ai/types';
 import { QUIET_HOURS } from './constants';
 import { isCompleteBody, parseDropText } from './drop-format';
 import { sendPush } from './push';
-import { completedToday, track, verifyDrop } from './service';
+import { completedToday, ensureDropImage, track, verifyDrop } from './service';
 import { getStore } from './store';
 import type { Course, Drop, User } from './types';
 import { kstDate, kstTime, newId, nowIso } from './util';
@@ -182,7 +183,7 @@ export async function collectBatches() {
   const perUser = await Promise.allSettled(users.map(u => run(() => store.listDropsByUser(u.id))));
   const pending = perUser.flatMap(p => (p.status === 'fulfilled' ? p.value : [])).filter(d => d.status === 'generating' && d.batchId);
   const batchIds = [...new Set(pending.map(d => d.batchId!))];
-  const stats = { batches: batchIds.length, ended: 0, saved: 0, failed: 0, discarded: 0, skipped: 0, errors: 0 };
+  const stats = { batches: batchIds.length, ended: 0, saved: 0, failed: 0, discarded: 0, skipped: 0, errors: 0, images: 0 };
 
   for (const batchId of batchIds) {
     const poll = await g.pollBatch(batchId);
@@ -199,7 +200,32 @@ export async function collectBatches() {
       }
     }
   }
+  stats.images = await fillDropImages(perUser.flatMap(p => (p.status === 'fulfilled' ? p.value : [])));
   return stats;
+}
+
+/** 수거 한 번에 그리는 그림 수와 시작 마감 (pg_cron은 60초까지 기다린다) */
+const IMAGE_SWEEP = { max: 12, parallel: 4, startWithinMs: 40_000 };
+
+/**
+ * 그림이 없는 최근 Drop(밤에 만든 Drop, 실시간에서 놓친 Drop)에 그림을 붙인다. 오래된 것부터.
+ * 막 만든 실시간 Drop은 생성 요청이 직접 그리므로 5분이 지난 것만, 이미 읽은 Drop과 이틀 지난 Drop은 건너뛴다
+ */
+async function fillDropImages(drops: Drop[]) {
+  if (!imageEnabled()) return 0;
+  const now = Date.now();
+  const todo = drops
+    .filter(d => {
+      const age = now - Date.parse(d.generatedAt ?? '');
+      return d.status === 'ready' && !d.completedAt && age > 5 * 60_000 && age < 2 * 86_400_000 && imageRetryable(d, now);
+    })
+    .sort((a, b) => (a.generatedAt ?? '').localeCompare(b.generatedAt ?? ''))
+    .slice(0, IMAGE_SWEEP.max);
+  const run = limiter(IMAGE_SWEEP.parallel);
+  const made = await Promise.all(
+    todo.map(d => run(async () => (Date.now() - now < IMAGE_SWEEP.startWithinMs ? Boolean(await ensureDropImage(d.id)) : false))),
+  );
+  return made.filter(Boolean).length;
 }
 
 /** 조용한 시간(21:00~08:00)인지 */
