@@ -3,7 +3,8 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState } from 'react';
 
-import { AppHeader, Footer, Loading, Main, PrimaryButton, Screen, TextButton } from '@/components/ui';
+import { CatIcon } from '@/components/CatIcon';
+import { AppHeader, Footer, Main, PrimaryButton, Screen, TextButton } from '@/components/ui';
 import { readNdjson } from '@/lib/client/ndjson';
 
 type Ev =
@@ -72,27 +73,55 @@ function Generating() {
   const done = Boolean(firstDropId);
   const status = failed ? '' : done ? `코스가 준비됐어요 · ${drops.length}개 Drop` : drops.length ? '코스를 만들고 있어요' : '커리큘럼을 짜고 있어요';
 
+  const working = !failed && !done;
+
   return (
     <Screen>
       <AppHeader layout="nav" close="/today" />
-      <Main className="pb-6 pt-4">
-        <p className="min-h-5 text-sm font-semibold text-txt-black-tertiary">{status}</p>
-        <h1 className="mt-1 min-h-8 text-2xl font-bold tracking-[-1px]">{title || params.get('topic')}</h1>
-        <ol className="mt-6 flex flex-col gap-2">
+      <Main className="pb-6 pt-6">
+        <div className="flex items-center gap-2.5">
+          <CatIcon category={params.get('category') ?? '기타'} />
+          <span role="status" className="min-h-[22px] flex-1 text-sm text-fuse-sub">
+            {status}
+          </span>
+        </div>
+        <h1 className="mt-3 min-h-9 text-[28px] font-bold leading-[1.3]">{title || params.get('topic')}</h1>
+        {failed ? null : (
+          <p aria-hidden="true" className="mt-5 text-[52px] font-bold leading-none">
+            {drops.length}
+            <span className="relative -top-[0.14em] ml-1.5 text-[22px] leading-[1.3]">편</span>
+          </p>
+        )}
+        <ol className="mt-6 flex flex-col">
           {drops.map((d, i) => (
-            <li key={`${i}-${d}`} className="mc-in flex items-start gap-3 rounded-2xl bg-shape-depth1 p-4">
-              <span className="w-5 flex-shrink-0 text-sm font-semibold text-txt-black-tertiary">{i + 1}</span>
-              <span className="text-sm font-semibold">{d}</span>
+            <li key={`${i}-${d}`} className={`mc-in flex min-h-[60px] items-center gap-3 py-2 ${i ? 'border-t border-[#F2F2F4]' : ''}`}>
+              <span className="mc-pop flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-fuse-ink">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M5 12.5 10 17.5 19 7" stroke="#FFFFFF" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+              <span className="flex-1 text-sm">{d}</span>
             </li>
           ))}
-          {!failed && !done ? <Loading label={drops.length ? '다음 Drop을 고르는 중' : '주제를 정리하는 중'} /> : null}
+          {working ? (
+            <li className={`mc-in flex min-h-[60px] items-center gap-3 py-2 ${drops.length ? 'border-t border-[#F2F2F4]' : ''}`}>
+              <span className="relative flex h-8 w-8 flex-shrink-0 items-center justify-center text-[13px] font-semibold leading-[1.3] text-fuse-sub">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true" className="absolute inset-0 -rotate-90">
+                  <circle cx="16" cy="16" r="14" stroke="#EFEFF1" strokeWidth="2.5" />
+                  <circle className="mc-ring" cx="16" cy="16" r="14" stroke="#0B0B0C" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="88" strokeDashoffset="88" />
+                </svg>
+                {drops.length + 1}
+              </span>
+              <span className="flex-1 text-sm text-fuse-sub">{drops.length ? '다음 Drop을 고르는 중' : '주제를 정리하는 중'}</span>
+            </li>
+          ) : null}
         </ol>
-        {failed ? <p className="mt-6 text-center text-base text-txt-black-secondary">코스를 만들지 못했어요.</p> : null}
+        {failed ? <p className="mt-6 text-center text-sm text-fuse-sub">코스를 만들지 못했어요.</p> : null}
       </Main>
       {done ? (
         <Footer className="mc-in gap-2">
           {/* D1: 오늘 만든 코스의 첫 Drop은 오늘 Drop과 별개로 바로 읽는다 (대표 결정 유지) */}
-          <p className="text-center text-sm text-txt-black-secondary">하루 한 편씩 열려요. 첫 Drop은 오늘 Drop과 별도로 지금 바로 읽을 수 있어요.</p>
+          <p className="text-center text-[13px] text-fuse-sub">하루 한 편씩 열려요. 첫 Drop은 오늘 Drop과 별도로 지금 바로 읽을 수 있어요.</p>
           <PrimaryButton href={`/drop/${firstDropId}`} replace>
             첫 Drop 읽기
           </PrimaryButton>

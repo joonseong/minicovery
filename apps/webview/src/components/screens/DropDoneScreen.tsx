@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { josa } from '@/lib/josa';
 import type { PlusUsage } from '@/lib/service';
 
-import { Doodle } from '../Doodle';
+import { Doodle, type DoodleAnimal } from '../Doodle';
 import { PlusLeft } from '../PlusLeft';
 import { ReplaceConfirm } from '../QuotaSheets';
 import { SignupSheet } from '../SignupSheet';
@@ -33,6 +33,8 @@ export function DropDoneScreen(props: {
   dropIndex?: number;
   /** 전체 열린 코스에서 이어서 읽을 다음 Drop */
   nextDropId?: string;
+  /** 축하하는 캐릭터 (지금 단계) */
+  stageKey: DoodleAnimal;
 }) {
   const [confirm, setConfirm] = useState(false);
   const [signup, setSignup] = useState(false);
@@ -55,39 +57,42 @@ export function DropDoneScreen(props: {
       <AppHeader layout="nav" close="/today" />
       <Main className="pb-6 pt-2">
         <section className="flex flex-col items-center text-center">
-          <Doodle animal="rabbit" act="hop" label="기뻐하는 토끼 캐릭터" className="mc-pop aspect-square w-[min(160px,40vw)]" />
-          <h1 className="mt-4 text-[28px] font-bold leading-9 tracking-[-1px]">{props.openedAll ? `Drop ${n} 완료` : '오늘의 Drop 완료!'}</h1>
-          {props.openedAll ? <p className="mt-1 text-sm font-semibold text-txt-point">이어서 읽을 수 있어요</p> : null}
-          <p className="mt-2 text-base text-txt-black-secondary">
-            <b>{props.courseTitle}</b>
+          <Doodle animal={props.stageKey} act="hop" label="기뻐하는 캐릭터" className="mc-pop h-[120px] w-[120px]" />
+          <h1 className="mt-5 text-[28px] font-bold leading-[1.3]">{props.openedAll ? `Drop ${n} 완료` : '오늘의 Drop 완료!'}</h1>
+          {props.openedAll ? <p className="mt-1 text-[13px] font-medium text-fuse-hot">이어서 읽을 수 있어요</p> : null}
+          <p className="mt-2 text-sm text-fuse-sub">
+            <b className="font-semibold text-fuse-ink">{props.courseTitle}</b>
             {josa(props.courseTitle, '을/를').slice(props.courseTitle.length)} 통해
             <br />‘{props.dropTitle}’{josa(props.dropTitle.replace(/[?？!.]$/, ''), '을/를').slice(-1)} 알게 됐어요.
           </p>
         </section>
 
-        <section className="mt-8 flex flex-col items-center gap-3">
+        <section className="mt-8 flex flex-col items-center gap-3.5 rounded-card border border-fuse-line bg-fuse-card p-4">
           <div className="relative grid w-full grid-cols-7">
-            <span aria-hidden="true" className="absolute left-[7%] right-[7%] top-3 h-1 rounded-full bg-shape-depth2" />
+            <span aria-hidden="true" className="absolute left-[7%] right-[7%] top-3 h-1 rounded-full bg-fuse-track" />
             {LABELS.map((l, i) => (
               <div key={l} className="relative flex flex-col items-center gap-1.5">
                 {props.week[i] ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src="/img/check.png" alt="학습함" className="-m-px h-[30px] w-[30px] object-contain" />
+                  <span role="img" aria-label="학습함" className="flex h-7 w-7 items-center justify-center rounded-full bg-fuse-ink">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                      <path d="M3 7.2 5.8 10 11 4.5" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
                 ) : (
-                  <span className="h-7 w-7 rounded-full border-2 border-shape-depth2 bg-shape-white" />
+                  <span className="h-7 w-7 rounded-full border-[1.5px] border-fuse-edge bg-shape-white" />
                 )}
-                <span className={i === todayIdx ? 'text-sm font-bold text-txt-point' : 'text-sm text-txt-black-tertiary'}>{l}</span>
+                <span className={i === todayIdx ? 'text-[13px] font-semibold' : 'text-[13px] font-medium text-fuse-faint'}>{l}</span>
               </div>
             ))}
           </div>
-          <p className="mt-1 text-center text-sm text-txt-black-secondary">
+          <p className="text-center text-[13px] text-fuse-sub">
             이번 주 {days}일째 학습했어요.{props.openedAll ? '' : ' 내일도 한 편이 기다려요.'}
           </p>
         </section>
 
         {props.courses.length ? (
-          <section className="mt-8 flex flex-col gap-2">
-            <h2 className="text-sm font-bold text-txt-black-secondary">{props.courses.length > 1 ? '내일 받을 코스' : '내일 받을 Drop'}</h2>
+          <section className="mt-7 flex flex-col gap-2.5">
+            <h2 className="text-base font-semibold leading-[1.3]">{props.courses.length > 1 ? '내일 받을 코스' : '내일 받을 Drop'}</h2>
             <TomorrowList items={props.courses} tomorrowId={props.tomorrowId} />
             {props.plus ? (
               <>
@@ -102,11 +107,11 @@ export function DropDoneScreen(props: {
                 <button
                   type="button"
                   onClick={() => setConfirm(true)}
-                  className="mc-press mt-2 h-12 rounded-full border border-border-button bg-shape-white text-base font-semibold text-txt-black-secondary"
+                  className="mc-press mt-1 h-12 flex-shrink-0 rounded-full border border-fuse-edge bg-shape-white text-sm font-semibold"
                 >
                   다른 주제로 바꾸기
                 </button>
-                <p className="text-center text-sm text-txt-black-secondary">무료는 한 번에 코스 1개를 배울 수 있어요.</p>
+                <p className="text-center text-[13px] text-fuse-sub">무료는 한 번에 코스 1개를 배울 수 있어요.</p>
               </>
             ) : null}
           </section>

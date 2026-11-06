@@ -19,6 +19,7 @@ export default async function CourseDonePage({ params }: { params: { id: string 
       stageKey={stage.key}
       next={stage.next}
       related={course.related}
+      category={course.category}
       plus={isPlus(user)}
       first={stage.learned === 1}
       answer={course.explainAnswer ?? null}

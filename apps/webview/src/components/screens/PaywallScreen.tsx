@@ -11,7 +11,7 @@ import type { PlusUsage } from '@/lib/service';
 
 import { Doodle } from '../Doodle';
 import { plusLeftText } from '../PlusLeft';
-import { AppHeader, CHARACTER, Footer, IconCheck, Main, PrimaryButton, Screen } from '../ui';
+import { AppHeader, CHARACTER, Footer, Main, Screen } from '../ui';
 
 const BENEFITS = [
   {
@@ -117,78 +117,86 @@ export function PaywallScreen({
   return (
     <Screen>
       <AppHeader layout="nav" close="/today" />
-      <Main className="pb-6 pt-2">
-        <section className="flex flex-col items-center text-center">
-          <Doodle animal={stageKey} act={plus ? 'idle' : 'tilt'} label={`${ch.name} 단계 캐릭터`} className="h-[72px] w-[72px]" />
-          <p className="mt-3 text-sm font-bold text-txt-point">{plus ? '지금 Plus를 쓰고 있어요' : head.sub}</p>
-          <h1 className="mt-1 text-[28px] font-bold leading-9 tracking-[-1px]">
-            {head.line1}
-            <br />
-            {head.line2}
-          </h1>
-          {plus && usage ? <p className="mt-2 text-sm text-txt-black-secondary">{plusLeftText(usage).replace(/^Plus · /, '')}</p> : null}
+      <Main className="pb-6 pt-3">
+        <section className="flex items-end justify-between gap-3">
+          <div className="flex min-w-0 flex-col gap-2">
+            <p className="text-sm text-fuse-sub">{plus ? '지금 Plus를 쓰고 있어요' : head.sub}</p>
+            <h1 className="text-[28px] font-bold leading-[1.3]">
+              {head.line1}
+              <br />
+              {head.line2}
+            </h1>
+            {plus && usage ? <p className="text-[13px] text-fuse-sub">{plusLeftText(usage).replace(/^Plus · /, '')}</p> : null}
+          </div>
+          <Doodle animal={stageKey} act={plus ? 'idle' : 'tilt'} label={`${ch.name} 단계 캐릭터`} className="h-[72px] w-[72px] flex-shrink-0" />
         </section>
-        <ul className="mt-8 flex flex-col gap-5">
+        <ul className="mt-7 flex flex-col">
           {BENEFITS.map(b => (
-            <li key={b.title} className="flex items-start gap-3">
-              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-shape-depth1">
-                <IconCheck />
+            <li key={b.title} className="flex items-start gap-3.5 border-b border-[#F2F2F4] py-4">
+              <span className="flex h-[30px] w-[30px] flex-shrink-0 items-center justify-center rounded-[9px] bg-fuse-ink">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M5 12.5 10 17.5 19 7" stroke="#FFFFFF" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </span>
-              <span className="flex flex-col gap-0.5">
-                <span className="text-base font-semibold">{b.title}</span>
-                <span className="text-sm text-txt-black-secondary">{b.desc}</span>
+              <span className="flex flex-col gap-1">
+                <span className="text-base font-semibold leading-[1.3]">{b.title}</span>
+                <span className="text-[13px] text-fuse-sub">{b.desc}</span>
               </span>
             </li>
           ))}
         </ul>
-        <p className="mt-6 rounded-2xl bg-shape-depth1 px-5 py-4 text-sm text-txt-black-secondary">
+        <p className="mt-5 rounded-card border border-fuse-line bg-fuse-card p-4 text-[13px] text-fuse-sub">
           무료는 한 번에 코스 1개를 배울 수 있어요. 해지해도 만든 코스와 읽은 Drop은 그대로 남고, 진행 중인 코스도 계속 받아요. 새 코스는 진행 중인 코스가 1개 이하일 때 만들 수 있어요.
         </p>
-        {plus ? <p className="mt-4 text-center text-sm text-txt-black-secondary">구독 관리 · 아이폰 설정 &gt; 내 이름 &gt; 구독</p> : null}
-        {beta && !plus ? <p className="mt-6 text-center text-sm text-txt-black-tertiary">베타 기간에는 결제 없이 Plus를 써 볼 수 있어요.</p> : null}
-        {message ? <p className="mt-4 text-center text-sm text-txt-black-secondary">{message}</p> : null}
+        {plus ? <p className="mt-4 text-center text-[13px] text-fuse-sub">구독 관리 · 아이폰 설정 &gt; 내 이름 &gt; 구독</p> : null}
+        {beta && !plus ? <p className="mt-6 text-center text-[13px] text-fuse-faint">베타 기간에는 결제 없이 Plus를 써 볼 수 있어요.</p> : null}
+        {message ? <p className="mt-4 text-center text-sm text-fuse-sub">{message}</p> : null}
       </Main>
-      <Footer className="gap-3">
-        <div className="flex flex-col gap-2 rounded-2xl border-2 border-border-brand bg-shape-depth1 px-5 py-4">
-          <div className="flex items-center justify-between gap-3">
-            <span className="flex flex-col gap-0.5">
-              <span className="text-base font-semibold">미니커버리 Plus</span>
-              <span className="text-sm text-txt-black-tertiary">{plus ? '이용 중' : trialOn ? `첫 구독 ${trial.days}일 무료` : '매달 자동 갱신'}</span>
+      <Footer className="gap-3 border-t border-[#F2F2F4]">
+        <div className="flex flex-col gap-4 rounded-card bg-fuse-ink px-[18px] pb-4 pt-[18px] text-txt-white-primary">
+          <div className="flex items-end justify-between gap-3">
+            <span className="flex flex-col gap-1">
+              <span className="text-base font-semibold leading-[1.3]">미니커버리 Plus</span>
+              <span className={plus ? 'text-[13px] font-semibold text-fuse-hot' : 'text-[13px] font-semibold text-fuse-faint'}>
+                {plus ? '이용 중' : trialOn ? `첫 구독 ${trial.days}일 무료` : '매달 자동 갱신'}
+              </span>
             </span>
-            <span className="text-lg font-semibold">{priceLabel}</span>
+            <span className="text-xl font-bold leading-[1.3]">{priceLabel}</span>
           </div>
           {/* 체험 조건·가격·해지는 자격 확인 전·후 모두 한 줄로 고정 (심사 3.1.2) */}
           {plus ? null : (
-            <p className="text-sm text-txt-black-secondary">
+            <p className="-mt-2 text-[13px] text-fuse-faint">
               {trialOn ? `첫 구독은 ${trial.days}일 무료 · 이후 ${priceLabel} 자동 갱신 · 언제든 해지할 수 있어요` : `${priceLabel} 자동 갱신 · 언제든 해지할 수 있어요`}
             </p>
           )}
+          {plus ? (
+            <Link href="/start" replace className="mc-press flex h-14 items-center justify-center rounded-full bg-shape-white text-base font-semibold text-fuse-ink">
+              새 코스 만들기
+            </Link>
+          ) : (
+            <button type="button" onClick={() => void start()} className="mc-press flex h-14 items-center justify-center rounded-full bg-shape-white text-base font-semibold text-fuse-ink">
+              {busy ? '처리하는 중…' : trial.state === 'eligible' ? `${trial.days}일 무료로 시작하기` : 'Plus 시작하기'}
+            </button>
+          )}
         </div>
-        {plus ? (
-          <PrimaryButton href="/start" replace>
-            새 코스 만들기
-          </PrimaryButton>
-        ) : (
-          <PrimaryButton onClick={() => void start()}>{busy ? '처리하는 중…' : trial.state === 'eligible' ? `${trial.days}일 무료로 시작하기` : 'Plus 시작하기'}</PrimaryButton>
-        )}
-        <p className="text-center text-sm text-txt-black-secondary">
+        <p className="text-center text-[13px] text-fuse-sub">
           {trialOn && !plus ? `체험 중에 해지하면 결제되지 않아요.` : '언제든 해지할 수 있어요.'}
           <br />
           {plus && !beta ? (
-            <a href="https://apps.apple.com/account/subscriptions" className="underline">
+            <a href="https://apps.apple.com/account/subscriptions" className="inline-block px-0.5 py-1 underline">
               구독 관리
             </a>
           ) : (
-            <button type="button" className="underline" onClick={() => void restore()}>
+            <button type="button" className="px-0.5 py-1 underline" onClick={() => void restore()}>
               구매 복원
             </button>
           )}{' '}
           ·{' '}
-          <Link href="/terms" className="underline">
+          <Link href="/terms" className="inline-block px-0.5 py-1 underline">
             이용약관
           </Link>{' '}
           ·{' '}
-          <Link href="/privacy" className="underline">
+          <Link href="/privacy" className="inline-block px-0.5 py-1 underline">
             개인정보
           </Link>
         </p>

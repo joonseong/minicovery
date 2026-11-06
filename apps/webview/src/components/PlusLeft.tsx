@@ -9,5 +9,5 @@ export function plusLeftText(usage: PlusUsage) {
 
 export function PlusLeft({ usage, className = 'mt-2' }: { usage: PlusUsage | null; className?: string }) {
   if (!usage) return null;
-  return <p className={`${className} text-center text-sm text-txt-black-secondary`}>{plusLeftText(usage)}</p>;
+  return <p className={`${className} text-center text-[13px] text-fuse-sub`}>{plusLeftText(usage)}</p>;
 }

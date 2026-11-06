@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 
 import { DropDoneScreen } from '@/components/screens/DropDoneScreen';
-import { activeCourses, isPlus, plusUsage, weekDone } from '@/lib/service';
+import { activeCourses, isPlus, plusUsage, stageOf, weekDone } from '@/lib/service';
 import { currentUser } from '@/lib/session';
 import { getStore } from '@/lib/store';
 
@@ -17,7 +17,7 @@ export default async function DropDonePage({ params, searchParams }: { params: {
   const items = await activeCourses(user.id);
   const courses = items
     .filter(i => i.next && !i.course.openedAllAt)
-    .map(i => ({ id: i.course.id, topic: i.course.topic, index: i.next!.index, total: i.course.outline.length, title: i.next!.title }));
+    .map(i => ({ id: i.course.id, topic: i.course.topic, index: i.next!.index, total: i.course.outline.length, title: i.next!.title, category: i.course.category }));
   const tomorrowId = courses.some(c => c.id === user.tomorrowCourseId) ? user.tomorrowCourseId! : courses[0]?.id;
   const week = await weekDone(user.id);
   // 전체 열린 코스면 바로 이어 읽을 다음 Drop (건너뛴 Drop은 빼고)
@@ -39,6 +39,7 @@ export default async function DropDonePage({ params, searchParams }: { params: {
       dropIndex={drop.index}
       nextDropId={next?.id}
       askSignup={searchParams.signup === '1' && user.anon}
+      stageKey={stageOf(user).key}
     />
   );
 }

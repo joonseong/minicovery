@@ -55,6 +55,7 @@ export async function recallForToday(user: User): Promise<(Recall & { dropId: st
 
 export interface ReviewItem {
   dropId: string;
+  category: string;
   meta: string;
   title: string;
   takeaway: string;
@@ -73,6 +74,7 @@ export async function weekReview(user: User): Promise<WeekReviewData> {
   const courses = await store.listCourses(user.id);
   const alive = new Set(courses.filter(c => c.status === 'active' || c.status === 'completed').map(c => c.id));
   const topicOf = new Map(courses.map(c => [c.id, c.topic]));
+  const categoryOf = new Map(courses.map(c => [c.id, c.category]));
   const drops = (await store.listDropsByUser(user.id))
     .filter(d => d.completedAt && d.body?.takeaway && alive.has(d.courseId))
     .sort((a, b) => a.completedAt!.localeCompare(b.completedAt!));
@@ -84,7 +86,7 @@ export async function weekReview(user: User): Promise<WeekReviewData> {
     const to = sunday.toISOString().slice(0, 10);
     const items: ReviewItem[] = drops
       .filter(d => kstDate(d.completedAt!) >= from && kstDate(d.completedAt!) <= to)
-      .map(d => ({ dropId: d.id, meta: `${topicOf.get(d.courseId) ?? ''} · Drop ${d.index + 1}`, title: d.title, takeaway: d.body!.takeaway }));
+      .map(d => ({ dropId: d.id, category: categoryOf.get(d.courseId) ?? '기타', meta: `${topicOf.get(d.courseId) ?? ''} · Drop ${d.index + 1}`, title: d.title, takeaway: d.body!.takeaway }));
     return { range: `${label(monday)} ~ ${label(sunday)}`, items };
   };
   const today = new Date(kstDate());
@@ -101,6 +103,7 @@ export async function weekReview(user: User): Promise<WeekReviewData> {
 export interface ShareCard {
   title: string;
   topic: string;
+  category: string;
   total: number;
   takeaway: string;
   completedLabel: string;
@@ -130,6 +133,7 @@ export async function shareCard(shareId: string): Promise<ShareCard | null> {
   return {
     title: course.title,
     topic: course.topic,
+    category: course.category,
     total: course.outline.length,
     takeaway: pick?.body?.takeaway ?? '',
     completedLabel: `${m}월 ${d}일`,
@@ -144,23 +148,45 @@ export interface Recommended {
   category: string;
   total: number;
   copies: number;
+  opens: number;
 }
 
-const toRec = (c: Course): Recommended => ({ id: c.id, title: c.title, category: c.category, total: c.outline.length, copies: c.copies ?? 0 });
+const toRec = (c: Course): Recommended => ({
+  id: c.id,
+  title: c.title,
+  category: c.category,
+  total: c.outline.length,
+  copies: c.copies ?? 0,
+  opens: c.opens ?? 0,
+});
 
-/** 완주한 사람이 추천을 켰고, 운영자가 고른 코스. 만든 사람은 드러내지 않는다 */
-export async function recommendedCourses(user: User, limit = 5): Promise<Recommended[]> {
+/** 다른 사람들이 만든 코스: 완주한 사람이 추천을 켠 코스. 운영자가 숨긴 것(featured: false)만 뺀다. 만든 사람은 드러내지 않는다 */
+const listed = (c: Course) => c.status === 'completed' && Boolean(c.shared) && c.featured !== false;
+
+/** 새 코스 화면에 한 번에 불러오는 수 (아래로 내리면 이어서) */
+export const RECOMMEND_PAGE = 20;
+
+/** 많이 눌러본(미리보기를 연) 순 → 많이 받은 순 → 최근 순. 내가 만들었거나 이미 받은 코스는 뺀다 */
+export async function recommendedCourses(user: User, offset = 0, limit = RECOMMEND_PAGE): Promise<{ items: Recommended[]; hasMore: boolean }> {
   const mine = new Set((await getStore().listCourses(user.id)).flatMap(c => [c.id, c.copiedFrom].filter(Boolean)));
-  return (await getStore().listSharedCourses())
-    .filter(c => c.featured && !mine.has(c.id))
-    .sort((a, b) => (b.copies ?? 0) - (a.copies ?? 0))
-    .slice(0, limit)
-    .map(toRec);
+  const all = (await getStore().listSharedCourses())
+    .filter(c => listed(c) && !mine.has(c.id))
+    .sort((a, b) => (b.opens ?? 0) - (a.opens ?? 0) || (b.copies ?? 0) - (a.copies ?? 0) || b.createdAt.localeCompare(a.createdAt));
+  return { items: all.slice(offset, offset + limit).map(toRec), hasMore: all.length > offset + limit };
+}
+
+/** 추천 코스 미리보기를 열 때마다 하나 센다 (인기순). 만든 사람 본인은 세지 않는다 */
+export async function recordRecommendOpen(user: User, id: string) {
+  const store = getStore();
+  const course = await store.getCourse(id);
+  if (!course || !listed(course) || course.userId === user.id) return;
+  course.opens = (course.opens ?? 0) + 1;
+  await store.saveCourse(course);
 }
 
 export async function recommendedCourse(id: string): Promise<(Recommended & { level: Course['level']; titles: string[] }) | null> {
   const course = await getStore().getCourse(id);
-  if (!course || course.status !== 'completed' || !course.shared || !course.featured) return null;
+  if (!course || !listed(course)) return null;
   return { ...toRec(course), level: course.level, titles: course.outline.map(o => o.title) };
 }
 
@@ -189,7 +215,7 @@ export type CopyResult =
 export async function copyRecommended(user: User, sourceId: string, replace: boolean): Promise<CopyResult> {
   const store = getStore();
   const source = await store.getCourse(sourceId);
-  if (!source || source.status !== 'completed' || !source.shared || !source.featured) return { ok: false, reason: 'missing' };
+  if (!source || !listed(source)) return { ok: false, reason: 'missing' };
   const already = (await store.listCourses(user.id)).find(c => c.status !== 'deleted' && (c.id === sourceId || c.copiedFrom === sourceId));
   if (already) return { ok: false, reason: 'already', courseId: already.id };
   const quota = await courseQuota(user);
@@ -212,6 +238,7 @@ export async function copyRecommended(user: User, sourceId: string, replace: boo
     shared: undefined,
     featured: undefined,
     copies: undefined,
+    opens: undefined,
     shareId: undefined,
     copiedFrom: source.id,
   };

@@ -7,7 +7,7 @@
 html,
 body {
   background: #ffffff;
-  color: #151517;
+  color: #0b0b0c;
   letter-spacing: -0.5px;
   /* 한국어는 단어 단위로 줄바꿈 */
   word-break: keep-all;
@@ -18,7 +18,7 @@ body {
 }
 
 input::placeholder {
-  color: #b4b5c1;
+  color: #aeaeb2;
 }
 
 @keyframes mc-in {
@@ -115,6 +115,19 @@ input::placeholder {
   animation: mc-tab-pop 0.5s cubic-bezier(0.3, 1.4, 0.5, 1);
 }
 
+/* 만드는 중인 편: 동그라미 테두리가 로딩처럼 차오른다 */
+@keyframes mc-ring {
+  from {
+    stroke-dashoffset: 88;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.mc-ring {
+  animation: mc-ring 0.55s linear infinite;
+}
+
 /* 누르는 버튼 공통 피드백 */
 .mc-press {
   transition: transform 0.12s ease-out, opacity 0.12s ease-out;
@@ -136,7 +149,7 @@ input::placeholder {
   height: 1em;
   margin-left: 2px;
   vertical-align: text-bottom;
-  background: #20967a;
+  background: #0b0b0c;
   animation: caret 1s step-end infinite;
 }
 
@@ -145,8 +158,12 @@ input::placeholder {
   .mc-ic-on,
   .mc-pop,
   .mc-up,
-  .mc-in {
+  .mc-in,
+  .mc-ring {
     transition: none;
     animation: none;
+  }
+  .mc-ring {
+    stroke-dashoffset: 22;
   }
 }

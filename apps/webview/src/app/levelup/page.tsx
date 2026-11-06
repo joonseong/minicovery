@@ -24,11 +24,11 @@ export default async function LevelUpPage({ searchParams }: { searchParams: { ne
     <Screen>
       <AppHeader layout="nav" close={next} />
       <Main className="items-center justify-center pb-6 pt-4 text-center">
-        <div className="mc-pop mt-4 flex aspect-square w-[min(224px,56vw)] items-center justify-center">
+        <div className="mc-pop flex aspect-square w-[min(200px,52vw)] items-center justify-center">
           <Doodle animal={up.stage.key} act="cheer" label={`${ch.name} 캐릭터`} className="block h-full w-full" />
         </div>
-        <h1 className="mt-4 text-[28px] font-bold leading-9 tracking-[-1px]">{up.stage.name} 단계가 됐어요!</h1>
-        <p className="mt-2 text-base text-txt-black-secondary">
+        <h1 className="mt-8 text-[28px] font-bold leading-[1.3]">{up.stage.name} 단계가 됐어요!</h1>
+        <p className="mt-2.5 text-sm text-fuse-sub">
           {last ? `‘${last.topic}’까지 ` : ''}다 배운 주제가 {learned}개가 됐어요.
         </p>
       </Main>

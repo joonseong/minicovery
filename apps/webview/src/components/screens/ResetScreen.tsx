@@ -16,7 +16,7 @@ const ERRORS: Record<string, string> = {
   password: `비밀번호는 ${PW_MIN}자 이상이에요.`,
 };
 
-const INPUT = 'h-14 rounded-2xl border px-4 text-base leading-6 outline-none focus:border-border-brand';
+const INPUT = 'h-14 rounded-[18px] border bg-fuse-card px-[18px] text-base leading-6 outline-none placeholder:text-fuse-chev focus:border-fuse-ink focus:bg-shape-white';
 
 /** 메일 링크(/reset?token=)로 들어와 새 비밀번호를 두 번 적는다 */
 export function ResetScreen({ token }: { token: string }) {
@@ -49,8 +49,8 @@ export function ResetScreen({ token }: { token: string }) {
     <Screen>
       <AppHeader layout="nav" close="/login" />
       <Main className="pb-6 pt-4">
-        <h1 className="text-2xl font-bold tracking-[-1px]">새 비밀번호</h1>
-        <p className="mt-2 text-base text-txt-black-secondary">{PW_MIN}자 이상으로 새 비밀번호를 정해 주세요.</p>
+        <h1 className="text-[28px] font-bold leading-[1.3]">새 비밀번호</h1>
+        <p className="mt-2 text-sm text-fuse-sub">{PW_MIN}자 이상으로 새 비밀번호를 정해 주세요.</p>
         <form
           className="mt-6 flex flex-col gap-4"
           onSubmit={e => {
@@ -59,7 +59,7 @@ export function ResetScreen({ token }: { token: string }) {
           }}
         >
           <div className="flex flex-col gap-2">
-            <label htmlFor="rs-pw" className="text-sm font-semibold text-txt-black-secondary">
+            <label htmlFor="rs-pw" className="text-[13px] font-medium text-fuse-sub">
               새 비밀번호
             </label>
             <input
@@ -71,12 +71,12 @@ export function ResetScreen({ token }: { token: string }) {
               onChange={e => setPw(e.target.value)}
               disabled={!token}
               aria-invalid={Boolean(pwHelp)}
-              className={`${INPUT} ${pwHelp ? 'border-border-error' : 'border-border-button'}`}
+              className={`${INPUT} ${pwHelp ? 'border-border-error' : 'border-fuse-line'}`}
             />
-            {pwHelp ? <p className="text-sm text-txt-error">{pwHelp}</p> : null}
+            {pwHelp ? <p className="text-sm text-fuse-hot">{pwHelp}</p> : null}
           </div>
           <div className="flex flex-col gap-2">
-            <label htmlFor="rs-pw2" className="text-sm font-semibold text-txt-black-secondary">
+            <label htmlFor="rs-pw2" className="text-[13px] font-medium text-fuse-sub">
               한 번 더
             </label>
             <input
@@ -88,12 +88,12 @@ export function ResetScreen({ token }: { token: string }) {
               onChange={e => setPw2(e.target.value)}
               disabled={!token}
               aria-invalid={Boolean(matchHelp)}
-              className={`${INPUT} ${matchHelp ? 'border-border-error' : 'border-border-button'}`}
+              className={`${INPUT} ${matchHelp ? 'border-border-error' : 'border-fuse-line'}`}
             />
-            {matchHelp ? <p className="text-sm text-txt-error">{matchHelp}</p> : null}
+            {matchHelp ? <p className="text-sm text-fuse-hot">{matchHelp}</p> : null}
           </div>
           {error ? (
-            <p role="alert" className="text-sm text-txt-error">
+            <p role="alert" className="text-sm text-fuse-hot">
               {error}
               {needNewLink ? (
                 <>

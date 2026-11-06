@@ -8,8 +8,8 @@ export default function NotFound() {
       <AppHeader layout="logo" />
       <Main className="items-center justify-center pb-6 pt-4 text-center">
         <Doodle animal="rabbit" act="tilt" className="h-24 w-24" />
-        <h1 className="mt-4 text-2xl font-bold tracking-[-1px]">페이지를 찾을 수 없어요</h1>
-        <p className="mt-2 text-base text-txt-black-secondary">
+        <h1 className="mt-4 text-[28px] font-bold leading-[1.3]">페이지를 찾을 수 없어요</h1>
+        <p className="mt-2 text-sm text-fuse-sub">
           주소가 바뀌었거나 지워진 페이지예요.
           <br />
           홈에서 오늘 Drop을 이어서 읽어 보세요.

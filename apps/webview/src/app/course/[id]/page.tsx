@@ -28,6 +28,7 @@ export default async function CoursePage({ params }: { params: { id: string } })
       courseId={course.id}
       title={course.title}
       meta={`${LEVEL_LABEL[course.level]} · ${course.category}`}
+      category={course.category}
       drops={drops.map(d => ({ id: d.id, index: d.index, title: d.title, done: Boolean(d.completedAt), skipped: d.status === 'skipped' }))}
       nextId={course.status === 'active' ? next?.id : undefined}
       doneToday={Boolean(doneToday)}
