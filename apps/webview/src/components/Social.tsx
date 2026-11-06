@@ -29,7 +29,7 @@ export function SocialButtons({
   const [available, setAvailable] = useState({ apple: false, kakao: false, google: false });
   const [error, setError] = useState('');
   useEffect(() => setAvailable({ apple: canAppleSignIn(), kakao: canSocialSignIn('kakao'), google: canSocialSignIn('google') }), []);
-  const base = 'relative flex items-center justify-center rounded-xl text-base font-semibold';
+  const base = 'relative flex items-center justify-center rounded-full text-base font-semibold';
 
   /** 앱에서 토큰을 받아 서버에 넘긴다. 사용자가 닫은 경우(canceled)는 조용히 둔다 */
   const signIn = async (
@@ -72,15 +72,15 @@ export function SocialButtons({
     <div className="flex flex-col gap-2">
       {available.kakao ? (
         <button type="button" onClick={() => void signInKakao()} className={cx(base, 'mc-press bg-[#FEE500] text-[rgba(0,0,0,0.85)]')} style={{ height }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" className="absolute left-5">
+          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" className="absolute left-[22px]">
             <path d="M12 4C7.03 4 3 7.13 3 11c0 2.5 1.67 4.69 4.19 5.93l-.86 3.13c-.08.28.24.5.48.34l3.73-2.47c.48.05.97.07 1.46.07 4.97 0 9-3.13 9-7s-4.03-7-9-7z" fill="#000" />
           </svg>
           카카오로 시작하기
         </button>
       ) : null}
       {available.google ? (
-        <button type="button" onClick={() => void signInGoogle()} className={cx(base, 'mc-press border border-border-button bg-shape-white')} style={{ height }}>
-          <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true" className="absolute left-5">
+        <button type="button" onClick={() => void signInGoogle()} className={cx(base, 'mc-press border border-fuse-edge bg-shape-white')} style={{ height }}>
+          <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true" className="absolute left-[22px]">
             <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
             <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
             <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
@@ -90,8 +90,8 @@ export function SocialButtons({
         </button>
       ) : null}
       {available.apple ? (
-        <button type="button" onClick={() => void signInApple()} className={cx(base, 'mc-press bg-[#000] text-txt-white-primary')} style={{ height }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" className="absolute left-5">
+        <button type="button" onClick={() => void signInApple()} className={cx(base, 'mc-press bg-fuse-ink text-txt-white-primary')} style={{ height }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" className="absolute left-[22px]">
             <path
               fill="#fff"
               d="M16.37 12.6c-.02-2.2 1.8-3.26 1.88-3.31-1.03-1.5-2.62-1.7-3.18-1.73-1.35-.14-2.64.8-3.33.8-.69 0-1.74-.78-2.86-.76-1.47.02-2.83.86-3.59 2.17-1.53 2.66-.39 6.6 1.1 8.76.73 1.06 1.6 2.24 2.73 2.2 1.1-.04 1.51-.71 2.84-.71 1.32 0 1.7.71 2.86.69 1.18-.02 1.93-1.07 2.65-2.13.84-1.22 1.18-2.41 1.2-2.47-.03-.01-2.3-.88-2.3-3.51zM14.2 6.13c.6-.73 1.01-1.75.9-2.76-.87.04-1.92.58-2.54 1.31-.56.65-1.05 1.68-.92 2.68.97.07 1.96-.49 2.56-1.23z"
@@ -103,21 +103,21 @@ export function SocialButtons({
       {divider ? (
         available.kakao || available.google || available.apple ? (
           <div className="mt-4 flex items-center gap-3">
-            <span aria-hidden="true" className="h-px flex-1 bg-border-div" />
-            <span className="text-sm text-txt-black-tertiary">{divider}</span>
-            <span aria-hidden="true" className="h-px flex-1 bg-border-div" />
+            <span aria-hidden="true" className="h-px flex-1 bg-[#F2F2F4]" />
+            <span className="text-[13px] text-fuse-sub">{divider}</span>
+            <span aria-hidden="true" className="h-px flex-1 bg-[#F2F2F4]" />
           </div>
         ) : null
       ) : (
         <Link
           href={`/login?mode=signup&next=${encodeURIComponent(next)}`}
-          className={cx(base, 'mc-press border border-border-button bg-shape-white text-txt-black-primary')}
+          className={cx(base, 'mc-press border border-fuse-edge bg-shape-white text-fuse-ink')}
           style={{ height }}
         >
           이메일로 계속하기
         </Link>
       )}
-      {error ? <p className="text-center text-sm text-txt-error">{error}</p> : null}
+      {error ? <p className="text-center text-sm text-fuse-hot">{error}</p> : null}
     </div>
   );
 }

@@ -14,7 +14,7 @@ import { AppHeader, Footer, Main, PrimaryButton, Screen } from '../ui';
 export const EMAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const PW_MIN = 8;
 
-const INPUT = 'h-14 rounded-2xl border px-4 text-base leading-6 outline-none focus:border-border-brand';
+const INPUT = 'h-14 rounded-[18px] border bg-fuse-card px-[18px] text-base leading-6 outline-none placeholder:text-fuse-chev focus:border-fuse-ink focus:bg-shape-white';
 
 /** 로그인(소셜 + 이메일) · 이메일 가입 (보조 수단) */
 export function LoginScreen({ next, mode }: { next: string; mode: 'login' | 'signup' }) {
@@ -57,8 +57,8 @@ export function LoginScreen({ next, mode }: { next: string; mode: 'login' | 'sig
     <Screen>
       <AppHeader layout="nav" back />
       <Main className="pb-6 pt-4">
-        <h1 className="text-2xl font-bold tracking-[-1px]">{signup ? '이메일로 가입' : '로그인'}</h1>
-        <p className="mt-2 text-base text-txt-black-secondary">
+        <h1 className="text-[28px] font-bold leading-[1.3]">{signup ? '이메일로 가입' : '로그인'}</h1>
+        <p className="mt-2 text-sm text-fuse-sub">
           {signup ? '지금까지 읽은 코스와 진도가 그대로 저장돼요.' : '이 기기에서 읽은 코스와 기록도 계정으로 옮겨 드려요. 계정에 있던 코스도 그대로 남아요.'}
         </p>
         {signup ? null : (
@@ -67,14 +67,14 @@ export function LoginScreen({ next, mode }: { next: string; mode: 'login' | 'sig
           </div>
         )}
         <form
-          className={`${signup ? 'mt-8' : 'mt-6'} flex flex-col gap-4`}
+          className={`${signup ? 'mt-8' : 'mt-5'} flex flex-col gap-3.5`}
           onSubmit={e => {
             e.preventDefault();
             void submit();
           }}
         >
-          <div className="flex flex-col gap-2">
-            <label htmlFor="li-email" className="text-sm font-semibold text-txt-black-secondary">
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="li-email" className="text-[13px] font-medium text-fuse-sub">
               이메일
             </label>
             <input
@@ -86,16 +86,16 @@ export function LoginScreen({ next, mode }: { next: string; mode: 'login' | 'sig
               onChange={e => setEmail(e.target.value.trim())}
               aria-invalid={Boolean(emailHelp)}
               aria-describedby={emailHelp ? 'li-email-help' : undefined}
-              className={`${INPUT} ${emailHelp ? 'border-border-error' : 'border-border-button'}`}
+              className={`${INPUT} ${emailHelp ? 'border-border-error' : 'border-fuse-line'}`}
             />
             {emailHelp ? (
-              <p id="li-email-help" className="text-sm text-txt-error">
+              <p id="li-email-help" className="text-sm text-fuse-hot">
                 {emailHelp}
               </p>
             ) : null}
           </div>
-          <div className="flex flex-col gap-2">
-            <label htmlFor="li-pw" className="text-sm font-semibold text-txt-black-secondary">
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="li-pw" className="text-[13px] font-medium text-fuse-sub">
               비밀번호
             </label>
             <input
@@ -107,16 +107,16 @@ export function LoginScreen({ next, mode }: { next: string; mode: 'login' | 'sig
               onChange={e => setPw(e.target.value)}
               aria-invalid={Boolean(pwHelp)}
               aria-describedby={signup ? 'li-pw-help' : undefined}
-              className={`${INPUT} ${pwHelp ? 'border-border-error' : 'border-border-button'}`}
+              className={`${INPUT} ${pwHelp ? 'border-border-error' : 'border-fuse-line'}`}
             />
             {signup ? (
-              <p id="li-pw-help" className={pwHelp ? 'text-sm text-txt-error' : 'text-sm text-txt-black-tertiary'}>
+              <p id="li-pw-help" className={pwHelp ? 'text-sm text-fuse-hot' : 'text-sm text-fuse-faint'}>
                 {pwHelp || `${PW_MIN}자 이상으로 정해 주세요`}
               </p>
             ) : null}
           </div>
           {error ? (
-            <p role="alert" className="text-sm text-txt-error">
+            <p role="alert" className="text-sm text-fuse-hot">
               {error}
             </p>
           ) : null}
@@ -124,14 +124,14 @@ export function LoginScreen({ next, mode }: { next: string; mode: 'login' | 'sig
         </form>
         <div className="mt-4 flex flex-col items-center">
           {signup ? null : (
-            <Link href={`/forgot${email ? `?email=${encodeURIComponent(email)}` : ''}`} className="flex min-h-11 items-center px-3 text-sm text-txt-black-tertiary underline">
+            <Link href={`/forgot${email ? `?email=${encodeURIComponent(email)}` : ''}`} className="flex min-h-11 items-center px-3 text-sm font-medium text-fuse-sub underline">
               비밀번호를 잊으셨나요?
             </Link>
           )}
           <Link
             href={`/login?mode=${signup ? 'login' : 'signup'}&next=${encodeURIComponent(next)}`}
             replace
-            className="flex min-h-11 items-center px-3 text-sm text-txt-black-tertiary underline"
+            className="flex min-h-11 items-center px-3 text-sm font-medium text-fuse-sub underline"
           >
             {signup ? '이미 계정이 있어요 · 로그인' : '처음이에요 · 이메일로 가입'}
           </Link>

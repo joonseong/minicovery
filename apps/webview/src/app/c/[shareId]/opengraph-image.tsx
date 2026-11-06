@@ -14,13 +14,13 @@ export default async function Image({ params }: { params: { shareId: string } })
   const font = await fetch(FONT).then(r => r.arrayBuffer());
   return new ImageResponse(
     (
-      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', background: '#20967A', color: '#FFFFFF', padding: 64, fontFamily: 'Pretendard' }}>
+      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', background: '#FFFFFF', color: '#0B0B0C', padding: 64, fontFamily: 'Pretendard' }}>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <div style={{ fontSize: 30, color: '#EEEEF9' }}>{card ? `코스 완주 · ${card.total}편` : '코스 완주'}</div>
+          <div style={{ fontSize: 30, color: '#8E8E93' }}>{card ? `코스 완주 · ${card.total}편` : '코스 완주'}</div>
           <div style={{ marginTop: 16, fontSize: 60, lineHeight: 1.25 }}>{card?.title ?? '미니커버리'}</div>
         </div>
         {card?.takeaway ? (
-          <div style={{ display: 'flex', background: '#FFFFFF', color: '#151517', borderRadius: 28, padding: '28px 36px', fontSize: 36, lineHeight: 1.4 }}>{card.takeaway}</div>
+          <div style={{ display: 'flex', background: '#FAFAFB', border: '2px solid #F0F0F2', color: '#0B0B0C', borderRadius: 40, padding: '28px 36px', fontSize: 36, lineHeight: 1.4 }}>{card.takeaway}</div>
         ) : null}
         <div style={{ fontSize: 30 }}>미니커버리 · 하루 한 편 교양</div>
       </div>

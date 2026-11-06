@@ -7,6 +7,7 @@ import { isCompleteBody, parseDropText, splitPoints } from '@/lib/drop-format';
 import type { Drop, DropBody } from '@/lib/types';
 
 import { AfterComplete, type CompleteResult } from '../AfterComplete';
+import { CatIcon } from '../CatIcon';
 import type { DoodleAnimal } from '../Doodle';
 import { DropLoading, type DropLoadingStep } from '../DropLoading';
 import { RecallCard, type RecallLike } from '../RecallCard';
@@ -57,6 +58,7 @@ export function DropScreen({
   nextDropId,
   openedAll,
   stageKey,
+  category,
 }: {
   initialDrop: Drop;
   courseTitle: string;
@@ -69,6 +71,8 @@ export function DropScreen({
   openedAll?: boolean;
   /** 로딩 화면 캐릭터 (지금 단계) */
   stageKey: DoodleAnimal;
+  /** 코스 분야 (진행 줄의 아이콘) */
+  category: string;
 }) {
   const skippedAtStart = initialDrop.status === 'skipped';
   const [drop, setDrop] = useState(initialDrop);
@@ -232,13 +236,20 @@ export function DropScreen({
 
   return (
     <Screen className="relative">
-      <AppHeader layout="nav" title={courseTitle} close="/today" divider />
-      <Main className="pb-8 pt-6">
-        {recall && phase !== 'skipped' ? <RecallCard recall={recall} /> : null}
-        <p className="text-sm font-semibold text-txt-black-tertiary">
-          Drop {drop.index + 1} / {total}
-        </p>
-        <h1 className="mt-2 text-2xl font-bold tracking-[-1px]">{drop.title}</h1>
+      <AppHeader layout="nav" title={courseTitle} close="/today" />
+      <Main className="pb-8 pt-4">
+        {recall && phase !== 'skipped' ? <RecallCard recall={recall} className="mb-7" /> : null}
+        <div className="flex items-center gap-3">
+          <CatIcon category={category} />
+          <span className="text-sm font-medium leading-[1.3]">
+            Drop {drop.index + 1}
+            <span className="text-fuse-mute"> / {total}</span>
+          </span>
+          <span aria-hidden="true" className="h-1.5 flex-1 overflow-hidden rounded-full bg-fuse-track">
+            <span className="block h-full rounded-full bg-fuse-ink" style={{ width: `${Math.round(((drop.index + 1) / Math.max(1, total)) * 100)}%` }} />
+          </span>
+        </div>
+        <h1 className="mt-5 text-[28px] font-bold leading-[1.3]">{drop.title}</h1>
         {phase === 'ready' && drop.image?.url ? (
           // 내용을 옮긴 장식 그림 (본문이 같은 내용을 말한다)
           // eslint-disable-next-line @next/next/no-img-element
@@ -247,7 +258,7 @@ export function DropScreen({
 
         {phase === 'skipped' ? (
           <div className="mt-10 flex flex-col items-center gap-4 text-center">
-            <p className="text-base text-txt-black-secondary">{notice}</p>
+            <p className="text-base text-fuse-sub">{notice}</p>
             <PrimaryButton href={skipHref} replace>
               {skipNext ? '다음 Drop 읽기' : '코스로 돌아가기'}
             </PrimaryButton>
@@ -255,36 +266,36 @@ export function DropScreen({
         ) : phase === 'conflict' ? (
           // 본문은 숨기고 안내만. 완료는 막는다
           <div className="mt-10 flex flex-col items-center gap-4 text-center">
-            <p className="text-base text-txt-black-secondary">{notice}</p>
+            <p className="text-base text-fuse-sub">{notice}</p>
             <OutlineButton onClick={() => window.location.reload()}>다시 열기</OutlineButton>
           </div>
         ) : phase === 'failed' ? (
           <div className="mt-10 flex flex-col items-center gap-4 text-center">
-            <p className="text-base text-txt-black-secondary">Drop을 만들지 못했어요. 잠시 뒤 다시 시도해 주세요.</p>
+            <p className="text-base text-fuse-sub">Drop을 만들지 못했어요. 잠시 뒤 다시 시도해 주세요.</p>
             <OutlineButton onClick={() => setAttempt(a => a + 1)}>다시 만들기</OutlineButton>
           </div>
         ) : loading ? (
           <DropLoading step={loadingStep} progress={progress} animal={stageKey} />
         ) : (
-          <article className={`${drop.image?.url ? 'mt-3' : 'mt-6'} flex flex-col gap-7`}>
-            {body.hook ? <p className="whitespace-pre-line text-lg font-semibold leading-7">{body.hook}</p> : null}
+          <article className={`${drop.image?.url ? 'mt-3' : 'mt-6'} flex flex-col gap-8`}>
+            {body.hook ? <p className="whitespace-pre-line text-base font-semibold">{body.hook}</p> : null}
             {SECTIONS.map(s =>
               body[s.key] ? (
-                <section key={s.key} className="flex flex-col gap-2">
-                  <h2 className="text-sm font-bold text-txt-black-secondary">{s.label}</h2>
-                  <p className="whitespace-pre-line text-base leading-7">{body[s.key]}</p>
+                <section key={s.key} className="flex flex-col gap-2.5">
+                  <h2 className="text-[13px] font-medium text-fuse-sub">{s.label}</h2>
+                  <p className="whitespace-pre-line text-base">{body[s.key]}</p>
                 </section>
               ) : null,
             )}
             {body.takeaway ? (
-              <section className="flex flex-col gap-2 rounded-2xl bg-shape-depth1 p-5">
-                <h2 className="text-sm font-bold text-txt-black-secondary">정리하기</h2>
-                <p className="text-lg font-semibold">{body.takeaway}</p>
+              <section className="flex flex-col gap-2 rounded-card border border-fuse-line bg-fuse-card p-4">
+                <h2 className="text-[13px] font-medium text-fuse-sub">정리하기</h2>
+                <p className="text-xl font-bold leading-[1.3]">{body.takeaway}</p>
                 {points.length ? (
-                  <ul className="mt-2 flex flex-col gap-2 border-t border-border-div pt-4">
+                  <ul className="mt-2 flex flex-col gap-1.5 border-t border-fuse-line pt-3">
                     {points.map((pt, i) => (
-                      <li key={i} className="flex gap-2 text-base leading-6">
-                        <span aria-hidden className="shrink-0 text-txt-black-tertiary">–</span>
+                      <li key={i} className="flex gap-2 text-sm">
+                        <span aria-hidden className="shrink-0 text-fuse-faint">–</span>
                         <span>{pt}</span>
                       </li>
                     ))}
@@ -297,20 +308,23 @@ export function DropScreen({
 
         {phase === 'ready' ? (
           <>
-            <section className="mt-10 flex flex-col gap-3 border-t border-border-div pt-6">
-              <h2 className="text-sm font-bold text-txt-black-secondary">출처 · 더 알아보기</h2>
+            <section className="mt-10 flex flex-col">
+              <h2 className="mb-1 text-[13px] font-medium text-fuse-sub">출처 · 더 알아보기</h2>
               {drop.sources.map(s => (
-                <a key={s.url} href={s.url} target="_blank" rel="noreferrer" className="text-sm text-txt-link">
-                  {s.title}
+                <a key={s.url} href={s.url} target="_blank" rel="noreferrer" className="flex min-h-[52px] items-center gap-3 border-b border-[#F2F2F4] text-sm">
+                  <span className="min-w-0 flex-1">{s.title}</span>
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" className="flex-shrink-0">
+                    <path d="M4 10 10 4M5 4h5v5" stroke="#AEAEB2" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
                 </a>
               ))}
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-sm text-txt-black-tertiary">AI가 만든 콘텐츠예요{drop.corrected ? ' · 내용을 다시 확인해 고쳤어요' : ''}</p>
+              <div className="mt-1 flex items-center justify-between gap-3">
+                <p className="text-[13px] text-fuse-faint">AI가 만든 콘텐츠예요{drop.corrected ? ' · 내용을 다시 확인해 고쳤어요' : ''}</p>
                 <button
                   type="button"
                   disabled={reported}
                   onClick={() => setReportSheet(true)}
-                  className={reported ? 'min-h-11 flex-shrink-0 text-sm text-txt-black-tertiary' : 'min-h-11 flex-shrink-0 text-sm text-txt-black-tertiary underline'}
+                  className={reported ? 'min-h-11 flex-shrink-0 text-[13px] text-fuse-sub' : 'min-h-11 flex-shrink-0 text-[13px] text-fuse-sub underline'}
                 >
                   {reported ? '신고했어요' : '내용이 이상해요'}
                 </button>
@@ -319,9 +333,9 @@ export function DropScreen({
             <div ref={sentinel} />
             {!rereading ? (
               <section className="mt-10 flex flex-col gap-4">
-                <div className="flex flex-col gap-1 text-center">
-                  <h2 className="text-lg font-semibold">{openedAll ? '이 Drop, 어땠어요?' : '오늘 Drop, 어땠어요?'}</h2>
-                  <p className="text-sm text-txt-black-secondary">
+                <div className="flex flex-col gap-1.5 text-center">
+                  <h2 className="text-xl font-bold leading-[1.3]">{openedAll ? '이 Drop, 어땠어요?' : '오늘 Drop, 어땠어요?'}</h2>
+                  <p className="text-sm text-fuse-sub">
                     어느 쪽을 눌러도 {openedAll ? '이 Drop을' : '오늘 Drop을'} 마쳐요. ‘조금 헷갈려요’는 더 쉽게 다시 설명해 줘요.
                   </p>
                 </div>
@@ -343,20 +357,20 @@ export function DropScreen({
       ) : null}
 
       <Sheet open={reportSheet} onClose={() => setReportSheet(false)} labelledBy="reportTitle">
-        <h2 id="reportTitle" className="mt-6 text-2xl font-bold tracking-[-1px]">
+        <h2 id="reportTitle" className="mt-6 text-2xl font-bold leading-[1.3]">
           어떤 점이 이상했나요?
         </h2>
-        <p className="mt-1 text-base text-txt-black-secondary">알려 주시면 확인하고 고칠게요.</p>
+        <p className="mt-1 text-sm text-fuse-sub">알려 주시면 확인하고 고칠게요.</p>
         <div className="mt-5 flex flex-col gap-2">
           {REPORT_REASONS.map(r => (
             <button
               key={r.key}
               type="button"
               onClick={() => void report(r.key)}
-              className="mc-press flex min-h-14 flex-col items-start justify-center gap-0.5 rounded-2xl border border-border-button bg-shape-white px-5 py-3 text-left"
+              className="mc-press flex min-h-14 flex-col items-start justify-center gap-0.5 rounded-card border border-fuse-line bg-fuse-card px-4 py-3 text-left"
             >
-              <span className="text-base font-semibold">{r.label}</span>
-              <span className="text-sm text-txt-black-tertiary">{r.desc}</span>
+              <span className="text-base font-semibold leading-[1.3]">{r.label}</span>
+              <span className="text-[13px] text-fuse-sub">{r.desc}</span>
             </button>
           ))}
         </div>

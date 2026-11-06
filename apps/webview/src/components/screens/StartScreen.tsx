@@ -3,14 +3,15 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
+import Link from 'next/link';
+
 import { checkTopic, levelHref } from '@/lib/client/start';
 import { josa } from '@/lib/josa';
 import type { Recommended } from '@/lib/learning';
 
-import Link from 'next/link';
-
+import { CatIcon } from '../CatIcon';
 import { LimitSheet, MonthlySheet, ReplaceSheet } from '../QuotaSheets';
-import { AppHeader, BottomNav, Main, PrimaryButton, Screen, Toast, useToast } from '../ui';
+import { BottomNav, IconArrow, Main, PrimaryButton, Screen, Toast, useToast } from '../ui';
 
 const MAX = 100;
 
@@ -22,15 +23,28 @@ type Props = {
   replace?: boolean;
   /** Plus 새 코스가 다시 채워지는 날 */
   resetLabel?: string;
-  /** 다른 사람들이 만든 추천 코스 */
+  /** 다른 사람들이 만든 추천 코스 (첫 20개, 많이 눌러본 순) */
   recommended?: Recommended[];
+  /** 더 불러올 추천 코스가 있음 (아래로 내리면 20개씩) */
+  recommendedMore?: boolean;
   /** 추천·안개 주제로 들어옴(?go=1): 주제 검사→수준 선택까지 바로 진행 */
   autoGo?: boolean;
   /** 도착하자마자 한 번 보여 줄 안내 (계정 삭제·로그아웃 뒤) */
   notice?: string;
 };
 
-export function StartScreen({ initialTopic, suggestions, quota, currentTopic, replace, resetLabel, recommended = [], autoGo, notice: arrivalNotice }: Props) {
+export function StartScreen({
+  initialTopic,
+  suggestions,
+  quota,
+  currentTopic,
+  replace,
+  resetLabel,
+  recommended: firstRecommended = [],
+  recommendedMore = false,
+  autoGo,
+  notice: arrivalNotice,
+}: Props) {
   const router = useRouter();
   const [topic, setTopic] = useState(initialTopic);
   const [busy, setBusy] = useState(false);
@@ -38,6 +52,10 @@ export function StartScreen({ initialTopic, suggestions, quota, currentTopic, re
   const [sheet, setSheet] = useState<null | { kind: 'free' | 'monthly' | 'daily' | 'over'; replaceHref: string }>(null);
   const [toast, showToast] = useToast();
   const autoRan = useRef(false);
+  const [recommended, setRecommended] = useState(firstRecommended);
+  const [more, setMore] = useState(recommendedMore);
+  const loadingMore = useRef(false);
+  const listEnd = useRef<HTMLDivElement>(null);
   const trimmed = topic.trim();
   // 이번 달 3개를 다 만들었으면 입력 전에 막는다 (AI 검사까지 돌리지 않는다)
   const blocked = quota === 'monthly';
@@ -110,33 +128,60 @@ export function StartScreen({ initialTopic, suggestions, quota, currentTopic, re
     if (arrivalNotice) showToast(arrivalNotice);
   }, [arrivalNotice, showToast]);
 
+  // 다른 사람들이 만든 코스: 목록 끝이 보이면 다음 20개를 불러온다
+  useEffect(() => {
+    if (!more || !listEnd.current) return;
+    const observer = new IntersectionObserver(async entries => {
+      if (!entries.some(e => e.isIntersecting) || loadingMore.current) return;
+      loadingMore.current = true;
+      try {
+        const res = await fetch(`/api/recommended?offset=${recommended.length}`);
+        const page = (await res.json()) as { items: Recommended[]; hasMore: boolean };
+        setRecommended(list => [...list, ...page.items.filter(r => !list.some(x => x.id === r.id))]);
+        setMore(page.hasMore && page.items.length > 0);
+      } catch {
+        setMore(false);
+      } finally {
+        loadingMore.current = false;
+      }
+    });
+    observer.observe(listEnd.current);
+    return () => observer.disconnect();
+  }, [more, recommended.length]);
+
   return (
     <Screen className="relative">
-      <AppHeader layout="logo" />
-      <Main className="pb-10 pt-8">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-[28px] font-bold leading-9 tracking-[-1px]">
+      <Main className="pb-32 pt-6">
+        <div className="flex flex-col gap-2.5">
+          <h1 className="text-[28px] font-bold leading-[1.3]">
             요즘 뭐가
             <br />
             궁금하세요?
           </h1>
-          <p className="text-base text-txt-black-secondary">입력한 주제를 하루 한 편씩 읽는 코스로 만들어 드려요.</p>
+          <p className="text-sm text-fuse-sub">입력한 주제를 하루 한 편씩 읽는 코스로 만들어 드려요.</p>
         </div>
 
         {limitNote ? (
           // 한도를 주제를 다 입력하기 전에 알린다
-          <p className="mt-6 rounded-2xl bg-shape-depth1 px-5 py-4 text-sm text-txt-black-secondary">
-            {limitNote}{' '}
-            {quota === 'free' || quota === 'over' ? (
-              <Link href="/plus?from=keep" className="font-semibold text-txt-point">
-                Plus로 여러 코스 함께 배우기
-              </Link>
-            ) : null}
-          </p>
+          <div className="mt-6 flex gap-3 rounded-card border border-fuse-line bg-fuse-card p-4">
+            <span className="flex h-[30px] w-[30px] flex-shrink-0 items-center justify-center rounded-[9px] bg-fuse-ink">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 8v5M12 16.5h.01" stroke="#FFFFFF" strokeWidth="2.2" strokeLinecap="round" />
+              </svg>
+            </span>
+            <p className="min-w-0 flex-1 text-[13px] text-fuse-sub">
+              {limitNote}{' '}
+              {quota === 'free' || quota === 'over' ? (
+                <Link href="/plus?from=keep" className="font-bold text-fuse-ink">
+                  Plus로 여러 코스 함께 배우기
+                </Link>
+              ) : null}
+            </p>
+          </div>
         ) : null}
 
         <form
-          className={limitNote ? 'mt-6 flex flex-col gap-3' : 'mt-8 flex flex-col gap-3'}
+          className={limitNote ? 'mt-5 flex flex-col gap-2.5' : 'mt-6 flex flex-col gap-2.5'}
           onSubmit={e => {
             e.preventDefault();
             void go(topic);
@@ -155,12 +200,12 @@ export function StartScreen({ initialTopic, suggestions, quota, currentTopic, re
               enterKeyHint="go"
               placeholder="예: 금리가 오르면 환율은 왜 움직일까"
               aria-describedby="topic-count"
-              className="h-14 w-full rounded-2xl border bg-shape-white px-4 text-base text-txt-black-primary outline-none disabled:bg-shape-depth1 disabled:text-txt-black-tertiary"
-              style={{ borderColor: trimmed && !blocked ? '#20967A' : '#DEDFEB' }}
+              className="h-14 w-full rounded-[18px] border bg-shape-white px-[18px] text-base text-fuse-ink outline-none disabled:bg-fuse-card disabled:text-fuse-faint"
+              style={{ borderColor: trimmed && !blocked ? '#0B0B0C' : '#E3E3E6' }}
             />
             <div id="topic-count" className="flex items-start justify-between gap-3 px-1">
-              <span className="text-sm text-txt-black-secondary">{topic.length >= MAX ? `주제는 ${MAX}자까지 쓸 수 있어요. 핵심 단어로 줄여 볼까요?` : ''}</span>
-              <span className={topic.length >= MAX ? 'flex-shrink-0 text-sm font-semibold text-txt-error' : 'flex-shrink-0 text-sm text-txt-black-tertiary'}>
+              <span className="text-[13px] text-fuse-sub">{topic.length >= MAX ? `주제는 ${MAX}자까지 쓸 수 있어요. 핵심 단어로 줄여 볼까요?` : ''}</span>
+              <span className={topic.length >= MAX ? 'flex-shrink-0 text-[13px] font-semibold text-fuse-hot' : 'flex-shrink-0 text-[13px] text-fuse-faint'}>
                 {topic.length}/{MAX}
               </span>
             </div>
@@ -171,12 +216,12 @@ export function StartScreen({ initialTopic, suggestions, quota, currentTopic, re
         </form>
 
         {notice ? (
-          <div className="mc-in mt-4 rounded-2xl bg-shape-depth1 p-4">
-            <p className="text-sm text-txt-black-secondary">{notice.message}</p>
+          <div className="mc-in mt-4 rounded-card border border-fuse-line bg-fuse-card p-4">
+            <p className="text-sm text-fuse-sub">{notice.message}</p>
             {notice.suggestions.length ? (
               <div className="mt-3 flex flex-wrap gap-2">
                 {notice.suggestions.map(s => (
-                  <button key={s} type="button" onClick={() => void go(s)} className="min-h-11 rounded-full bg-shape-white px-4 py-3 text-sm">
+                  <button key={s} type="button" onClick={() => void go(s)} className="min-h-11 rounded-full bg-shape-white px-4 text-sm font-medium">
                     {s}
                   </button>
                 ))}
@@ -186,30 +231,36 @@ export function StartScreen({ initialTopic, suggestions, quota, currentTopic, re
         ) : null}
 
         {recommended.length ? (
-          <section className="mt-10 flex flex-col gap-3">
+          <section className="mt-9 flex flex-col gap-3">
             <div className="flex flex-col gap-0.5">
-              <h2 className="text-sm font-bold text-txt-black-secondary">다른 사람들이 만든 코스</h2>
-              <p className="text-sm text-txt-black-secondary">바로 받아서 첫 Drop을 읽을 수 있어요.</p>
+              <h2 className="text-base font-semibold leading-[1.3]">다른 사람들이 만든 코스</h2>
+              <p className="text-[13px] text-fuse-sub">바로 받아서 첫 Drop을 읽을 수 있어요.</p>
             </div>
-            {recommended.map(r => (
-              <Link key={r.id} href={`/recommend/${r.id}`} className="mc-press flex items-center gap-3 rounded-2xl border border-border-button py-4 pl-5 pr-4">
-                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <span className="text-sm font-semibold text-txt-black-tertiary">
-                    {r.category} · {r.total}편
+            <div className="flex flex-col gap-2">
+              {recommended.map(r => (
+                <Link key={r.id} href={`/recommend/${r.id}`} className="mc-press flex min-h-14 items-center gap-3.5 rounded-card border border-fuse-line bg-fuse-card p-4">
+                  <CatIcon category={r.category} />
+                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className="text-[13px] text-fuse-sub">
+                      {r.category} · {r.total}편
+                    </span>
+                    <span className="text-sm font-medium leading-[1.3]">{r.title}</span>
+                    {r.copies ? <span className="text-[13px] font-semibold text-fuse-hot">{r.copies}명이 받았어요</span> : null}
                   </span>
-                  <span className="text-base font-semibold">{r.title}</span>
-                  {r.copies ? <span className="text-sm text-txt-point">{r.copies}명이 받았어요</span> : null}
-                </span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="flex-shrink-0">
-                  <path d="m9 5 7 7-7 7" stroke="#B4B5C1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </Link>
-            ))}
+                  <IconArrow />
+                </Link>
+              ))}
+            </div>
+            {more ? (
+              <div ref={listEnd} className="flex h-12 items-center justify-center text-[13px] text-fuse-faint">
+                더 불러오는 중…
+              </div>
+            ) : null}
           </section>
         ) : null}
 
-        <section className={recommended.length ? 'mt-8 flex flex-col gap-3' : 'mt-12 flex flex-col gap-3'}>
-          <h2 className="text-sm font-bold text-txt-black-secondary">{recommended.length ? '직접 만들 주제 예시' : '이런 주제는 어때요?'}</h2>
+        <section className={recommended.length ? 'mt-8 flex flex-col gap-3' : 'mt-10 flex flex-col gap-3'}>
+          <h2 className="text-base font-semibold leading-[1.3]">{recommended.length ? '직접 만들 주제 예시' : '이런 주제는 어때요?'}</h2>
           <div className="flex flex-wrap gap-2">
             {suggestions.map(s => (
               <button
@@ -220,7 +271,7 @@ export function StartScreen({ initialTopic, suggestions, quota, currentTopic, re
                   setTopic(s);
                   void go(s);
                 }}
-                className="mc-press inline-flex min-h-11 items-center rounded-full bg-shape-depth1 px-4 py-3 text-sm text-txt-black-primary disabled:text-txt-black-tertiary"
+                className="mc-press inline-flex min-h-11 items-center rounded-full bg-fuse-pill px-4 text-sm font-medium text-fuse-ink disabled:text-fuse-faint"
               >
                 {s}
               </button>

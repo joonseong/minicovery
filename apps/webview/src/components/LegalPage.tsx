@@ -10,7 +10,7 @@ function withMailto(text: string): ReactNode {
   if (parts.length === 1) return text;
   return parts.map((p, i) =>
     EMAIL_RE.test(p) && p.includes('@') ? (
-      <a key={i} href={`mailto:${p}`} className="text-txt-link underline">
+      <a key={i} href={`mailto:${p}`} className="text-fuse-ink underline underline">
         {p}
       </a>
     ) : (
@@ -24,12 +24,12 @@ export function LegalPage({ title, updated, sections }: { title: string; updated
     <Screen>
       <AppHeader layout="nav" title={title} back />
       <Main className="gap-6 pb-10 pt-4">
-        <p className="text-sm text-txt-black-tertiary">시행일 {updated}</p>
+        <p className="text-sm text-fuse-faint">시행일 {updated}</p>
         {sections.map(s => (
           <section key={s.h} className="flex flex-col gap-2">
-            <h2 className="text-lg font-semibold">{s.h}</h2>
+            <h2 className="text-base font-semibold leading-[1.3]">{s.h}</h2>
             {s.p.map(p => (
-              <p key={p} className="text-base leading-7 text-txt-black-secondary">
+              <p key={p} className="text-[15px] leading-[1.7] text-fuse-sub">
                 {withMailto(p)}
               </p>
             ))}

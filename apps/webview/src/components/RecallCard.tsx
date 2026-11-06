@@ -25,20 +25,19 @@ export function RecallCard({ recall, id, className = 'mb-6' }: { recall: RecallL
   const label = yesterday ? '어제 되짚기' : `${recall.when} 되짚기`;
   const from = recall.sameCourse === false && recall.courseTopic ? `‘${recall.courseTopic}’에서` : '';
   return (
-    <section id={id} aria-label={label} className={cx('flex flex-col gap-2 rounded-2xl bg-shape-depth1 px-5 py-4', className)}>
-      <p className="text-sm font-bold text-txt-point">
-        {label}
-        {from ? <span className="font-semibold text-txt-black-tertiary"> · {from}</span> : null}
+    <section id={id} aria-label={label} className={cx('flex flex-col gap-2 rounded-card border border-fuse-line bg-fuse-card p-4', className)}>
+      <p className="text-[13px] font-medium text-fuse-sub">
+        {label} · {from ? `${from} ` : ''}
+        {recall.title ?? recall.concept}
       </p>
-      <p className="text-base font-semibold">{recall.title ?? recall.concept}</p>
-      <p className="text-sm text-txt-black-secondary">{yesterday ? '어제 배운 내용, 한 문장으로 떠올려 볼까요?' : '지난번에 배운 내용, 한 문장으로 떠올려 볼까요?'}</p>
+      <p className="text-base font-semibold leading-[1.3]">{yesterday ? '어제 배운 내용, 한 문장으로 떠올려 볼까요?' : '지난번에 배운 내용, 한 문장으로 떠올려 볼까요?'}</p>
       {shown ? (
-        <p className="mc-in rounded-xl bg-shape-white px-4 py-3 text-base">{recall.takeaway}</p>
+        <p className="mc-in mt-1 rounded-card border border-fuse-line bg-shape-white p-4 text-base font-semibold">{recall.takeaway}</p>
       ) : (
         <button
           type="button"
           onClick={() => setShown(true)}
-          className="mc-press h-10 self-start rounded-full border border-border-button bg-shape-white px-4 text-sm font-semibold"
+          className="mc-press mt-1 h-10 self-start rounded-full bg-fuse-ink px-4 text-sm font-semibold text-txt-white-primary"
         >
           떠올렸어요 · 확인하기
         </button>

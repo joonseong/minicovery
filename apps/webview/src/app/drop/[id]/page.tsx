@@ -27,6 +27,7 @@ export default async function DropPage({ params }: { params: { id: string } }) {
       nextDropId={next?.id}
       openedAll={Boolean(course.openedAllAt)}
       stageKey={stageOf(user).key}
+      category={course.category}
     />
   );
 }

@@ -1,11 +1,12 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { postJson } from '@/lib/client/ndjson';
 import type { Recommended } from '@/lib/learning';
 
+import { CatIcon } from '../CatIcon';
 import { LimitSheet, MonthlySheet, ReplaceSheet } from '../QuotaSheets';
 import { AppHeader, Footer, Main, PrimaryButton, Screen } from '../ui';
 
@@ -27,6 +28,11 @@ export function RecommendScreen(props: {
   // 이미 받은 코스면 지우고 다시 받는 대신 이어 읽기로
   const [already, setAlready] = useState<string | null>(null);
   const [notice, setNotice] = useState('');
+
+  // 열어 본 횟수 (새 코스 화면의 '많이 눌러본 순'). 미리 불러오기는 세지 않게 화면이 뜬 뒤에 보낸다
+  useEffect(() => {
+    void fetch(`/api/recommended/${course.id}/open`, { method: 'POST' });
+  }, [course.id]);
 
   const take = async () => {
     if (busy) return;
@@ -52,31 +58,41 @@ export function RecommendScreen(props: {
     <Screen className="relative">
       <AppHeader layout="nav" back />
       <Main className="pb-6 pt-4">
-        <p className="text-sm font-semibold text-txt-black-tertiary">
-          추천 코스 · {course.category} · {course.levelLabel}
-        </p>
-        <h1 className="mt-1 text-2xl font-bold tracking-[-1px]">{course.title}</h1>
-        <p className="mt-2 text-sm font-semibold text-txt-point">
-          {course.copies ? `${course.copies}명이 받았어요 · ` : ''}
-          {course.total}편
-        </p>
-        <ol className="mt-6 flex flex-col gap-2">
+        <section className="flex flex-col gap-2">
+          <div className="flex items-center gap-2.5">
+            <CatIcon category={course.category} />
+            <span className="flex-1 text-sm text-fuse-sub">
+              추천 코스 · {course.levelLabel} · {course.category}
+            </span>
+            {course.copies ? <span className="flex-shrink-0 text-[13px] font-medium text-fuse-hot">{course.copies}명이 받았어요</span> : null}
+          </div>
+          <h1 className="mt-1 text-[28px] font-bold leading-[1.3]">{course.title}</h1>
+        </section>
+        <section aria-label="구성" className="mt-5 flex flex-col gap-3">
+          <p className="text-[52px] font-bold leading-none">
+            {course.total}
+            <span className="relative -top-[0.14em] ml-2 text-[22px] leading-[1.3]">편</span>
+          </p>
+        </section>
+        <ol className="mt-6 flex flex-col">
           {course.titles.map((t, i) => (
-            <li key={t} className="flex min-h-14 items-center gap-3 rounded-2xl bg-shape-depth1 p-4">
-              <span className="w-6 flex-shrink-0 text-center text-sm font-bold text-txt-black-tertiary">{i + 1}</span>
-              <span className="flex-1 text-sm">{t}</span>
+            <li key={t} className={i ? 'border-t border-[#F2F2F4]' : ''}>
+              <div className="flex min-h-[60px] items-center gap-3 py-2">
+                <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-fuse-edge bg-shape-white text-[13px] font-semibold">
+                  {i + 1}
+                </span>
+                <span className="flex-1 text-sm">{t}</span>
+              </div>
             </li>
           ))}
         </ol>
-        <p className="mt-3 text-sm text-txt-black-secondary">
-          다른 사람이 만든 코스를 그대로 받아요. 첫 Drop은 바로 읽을 수 있고, 다음 편부터 하루 한 편씩 열려요.
-        </p>
-        {notice ? <p className="mt-3 text-sm text-txt-error">{notice}</p> : null}
+        <p className="mt-3 text-[13px] text-fuse-sub">다른 사람이 만든 코스를 그대로 받아요. 첫 Drop은 바로 읽을 수 있고, 다음 편부터 하루 한 편씩 열려요.</p>
+        {notice ? <p className="mt-3 text-sm text-fuse-hot">{notice}</p> : null}
       </Main>
-      <Footer className="gap-2">
+      <Footer className="gap-2.5">
         {already !== null ? (
           <>
-            <p className="text-center text-sm font-semibold text-txt-point">이미 받은 코스예요</p>
+            <p className="text-center text-[13px] font-medium text-fuse-hot">이미 받은 코스예요</p>
             <PrimaryButton href={already ? `/course/${already}` : '/library'} replace>
               이어 읽기
             </PrimaryButton>
@@ -84,7 +100,7 @@ export function RecommendScreen(props: {
         ) : (
           <>
             <PrimaryButton onClick={() => void take()}>{busy ? '받는 중…' : '이 코스 받기'}</PrimaryButton>
-            <p className="text-center text-sm text-txt-black-secondary">새 코스 만들기 1번으로 세요</p>
+            <p className="text-center text-[13px] text-fuse-sub">새 코스 만들기 1번으로 세요</p>
           </>
         )}
       </Footer>

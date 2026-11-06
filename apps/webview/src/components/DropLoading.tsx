@@ -13,7 +13,7 @@ const STEPS: { label: string; message: string; act: DoodleAct }[] = [
 export function DropLoading({ step, progress, animal }: { step: DropLoadingStep; progress: number; animal: DoodleAnimal }) {
   const current = STEPS[step]!;
   return (
-    <div className="mt-6 flex flex-col items-center gap-5 rounded-2xl bg-shape-depth1 px-5 pb-6 pt-7 text-center">
+    <div className="mt-6 flex flex-col items-center gap-5 rounded-card bg-fuse-card px-5 pb-6 pt-7 text-center border border-fuse-line">
       <Doodle animal={animal} act={current.act} className="h-[120px] w-[120px]" />
       <p role="status" aria-live="polite" className="text-lg font-semibold">
         {current.message}
@@ -30,13 +30,13 @@ export function DropLoading({ step, progress, animal }: { step: DropLoadingStep;
       </div>
       <ol className="flex w-full justify-between text-xs">
         {STEPS.map((s, i) => (
-          <li key={s.label} className={i < step ? 'text-txt-black-secondary' : i === step ? 'font-bold' : 'text-txt-black-tertiary'}>
+          <li key={s.label} className={i < step ? 'text-fuse-sub' : i === step ? 'font-bold' : 'text-fuse-faint'}>
             {i < step ? '✓ ' : ''}
             {s.label}
           </li>
         ))}
       </ol>
-      <p className="text-sm text-txt-black-tertiary">글과 그림을 함께 만들고 있어요 · 보통 30초 안팎</p>
+      <p className="text-sm text-fuse-faint">글과 그림을 함께 만들고 있어요 · 보통 30초 안팎</p>
     </div>
   );
 }

@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation';
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 
 /**
- * 디자인 캔버스(미니커버리 앱 디자인)의 공통 요소.
- * 글자: 가장 작은 글자 14, 타이틀 18, 본문 16, heading 24·28. 뱃지 13, 하단 탭 라벨 12.
- * 카드 모서리 16, 아래에서 올라오는 시트 위쪽만 24.
+ * Fuse 디자인 캔버스(미니커버리 홈 · Fuse 스타일 시안)의 공통 요소.
+ * 글자: 화면 제목 16 semibold, 본문 16, 보조 13·14, 큰 숫자 52, heading 28. 색은 tailwind `fuse-*`.
+ * 카드 모서리 22(rounded-card)·테두리 #F0F0F2, 버튼은 검정 알약, 아래에서 올라오는 시트 위쪽만 28.
  * 안전 영역은 앱 껍데기(SafeAreaView)가 처리하므로 웹은 따로 두지 않는다.
  */
 
@@ -20,39 +20,36 @@ export function cx(...a: (string | false | null | undefined)[]) {
 export function IconBack({ size = 24 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M15 5 8 12l7 7" stroke="#151517" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M15 5l-7 7 7 7" stroke="#0B0B0C" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 
-export function IconClose({ size = 24, color = '#151517' }: { size?: number; color?: string }) {
+export function IconClose({ size = 24, color = '#0B0B0C' }: { size?: number; color?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M6 6l12 12M18 6 6 18" stroke={color} strokeWidth="2" strokeLinecap="round" />
+      <path d="M6 6l12 12M18 6 6 18" stroke={color} strokeWidth="2.2" strokeLinecap="round" />
     </svg>
   );
 }
 
-export function IconArrow({ size = 20, color = '#9FA0AA' }: { size?: number; color?: string }) {
+export function IconArrow({ size = 16, color = '#AEAEB2' }: { size?: number; color?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="m9 5 7 7-7 7" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="m9 5 7 7-7 7" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 
-export function IconSetting({ size = 24 }: { size?: number }) {
+export function IconSetting({ size = 22 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="3" stroke="#0B0B0C" strokeWidth="2" />
       <path
-        d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"
-        stroke="#3F4047"
-        strokeWidth="1.8"
-      />
-      <path
-        d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1Z"
-        stroke="#3F4047"
-        strokeWidth="1.8"
+        d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"
+        stroke="#0B0B0C"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
     </svg>
   );
@@ -61,7 +58,7 @@ export function IconSetting({ size = 24 }: { size?: number }) {
 export function IconCheck({ size = 20 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M5 12.5 10 17.5 19 7" stroke="#18715B" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M5 12.5 10 17.5 19 7" stroke="#0B0B0C" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -88,104 +85,120 @@ export function IconSwap() {
   );
 }
 
-/* ---------- 헤더 (높이 44) ---------- */
+/* ---------- 헤더 ---------- */
 
 type HeaderProps = {
+  /** nav: 동그란 뒤로·닫기 + 왼쪽 제목, large: 탭 화면 제목(16), logo: 로고 */
   layout?: 'nav' | 'logo' | 'large';
   title?: string;
   /** 뒤로 가기. true면 브라우저 기록으로 */
   back?: string | true;
   close?: string;
   settings?: boolean;
+  /** 예전 구분선 (Fuse에서는 쓰지 않는다) */
   divider?: boolean;
 };
 
-export function AppHeader({ layout = 'nav', title, back, close, settings, divider }: HeaderProps) {
+/** 캔버스의 동그란 44 버튼 (테두리 #F0F0F2) */
+const CIRCLE = 'mc-press flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full border border-fuse-line bg-shape-white';
+
+export function AppHeader({ layout = 'nav', title, back, close, settings }: HeaderProps) {
   const router = useRouter();
   return (
-    <header
-      className="relative flex h-11 flex-shrink-0 items-center justify-between bg-shape-white px-2"
-      style={{ boxShadow: divider ? 'inset 0 -1px 0 #EEEEF9' : undefined }}
-    >
-      <div className="flex min-w-12 items-center">
-        {layout === 'nav' && back ? (
-          <button
-            type="button"
-            aria-label="뒤로"
-            className="flex h-11 w-12 items-center justify-center"
-            onClick={() => (back === true ? router.back() : router.push(back))}
-          >
-            <IconBack />
-          </button>
-        ) : null}
-        {layout === 'logo' ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src="/logo.svg" alt="Minicovery" width={86} height={16} className="ml-3 block h-4 w-auto" />
-        ) : null}
-        {layout === 'large' ? <h1 className="ml-3 text-lg font-semibold">{title}</h1> : null}
-      </div>
-      {layout === 'nav' && title ? (
-        <p className="absolute left-16 right-16 truncate text-center text-lg font-semibold">{title}</p>
+    <header className="relative flex min-h-[52px] flex-shrink-0 items-center gap-2 bg-shape-white px-5 pt-2">
+      {layout === 'nav' && back ? (
+        <button type="button" aria-label="뒤로" className={cx(CIRCLE, '-ml-2')} onClick={() => (back === true ? router.back() : router.push(back))}>
+          <IconBack size={18} />
+        </button>
       ) : null}
-      <div className="flex min-w-12 items-center justify-end">
-        {settings ? (
-          <Link href="/settings" aria-label="설정" className="flex h-11 w-12 items-center justify-center">
-            <IconSetting />
-          </Link>
-        ) : null}
-        {close ? (
-          <Link href={close} aria-label="닫기" className="flex h-11 w-12 items-center justify-center" replace>
-            <IconClose />
-          </Link>
-        ) : null}
-      </div>
+      {layout === 'nav' && close ? (
+        <Link href={close} aria-label="닫기" className={cx(CIRCLE, '-ml-2')} replace>
+          <IconClose size={16} />
+        </Link>
+      ) : null}
+      {layout === 'logo' ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src="/logo.svg" alt="Minicovery" width={86} height={16} className="block h-4 w-auto" />
+      ) : null}
+      {layout === 'large' ? <h1 className="flex-1 text-base font-semibold">{title}</h1> : null}
+      {layout === 'nav' && title ? <p className="min-w-0 flex-1 truncate text-sm font-medium">{title}</p> : <span className="flex-1" />}
+      {settings ? (
+        <Link href="/settings" aria-label="설정" className="-mr-2.5 flex h-11 w-11 items-center justify-center rounded-full">
+          <IconSetting />
+        </Link>
+      ) : null}
     </header>
   );
 }
 
-/* ---------- 하단 탭 ---------- */
+/* ---------- 하단 탭 (떠 있는 알약 + 새 코스 버튼) ---------- */
 
 const TABS = [
-  { key: 'today', label: '홈', href: '/today', icon: 'today' },
-  { key: 'explore', label: '새 코스', href: '/start', icon: 'explore' },
-  { key: 'map', label: '내 학습', href: '/map', icon: 'learn' },
-  { key: 'library', label: '프로필', href: '/library', icon: 'profile' },
+  { key: 'today', label: '홈', href: '/today' },
+  { key: 'map', label: '내 학습', href: '/map' },
+  { key: 'library', label: '프로필', href: '/library' },
 ] as const;
 
-export type TabKey = (typeof TABS)[number]['key'];
+export type TabKey = (typeof TABS)[number]['key'] | 'explore';
 
+function TabIcon({ tab, color }: { tab: (typeof TABS)[number]['key']; color: string }) {
+  if (tab === 'today')
+    return (
+      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V20H5a1 1 0 0 1-1-1z" fill={color} />
+      </svg>
+    );
+  if (tab === 'map')
+    return (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M5 19V11M12 19V5M19 19v-5" stroke={color} strokeWidth="2.4" strokeLinecap="round" />
+      </svg>
+    );
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="8.5" r="3.5" fill={color} />
+      <path d="M5 19.5c1.2-3.3 3.8-5 7-5s5.8 1.7 7 5" stroke={color} strokeWidth="2.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** 화면 위에 떠 있다. 쓰는 화면은 본문 아래에 여백(pb-32)을 둔다 */
 export function BottomNav({ active }: { active: TabKey }) {
   return (
-    <nav
-      aria-label="주요 메뉴"
-      className="grid flex-shrink-0 grid-cols-4 bg-shape-white px-2 pb-1 pt-2"
-      style={{ boxShadow: 'inset 0 1px 0 #EEEEF9' }}
+    <div
+      className="pointer-events-none absolute inset-x-0 bottom-0 z-30 h-28"
+      style={{ background: 'linear-gradient(rgba(255,255,255,0), #FFFFFF 60%)' }}
     >
-      {TABS.map(t => {
-        const on = t.key === active;
-        return (
-          <Link
-            key={t.key}
-            href={t.href}
-            replace
-            aria-current={on ? 'page' : undefined}
-            className="mc-tab flex h-12 flex-col items-center justify-center gap-0.5"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={`/img/tab/${t.icon}-${on ? 'on' : 'off'}.png`}
-              alt=""
-              width={30}
-              height={30}
-              className={cx('mc-ic block h-[30px] w-[30px] object-contain', on && 'mc-ic-on')}
-            />
-            <span className={cx('text-xs leading-4', on ? 'font-bold text-txt-black-primary' : 'text-txt-black-tertiary')}>
-              {t.label}
-            </span>
-          </Link>
-        );
-      })}
-    </nav>
+      <nav aria-label="주요 메뉴" className="pointer-events-auto absolute inset-x-5 bottom-4 flex items-center justify-between">
+        <div className="flex items-center gap-0.5 rounded-full bg-shape-white p-1 shadow-[0_8px_24px_rgba(15,15,20,0.10),0_0_0_1px_#F0F0F2]">
+          {TABS.map(t => {
+            const on = t.key === active;
+            return (
+              <Link
+                key={t.key}
+                href={t.href}
+                replace
+                aria-label={t.label}
+                aria-current={on ? 'page' : undefined}
+                className={cx('mc-tab flex h-12 w-12 items-center justify-center rounded-full', on && 'bg-fuse-pill')}
+              >
+                <TabIcon tab={t.key} color={on ? '#0B0B0C' : '#AEAEB2'} />
+              </Link>
+            );
+          })}
+        </div>
+        <Link
+          href="/start"
+          aria-label="새 코스 만들기"
+          aria-current={active === 'explore' ? 'page' : undefined}
+          className="mc-press flex h-[60px] w-[60px] items-center justify-center rounded-full bg-fuse-ink shadow-[0_8px_24px_rgba(15,15,20,0.25)]"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" stroke="#FFFFFF" strokeWidth="2.4" strokeLinecap="round" />
+          </svg>
+        </Link>
+      </nav>
+    </div>
   );
 }
 
@@ -205,11 +218,11 @@ export function Footer({ children, className }: { children: ReactNode; className
 
 /* ---------- 버튼 ---------- */
 
-const PRIMARY = 'mc-press flex h-14 w-full items-center justify-center rounded-full bg-shape-brand text-base font-semibold text-txt-white-primary';
-const DISABLED = 'flex h-14 w-full items-center justify-center rounded-full bg-shape-depth2 text-base font-semibold text-txt-black-tertiary';
-const TEXT_BTN = 'flex h-12 w-full items-center justify-center text-sm font-semibold text-txt-black-tertiary';
+const PRIMARY = 'mc-press flex h-14 w-full flex-shrink-0 items-center justify-center rounded-full bg-fuse-ink text-base font-semibold text-txt-white-primary';
+const DISABLED = 'flex h-14 w-full flex-shrink-0 items-center justify-center rounded-full bg-fuse-pill text-base font-semibold text-fuse-faint';
+const TEXT_BTN = 'flex h-12 w-full items-center justify-center text-sm font-semibold text-fuse-sub';
 const OUTLINE =
-  'mc-press flex h-14 w-full items-center justify-center rounded-full border border-border-button bg-shape-white text-base font-semibold text-txt-black-primary';
+  'mc-press flex h-14 w-full flex-shrink-0 items-center justify-center rounded-full border border-fuse-edge bg-shape-white text-base font-semibold text-fuse-ink';
 
 type BtnProps = { children: ReactNode; href?: string; onClick?: () => void; disabled?: boolean; replace?: boolean; className?: string };
 
@@ -242,18 +255,19 @@ export const TextButton = (p: BtnProps) => <Btn base={TEXT_BTN} {...p} />;
 
 /* ---------- 조각 ---------- */
 
+/** 캔버스의 분홍 글자 표시 (오늘 · 이용 중 · N일 연속) */
 export function Badge({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <span className={cx('inline-flex flex-shrink-0 items-center rounded-full bg-shape-depth1 px-3 py-1 text-[13px] font-bold leading-5 text-txt-point', className)}>
+    <span className={cx('inline-flex flex-shrink-0 items-center gap-1 text-[13px] font-medium leading-5 text-fuse-hot', className)}>
       {children}
     </span>
   );
 }
 
-export function Progress({ value, track = 'bg-shape-depth2', height = 8 }: { value: number; track?: string; height?: number }) {
+export function Progress({ value, track = 'bg-fuse-track', height = 6 }: { value: number; track?: string; height?: number }) {
   return (
     <div className={cx('flex-1 overflow-hidden rounded-full', track)} style={{ height }}>
-      <div className="h-full rounded-full bg-shape-brand" style={{ width: `${Math.round(Math.max(0, Math.min(1, value)) * 100)}%` }} />
+      <div className="h-full rounded-full bg-fuse-ink" style={{ width: `${Math.round(Math.max(0, Math.min(1, value)) * 100)}%` }} />
     </div>
   );
 }
@@ -262,14 +276,14 @@ export function Sheet({ open, onClose, children, labelledBy }: { open: boolean; 
   if (!open) return null;
   return (
     <div className="absolute inset-0 z-40">
-      <div className="mc-fade absolute inset-0 bg-[rgba(21,21,23,0.5)]" onClick={onClose} />
+      <div className="mc-fade absolute inset-0 bg-[rgba(0,0,0,0.35)]" onClick={onClose} />
       <section
         role="dialog"
         aria-modal="true"
         aria-labelledby={labelledBy}
-        className="mc-up absolute inset-x-0 bottom-0 flex max-h-[90%] flex-col overflow-y-auto rounded-t-[24px] bg-shape-white px-5 pb-4 pt-3"
+        className="mc-up absolute inset-x-0 bottom-0 flex max-h-[90%] flex-col overflow-y-auto rounded-t-[28px] bg-shape-white px-5 pb-5 pt-2.5 shadow-[0_-8px_24px_rgba(15,15,20,0.10)]"
       >
-        <div aria-hidden="true" className="h-1 w-10 self-center rounded-full bg-shape-div" />
+        <div aria-hidden="true" className="h-1 w-10 self-center rounded-full bg-fuse-edge" />
         {children}
       </section>
     </div>
@@ -279,8 +293,8 @@ export function Sheet({ open, onClose, children, labelledBy }: { open: boolean; 
 export function Loading({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-3 py-4">
-      <span className="mc-pulse h-2 w-2 rounded-full bg-shape-brand" />
-      <span className="text-sm text-txt-black-tertiary">{label}</span>
+      <span className="mc-pulse h-2 w-2 rounded-full bg-fuse-ink" />
+      <span className="text-sm text-fuse-sub">{label}</span>
     </div>
   );
 }

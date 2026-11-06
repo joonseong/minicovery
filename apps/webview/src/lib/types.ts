@@ -119,6 +119,8 @@ export interface Course {
   shared?: boolean;
   /** 운영자가 추천 코스로 고름 (shared일 때만 노출) */
   featured?: boolean;
+  /** 다른 사람이 추천 코스 미리보기를 연 횟수 (새 코스 화면 인기순) */
+  opens?: number;
   /** 이 코스를 받아 간 횟수 (추천 코스 카드의 'N명이 받았어요') */
   copies?: number;
   /** 추천 코스를 받아 만든 코스면 원본 코스 id */

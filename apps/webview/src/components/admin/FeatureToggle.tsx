@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-/** 어드민: 추천 코스로 보여 줄지. 인증은 같은 사이트 쿠키(mc_admin)가 따라간다 */
+/** 어드민: 추천 코스로 보여 줄지 (추천을 켠 완주 코스는 기본으로 보이고, 끄면 숨긴다). 인증은 같은 사이트 쿠키(mc_admin)가 따라간다 */
 export function FeatureToggle({ courseId, featured }: { courseId: string; featured: boolean }) {
   const [on, setOn] = useState(featured);
   return (
@@ -20,7 +20,7 @@ export function FeatureToggle({ courseId, featured }: { courseId: string; featur
         if (!res.ok) setOn(!next);
       }}
     >
-      {on ? '추천 중' : '추천하기'}
+      {on ? '보이는 중' : '숨김'}
     </button>
   );
 }

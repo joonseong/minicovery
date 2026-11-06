@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { nativeRequestReview, openAppSettings, requestPushPermission } from '@/lib/client/bridge';
 import { postJson } from '@/lib/client/ndjson';
 
+import { Doodle } from './Doodle';
 import { PrimaryButton, Sheet, TextButton, Toast, useToast } from './ui';
 
 export interface CompleteResult {
@@ -93,18 +94,17 @@ export function AfterComplete({ result, dropId }: { result: CompleteResult | nul
   return (
     <>
       <Sheet open={step === 'notify'} labelledBy="notifyTitle">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/img/bell.png" alt="" className="mt-6 h-16 w-16 object-contain" />
-        <h2 id="notifyTitle" className="mt-4 text-2xl font-bold tracking-[-1px]">
+        <Doodle animal="rabbit" act="perk" label="귀를 쫑긋 세운 토끼" className="mt-6 h-16 w-16" />
+        <h2 id="notifyTitle" className="mt-[18px] text-2xl font-bold leading-[1.3]">
           내일 다음 Drop이 도착하면
           <br />
           알려드릴까요?
         </h2>
-        <p className="mt-2 text-base text-txt-black-secondary">
+        <p className="mt-2.5 text-sm text-fuse-sub">
           새 Drop은 매일 0시에 열려요. 알림은 하루 한 번, 오늘 읽은 시간쯤 아직 안 읽었을 때만 보내요.
         </p>
-        <p className="mt-1 text-sm text-txt-black-secondary">밤 9시~아침 8시에 읽었다면 아침 8시로 맞춰요.</p>
-        <div className="mt-8 flex flex-col gap-1 pb-2">
+        <p className="mt-1 text-[13px] text-fuse-sub">밤 9시~아침 8시에 읽었다면 아침 8시로 맞춰요. 시간은 설정에서 바꿀 수 있어요.</p>
+        <div className="mt-7 flex flex-col gap-1">
           <PrimaryButton onClick={() => void allow()}>{busy ? '확인하는 중…' : '알림 받기'}</PrimaryButton>
           <TextButton onClick={() => void later(false)}>나중에</TextButton>
           <TextButton onClick={() => void later(true)}>다시 묻지 않기</TextButton>

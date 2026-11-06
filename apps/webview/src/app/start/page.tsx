@@ -16,6 +16,7 @@ export default async function StartPage({
   const quota = await courseQuota(user);
   const current = (await getStore().listCourses(user.id)).find(c => c.status === 'active');
   // 계정 삭제·로그아웃 직후 한 번 보여 주는 안내
+  const recommended = await recommendedCourses(user);
   const notice = searchParams.deleted === '1' ? '계정과 학습 기록을 지웠어요' : searchParams.logout === '1' ? '로그아웃했어요. 기록은 계정에 남아 있어요' : undefined;
   return (
     <StartScreen
@@ -24,7 +25,8 @@ export default async function StartPage({
       quota={quota.ok ? 'ok' : quota.reason}
       currentTopic={current?.topic}
       resetLabel={(await plusUsage(user))?.resetLabel}
-      recommended={await recommendedCourses(user)}
+      recommended={recommended.items}
+      recommendedMore={recommended.hasMore}
       replace={searchParams.replace === '1'}
       autoGo={searchParams.go === '1'}
       notice={notice}

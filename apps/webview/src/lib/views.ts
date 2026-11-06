@@ -1,6 +1,7 @@
 import { CATEGORIES } from './constants';
 import { type Recall, recallForToday } from './learning';
 import { activeCourses, completedToday, courseQuota, isPlus, pickedCourseId, plusUsage, stageOf, weekDone, weekDropCount } from './service';
+import { buildHomeStats } from './stats';
 import { getStore } from './store';
 import type { Course, Drop, User } from './types';
 import { daysBetween, kstDate, kstWeekday, nextDrop, nowIso } from './util';
@@ -52,9 +53,8 @@ export async function todayData(user: User) {
   const tomorrowId = user.tomorrowCourseId && cards.some(c => c.id === user.tomorrowCourseId) ? user.tomorrowCourseId : cards[0]?.id;
   const now = new Date(Date.now() + 9 * 3600_000);
   const dateLabel = `${now.getUTCMonth() + 1}월 ${now.getUTCDate()}일 ${'일월화수목금토'[now.getUTCDay()]}요일`;
-  const lastRead = (await store.listDropsByUser(user.id))
-    .filter(d => d.completedAt)
-    .sort((a, b) => b.completedAt!.localeCompare(a.completedAt!))[0];
+  const completed = (await store.listDropsByUser(user.id)).filter(d => d.completedAt);
+  const lastRead = [...completed].sort((a, b) => b.completedAt!.localeCompare(a.completedAt!))[0];
   // 진행 중 코스가 없는데 다 배운 주제가 있으면 "방금 다 배웠어요" 안내용
   const latestLearned = cards.length === 0 && user.learned?.length ? [...user.learned].sort((a, b) => b.at.localeCompare(a.at))[0] : undefined;
   // 로그인 때 합쳐진 코스 안내는 한 번만 보여 주고 지운다
@@ -77,6 +77,11 @@ export async function todayData(user: User) {
     anon: user.anon,
     weekDays: week.filter(Boolean).length,
     weekDrops: await weekDropCount(user.id),
+    /** 홈 상단 숫자 (주·월·전체) */
+    stats: buildHomeStats(
+      completed.map(d => d.completedAt!),
+      user.learned?.length ?? 0,
+    ),
     stage: stageOf(user),
     usage: await plusUsage(user),
     justLearned: latestLearned ? { topic: latestLearned.topic, courseId: latestLearned.courseId } : null,

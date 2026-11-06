@@ -2,7 +2,11 @@
 
 import Link from 'next/link';
 
-import { AppHeader, IconArrow, Main, Screen } from '../ui';
+import { CatIcon } from '../CatIcon';
+import { AppHeader, Main, Screen } from '../ui';
+
+/** 수준 막대 (캔버스 수준 선택): 처음 1칸 · 조금 2칸 · 꽤 3칸 */
+const BARS = [10, 16, 22];
 
 const LEVELS = [
   { value: 'beginner', label: '처음이에요', desc: '기본 개념부터 차근차근' },
@@ -19,24 +23,31 @@ export function LevelScreen({ topic, category, taskType, replace }: { topic: str
   return (
     <Screen>
       <AppHeader layout="nav" back />
-      <Main className="pb-6 pt-4">
-        <p className="text-sm font-semibold text-txt-black-tertiary">{topic}</p>
-        <h1 className="mt-1 text-2xl font-bold tracking-[-1px]">어느 정도 알고 있나요?</h1>
-        <p className="mt-2 text-base text-txt-black-secondary">고른 수준에 맞춰 코스 전체의 깊이를 정해요.</p>
-        <div className="mt-8 flex flex-col gap-3">
-          {LEVELS.map(l => (
+      <Main className="pb-10 pt-6">
+        <div className="flex items-center gap-2">
+          <CatIcon category={category} />
+          <p className="min-w-0 truncate text-sm font-medium text-fuse-sub">{topic}</p>
+        </div>
+        <h1 className="mt-2.5 text-[28px] font-bold leading-[1.3]">어느 정도 알고 있나요?</h1>
+        <p className="mt-2 text-sm text-fuse-sub">고른 수준에 맞춰 코스 전체의 깊이를 정해요.</p>
+        <div className="mt-8 flex flex-col gap-2.5">
+          {LEVELS.map((l, i) => (
             <Link
               key={l.value}
               href={href(l.value)}
               replace
               onClick={() => sessionStorage.setItem('ttfd_start', String(Date.now()))}
-              className="mc-press flex items-center justify-between gap-4 rounded-2xl border border-border-button bg-shape-white p-5"
+              className="mc-press flex min-h-[88px] items-center gap-4 rounded-card border border-fuse-line bg-fuse-card p-4"
             >
-              <span className="flex flex-col gap-1">
-                <span className="text-lg font-semibold text-txt-black-primary">{l.label}</span>
-                <span className="text-sm text-txt-black-tertiary">{l.desc}</span>
+              <span aria-hidden="true" className="flex h-[22px] flex-shrink-0 items-end gap-[3px]">
+                {BARS.map((h, b) => (
+                  <span key={h} className={`w-[5px] rounded-[2px] ${b <= i ? 'bg-fuse-ink' : 'bg-fuse-edge'}`} style={{ height: h }} />
+                ))}
               </span>
-              <IconArrow />
+              <span className="flex min-w-0 flex-1 flex-col gap-[3px]">
+                <span className="text-base font-semibold leading-[1.3] text-fuse-ink">{l.label}</span>
+                <span className="text-[13px] text-fuse-sub">{l.desc}</span>
+              </span>
             </Link>
           ))}
         </div>

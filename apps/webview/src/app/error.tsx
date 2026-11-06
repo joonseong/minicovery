@@ -16,8 +16,8 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
       <AppHeader layout="logo" />
       <Main className="items-center justify-center pb-6 pt-4 text-center">
         <Doodle animal="rabbit" act="tilt" className="h-24 w-24" />
-        <h1 className="mt-4 text-2xl font-bold tracking-[-1px]">잠시 문제가 생겼어요</h1>
-        <p className="mt-2 text-base text-txt-black-secondary">
+        <h1 className="mt-4 text-[28px] font-bold leading-[1.3]">잠시 문제가 생겼어요</h1>
+        <p className="mt-2 text-sm text-fuse-sub">
           다시 시도해 주세요.
           <br />
           계속 같은 문제가 생기면 설정의 문의하기로 알려 주세요.

@@ -69,14 +69,14 @@ export default async function AdminPage({ searchParams }: { searchParams: { toke
         ))}
       </ul>
       <h2 className="mt-8 font-bold">추천 코스 후보 ({shared.length})</h2>
-      <p className="mt-1 text-xs text-txt-black-tertiary">완주한 사용자가 추천을 켠 코스. 고른 코스만 새 코스 화면에 보여요 (만든 사람은 드러나지 않음)</p>
+      <p className="mt-1 text-xs text-txt-black-tertiary">완주한 사용자가 추천을 켠 코스는 새 코스 화면에 많이 눌러본 순으로 바로 보여요. 숨김을 누르면 빠져요 (만든 사람은 드러나지 않음)</p>
       <ul className="mt-2 flex flex-col gap-1">
         {shared.map(c => (
           <li key={c.id} className="flex items-center justify-between gap-2 rounded-lg border border-border-div p-2">
             <span>
-              {c.title} · {c.category} · {c.outline.length}편 · 받음 {c.copies ?? 0}
+              {c.title} · {c.category} · {c.outline.length}편 · 열어 봄 {c.opens ?? 0} · 받음 {c.copies ?? 0}
             </span>
-            <FeatureToggle courseId={c.id} featured={Boolean(c.featured)} />
+            <FeatureToggle courseId={c.id} featured={c.featured !== false} />
           </li>
         ))}
       </ul>
