@@ -18,6 +18,8 @@ import {
   EASY_SCHEMA,
   EASY_SYSTEM,
   IMAGE_CHECK_SCHEMA,
+  IMAGE_SCENE_SCHEMA,
+  IMAGE_SCENE_SYSTEM,
   IMAGE_CHECK_SYSTEM,
   TOPIC_CHECK_SCHEMA,
   TOPIC_CHECK_SYSTEM,
@@ -46,7 +48,7 @@ const WEB_SEARCH_TOOL = {
  * 5.5 모델은 thinking이 항상 켜져 있고 그 토큰도 max_tokens에 들어간다.
  * 가벼운 단계(check·verify·easy)는 effort low로 생각을 짧게 하고, 잘리면 한 번 두 배로 다시 부른다
  */
-const MAX_TOKENS = { check: 2000, curriculum: 4000, drop: 8000, verify: 6000, easy: 4000, imageCheck: 3000 } as const;
+const MAX_TOKENS = { check: 2000, curriculum: 4000, drop: 8000, verify: 6000, easy: 4000, imageCheck: 3000, imageScene: 1000 } as const;
 
 function textOf(message: Anthropic.Message): string {
   return message.content
@@ -256,8 +258,21 @@ export class ClaudeGenerator implements Generator {
     };
   }
 
+  /** 작품을 다루는 Drop 그림 장면: 작품·캐릭터 이름 없이 사람과 물건으로 (Haiku) */
+  async imageScene(params: { course?: string; title: string }) {
+    const message = await this.createJson({
+      model: MODEL_ID.haiku,
+      max_tokens: MAX_TOKENS.imageScene,
+      system: IMAGE_SCENE_SYSTEM,
+      output_config: { effort: 'low', format: { type: 'json_schema', schema: IMAGE_SCENE_SCHEMA } },
+      messages: [{ role: 'user', content: [params.course ? `Course: ${params.course}` : '', `Lesson title: ${params.title}`].filter(Boolean).join('\n') }],
+    });
+    if (message.stop_reason === 'refusal') throw new Error('refusal');
+    return { model: 'haiku' as const, usage: usageOf(message), result: (JSON.parse(textOf(message)) as { scene: string }).scene };
+  }
+
   /** 그림 검사는 정확도가 중요해 Opus(effort low). 거절되면 통과시키지 않는다 */
-  async checkImage(image: string) {
+  async checkImage(image: string, about?: string) {
     const message = await this.createJson({
       model: MODEL_ID.opus,
       max_tokens: MAX_TOKENS.imageCheck,
@@ -268,15 +283,15 @@ export class ClaudeGenerator implements Generator {
           role: 'user',
           content: [
             { type: 'image', source: { type: 'base64', media_type: 'image/webp', data: image } },
-            { type: 'text', text: 'Check this illustration.' },
+            { type: 'text', text: about ? `Check this illustration. The lesson: ${about}` : 'Check this illustration.' },
           ],
         },
       ],
     });
     const usage = usageOf(message);
     if (message.stop_reason === 'refusal') return { model: 'opus' as const, usage, result: { ok: false, problems: ['refusal'] } };
-    const r = JSON.parse(textOf(message)) as { ok: boolean; problems: string[]; text_found: boolean };
-    return { model: 'opus' as const, usage, result: { ok: r.ok && !r.text_found, problems: r.problems } };
+    const r = JSON.parse(textOf(message)) as { ok: boolean; problems: string[]; text_found: boolean; existing_character?: boolean };
+    return { model: 'opus' as const, usage, result: { ok: r.ok && !r.text_found && !r.existing_character, problems: r.problems } };
   }
 
   async easy(params: { courseTitle: string; title: string; text: string }) {

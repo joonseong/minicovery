@@ -174,6 +174,10 @@ export class MockGenerator implements Generator {
     return { model: 'haiku' as const, usage, result: { verdict: 'ok' as const, fixedText: '' } };
   }
 
+  async imageScene() {
+    return { model: 'haiku' as const, usage: zeroUsage(), result: 'A person reading a comic book on a sofa and smiling, with a small heart above.' };
+  }
+
   async checkImage() {
     await sleep(300);
     const usage = { ...zeroUsage(), inputTokens: 2300, outputTokens: 200 };
