@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+import { Doodle } from '@/components/Doodle';
 import { AppHeader, BottomNav, Main, Screen } from '@/components/ui';
 import { CHARACTER } from '@/lib/characters';
 import { currentUser } from '@/lib/session';
@@ -54,8 +55,7 @@ export default async function LibraryPage() {
       <AppHeader layout="large" title="프로필" settings />
       <Main className="gap-8 pb-8 pt-2">
         <section className="flex flex-col items-center pt-2 text-center">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={ch.face} alt={`${ch.name} 단계`} className="h-[72px] w-[72px] object-contain" />
+          <Doodle animal={d.stage.key} label={`${ch.name} 단계`} className="h-[72px] w-[72px]" />
           <p className="mt-3 text-sm font-bold text-txt-point">{ch.name} 단계</p>
           <p className="mt-0.5 text-2xl font-bold tracking-[-1px]">다 배운 주제 {d.stage.learned}개</p>
           <Link href="/map" className="mt-1 inline-flex min-h-11 items-center gap-0.5 text-sm text-txt-black-tertiary">

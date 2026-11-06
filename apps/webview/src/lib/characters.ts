@@ -1,5 +1,5 @@
-/** 캐릭터 단계 이미지 (public/img) */
+/** 캐릭터 단계 이름. 그림·움직임은 components/Doodle.tsx (손그림 두들, 생성 파일) */
 export const CHARACTER = {
-  rabbit: { full: '/img/rabbit.webp', still: '/img/rabbit-still.png', face: '/img/rabbit-face.png', name: '토끼' },
-  cat: { full: '/img/cat.webp', still: '/img/cat-still.png', face: '/img/cat-face.png', name: '고양이' },
+  rabbit: { name: '토끼' },
+  cat: { name: '고양이' },
 } as const;

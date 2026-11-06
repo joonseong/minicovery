@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { Doodle } from '@/components/Doodle';
 import { shareCard } from '@/lib/learning';
 
 export const dynamic = 'force-dynamic';
@@ -25,8 +26,7 @@ export default async function SharePage({ params }: { params: { shareId: string 
       <h1 className="mt-2 text-[28px] font-bold leading-9 tracking-[-1px]">{card.title}</h1>
       <p className="mt-2 text-base font-semibold text-txt-white-secondary">{card.total}편을 하루 한 편씩 다 읽었어요</p>
       <div className="flex flex-1 items-center justify-center py-8">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/img/rabbit.webp" alt="기뻐하는 토끼 캐릭터" className="h-[168px] w-[168px] object-contain" />
+        <Doodle animal="rabbit" act="cheer" label="기뻐하는 토끼 캐릭터" className="h-[168px] w-[168px]" />
       </div>
       {card.takeaway ? (
         <div className="flex flex-col gap-2 rounded-2xl bg-shape-white p-5 text-txt-black-primary">

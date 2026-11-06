@@ -2,8 +2,8 @@
 
 import { useEffect } from 'react';
 
+import { Doodle } from '@/components/Doodle';
 import { AppHeader, Footer, Main, OutlineButton, PrimaryButton, Screen } from '@/components/ui';
-import { CHARACTER } from '@/lib/characters';
 
 /** 서버·렌더링 예외. 다시 시도(reset)와 홈으로 가는 길을 둔다 */
 export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
@@ -15,8 +15,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
     <Screen>
       <AppHeader layout="logo" />
       <Main className="items-center justify-center pb-6 pt-4 text-center">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={CHARACTER.rabbit.still} alt="" className="h-24 w-24 object-contain" />
+        <Doodle animal="rabbit" act="tilt" className="h-24 w-24" />
         <h1 className="mt-4 text-2xl font-bold tracking-[-1px]">잠시 문제가 생겼어요</h1>
         <p className="mt-2 text-base text-txt-black-secondary">
           다시 시도해 주세요.

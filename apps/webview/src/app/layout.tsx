@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next';
 import { FlashToast } from '@/components/FlashToast';
 
 import './globals.css';
+import './doodle.css';
 
 export const metadata: Metadata = {
   title: '미니커버리',
