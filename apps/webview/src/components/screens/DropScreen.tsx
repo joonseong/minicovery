@@ -15,6 +15,8 @@ type StreamEv =
   | { type: 'text'; delta: string }
   | { type: 'retry' }
   | { type: 'done' | 'ready' | 'corrected'; drop: Drop }
+  /** 글 다음에 그려진 두들 그림 */
+  | { type: 'image'; url: string }
   | { type: 'refused' }
   /** 모델이 거절해 이 Drop을 건너뜀. 다음 Drop으로 이어 간다 */
   | { type: 'skipped'; message: string; nextDropId?: string }
@@ -103,6 +105,7 @@ export function DropScreen({
           setDrop(e.drop);
           setPhase('ready');
         }
+        if (e.type === 'image') setDrop(d => ({ ...d, image: { at: d.image?.at ?? '', tries: d.image?.tries ?? 1, url: e.url } }));
         if (e.type === 'refused' || e.type === 'skipped') {
           setNotice(e.type === 'skipped' && e.message ? e.message : SKIPPED_MESSAGE);
           if (e.type === 'skipped' && e.nextDropId) setSkipNext(e.nextDropId);
@@ -174,6 +177,11 @@ export function DropScreen({
           Drop {drop.index + 1} / {total}
         </p>
         <h1 className="mt-2 text-2xl font-bold tracking-[-1px]">{drop.title}</h1>
+        {phase === 'ready' && drop.image?.url ? (
+          // 내용을 옮긴 장식 그림 (본문이 같은 내용을 말한다)
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={drop.image.url} alt="" width={1536} height={1024} className="mc-fade mt-3 block aspect-[3/2] h-auto w-full" />
+        ) : null}
 
         {phase === 'skipped' ? (
           <div className="mt-10 flex flex-col items-center gap-4 text-center">
@@ -194,7 +202,7 @@ export function DropScreen({
             <OutlineButton onClick={() => setAttempt(a => a + 1)}>다시 만들기</OutlineButton>
           </div>
         ) : (
-          <article className="mt-6 flex flex-col gap-7">
+          <article className={`${phase === 'ready' && drop.image?.url ? 'mt-3' : 'mt-6'} flex flex-col gap-7`}>
             {body.hook ? (
               <p className="whitespace-pre-line text-lg font-semibold leading-7">{body.hook}</p>
             ) : streaming ? (

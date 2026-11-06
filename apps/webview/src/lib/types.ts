@@ -171,14 +171,26 @@ export interface Drop {
   evidence?: string[];
   /** '조금 헷갈려요'로 만든 쉬운 설명 (한 번만 만든다) */
   easy?: EasyBody;
+  /** 글 위에 붙는 두들 그림 (OpenAI). 글이 준비된 뒤 따로 만든다 */
+  image?: DropImage;
+}
+
+export interface DropImage {
+  /** 공개 주소. 없으면 아직 만드는 중이거나 실패 */
+  url?: string;
+  /** 마지막으로 시도한 시각 */
+  at: string;
+  /** 시도 횟수 (3번 실패하면 그만둔다) */
+  tries: number;
 }
 
 export interface UsageLog {
   id: string;
   userId: string;
   at: string;
-  purpose: 'check' | 'curriculum' | 'drop' | 'verify' | 'easy';
-  model: ModelTier;
+  purpose: 'check' | 'curriculum' | 'drop' | 'verify' | 'easy' | 'image';
+  /** image: Drop 그림 (OpenAI) */
+  model: ModelTier | 'image';
   mode: GenerationMode;
   inputTokens: number;
   outputTokens: number;

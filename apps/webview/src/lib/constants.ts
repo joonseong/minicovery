@@ -26,6 +26,35 @@ export const CATEGORIES = [
   '라이프스타일',
 ] as const;
 
+/**
+ * 분야 색: 분야 아이콘(Fuse 캔버스 CatIcon, ~/Desktop/2026/minicovery/assets/category-doodles/_generate.py)과 같은 색.
+ * Drop 그림의 포인트 색으로 쓴다. name은 그림 모델에 함께 주는 색 이름
+ */
+export const CATEGORY_COLOR: Record<string, { hex: string; name: string }> = {
+  '경제·금융': { hex: '#10C45C', name: 'bright green' },
+  '경영·마케팅': { hex: '#5E94FF', name: 'cornflower blue' },
+  '정치·사회': { hex: '#00B2C2', name: 'teal' },
+  역사: { hex: '#FF6B1A', name: 'vivid orange' },
+  '철학·종교': { hex: '#AF7CFF', name: 'lavender purple' },
+  '심리·행동': { hex: '#FF5C93', name: 'hot pink' },
+  과학: { hex: '#4397FF', name: 'sky blue' },
+  '기술·AI': { hex: '#14B8FF', name: 'bright azure' },
+  '건강·의학': { hex: '#FF5F7C', name: 'coral pink' },
+  '환경·지구': { hex: '#22C55E', name: 'fresh green' },
+  우주: { hex: '#8E89FF', name: 'periwinkle' },
+  '수학·논리': { hex: '#00B8A9', name: 'turquoise' },
+  '언어·글쓰기': { hex: '#FF8A00', name: 'orange' },
+  문학: { hex: '#BE76FF', name: 'violet' },
+  '미술·디자인': { hex: '#FFB000', name: 'golden yellow' },
+  음악: { hex: '#D367FF', name: 'orchid' },
+  '영화·대중문화': { hex: '#FF5F7E', name: 'coral red' },
+  '음식·와인': { hex: '#EB6E95', name: 'rose pink' },
+  '여행·지리': { hex: '#00C2D1', name: 'aqua' },
+  스포츠: { hex: '#FF642C', name: 'red orange' },
+  라이프스타일: { hex: '#FFA41B', name: 'tangerine' },
+  기타: { hex: '#9A9AA3', name: 'warm gray' },
+};
+
 export const SUGGESTED_TOPICS = ['행동경제학', '진화론', '와인', '로마 역사', 'UX 심리학', '금리와 환율', '양자역학', '미술사'];
 
 /** Learned 판정: 코스 Drop의 70% 이상 완료 + 완료한 Drop의 "이해했어요" 과반 (PRD §13.2) */

@@ -124,6 +124,14 @@ export class FileStore implements Store {
     return this.db.drops[id]!;
   }
 
+  /** 로컬 개발: public/generated 아래에 써서 같은 서버가 바로 보여 준다 */
+  async putImage(file: string, bytes: Uint8Array) {
+    const target = path.join(process.cwd(), 'public', 'generated', file);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, bytes);
+    return `/generated/${file}`;
+  }
+
   async addUsage(log: UsageLog) {
     this.db.usage.push(log);
     this.persist();

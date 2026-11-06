@@ -35,6 +35,8 @@ export interface Store {
   saveDrop(drop: Drop): Promise<void>;
   /** 상태가 from 중 하나일 때만 patch를 덮어쓴다 (동시 요청의 중복 생성 방지). 바뀐 Drop을 돌려주고, 아니면 null */
   claimDrop(id: string, from: Drop['status'][], patch: Partial<Drop>): Promise<Drop | null>;
+  /** 공개 그림 파일을 올리고 주소를 돌려준다 (Drop 그림) */
+  putImage(path: string, bytes: Uint8Array, contentType: string): Promise<string>;
 
   addUsage(log: UsageLog): Promise<void>;
   listUsage(sinceIso?: string): Promise<UsageLog[]>;
