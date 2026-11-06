@@ -16,6 +16,7 @@ test('그림 지시: 분야 색 하나, 해부학 규칙, 제목·정리 한 줄
   const full = dropImagePrompt({ title: '잃는 게 더 아픈 이유: 손실 회피', point: '잃는 아픔은 얻는 기쁨보다 약 두 배 크다.', course: '행동경제학', color });
   assert.match(full, /exactly one accent color, bright green \(#10C45C\)/);
   assert.match(full, /exactly two arms and two hands/);
+  assert.match(full, /Never draw existing characters/);
   assert.match(full, /Course: 행동경제학\nLesson title: 잃는 게 더 아픈 이유: 손실 회피\nKey point: 잃는 아픔은/);
   assert.doesNotMatch(full, /extra simple/);
   const early = dropImagePrompt({ title: '처음 본 숫자에 끌려가는 이유', color, simpler: true });

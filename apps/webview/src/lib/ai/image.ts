@@ -56,6 +56,7 @@ export function dropImagePrompt(input: { title: string; point?: string; course?:
     'Never draw a third hand or arm, a floating hand, or extra fingers. If an idea would need more hands, simplify the pose (for example one hand on the chin and the other resting) or show an object on its own instead.',
     input.simpler ? 'Keep this one extra simple: at most one person with both hands clearly visible, or only objects with no people.' : '',
     'No text, no letters, no numbers, no logos, no captions, no frame, no border, no shadows, no gradients, no scenery behind the subject.',
+    'Never draw existing characters, mascots or brand logos from anime, games or companies (even if the lesson is about them); use original generic figures or objects instead.',
   ];
   const scene = [
     'Draw one simple scene that captures the core idea of this short lesson so a reader gets it at a glance.',
