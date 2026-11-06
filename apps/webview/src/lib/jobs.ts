@@ -204,8 +204,8 @@ export async function collectBatches() {
   return stats;
 }
 
-/** 수거 한 번에 그리는 그림 수와 시작 마감 (pg_cron은 60초까지 기다린다) */
-const IMAGE_SWEEP = { max: 12, parallel: 4, startWithinMs: 40_000 };
+/** 수거 한 번에 그리는 그림 수와 시작 마감. 한 장에 그리기+검사 20초 안팎 (pg_cron은 60초까지 기다린다) */
+const IMAGE_SWEEP = { max: 18, parallel: 6, startWithinMs: 30_000 };
 
 /**
  * 그림이 없는 최근 Drop(밤에 만든 Drop, 실시간에서 놓친 Drop)에 그림을 붙인다. 오래된 것부터.

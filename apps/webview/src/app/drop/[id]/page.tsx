@@ -2,7 +2,7 @@ import { notFound, redirect } from 'next/navigation';
 
 import { DropScreen } from '@/components/screens/DropScreen';
 import { recallFor } from '@/lib/learning';
-import { canOpenDrop } from '@/lib/service';
+import { canOpenDrop, stageOf } from '@/lib/service';
 import { currentUser } from '@/lib/session';
 import { getStore } from '@/lib/store';
 
@@ -26,6 +26,7 @@ export default async function DropPage({ params }: { params: { id: string } }) {
       recall={await recallFor(user, drop)}
       nextDropId={next?.id}
       openedAll={Boolean(course.openedAllAt)}
+      stageKey={stageOf(user).key}
     />
   );
 }

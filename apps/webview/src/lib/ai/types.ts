@@ -45,6 +45,12 @@ export interface VerifyOutput {
   fixedText: string;
 }
 
+/** Drop 그림 검사 결과: 손·팔이 맞고 글자가 없으면 ok */
+export interface ImageCheck {
+  ok: boolean;
+  problems: string[];
+}
+
 export interface Metered<T> {
   result: T;
   usage: Usage;
@@ -71,6 +77,8 @@ export interface Generator {
   verify(text: string, evidence: string[]): Promise<Metered<VerifyOutput>>;
   /** '조금 헷갈려요': 같은 내용을 일상 예시로 더 쉽게 */
   easy(params: { courseTitle: string; title: string; text: string }): Promise<Metered<EasyBody>>;
+  /** Drop 그림 검사 (손·팔 개수, 글자). image는 webp base64 */
+  checkImage(image: string): Promise<Metered<ImageCheck>>;
   /** 야간 Batch 제출. mock은 즉시 처리하고 'mock-<n>' id를 돌려준다 */
   submitBatch(items: BatchItem[]): Promise<string>;
   pollBatch(batchId: string): Promise<BatchPoll>;
