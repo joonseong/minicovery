@@ -1,5 +1,5 @@
 import { getGenerator } from './ai';
-import { drawDropImage, imageEnabled, imageInProgress, imageRetryable } from './ai/image';
+import { drawDropImage, imageEnabled, imageInProgress, imageRetryable, isWorkCategory } from './ai/image';
 import { costUsd } from './ai/pricing';
 import type { Metered } from './ai/types';
 import {
@@ -570,8 +570,15 @@ const IMAGE_WAIT_MS = 30_000;
 async function drawCheckedImage(drop: Drop, course: Course | null, point?: string): Promise<string | null> {
   const store = getStore();
   const color = CATEGORY_COLOR[course?.category ?? ''] ?? CATEGORY_COLOR['기타']!;
+  // 작품을 다루는 코스는 이름이 들어가면 캐릭터를 그대로 그리므로, 이름 없는 장면으로 바꿔 그린다
+  let scene: string | undefined;
+  if (isWorkCategory(course?.category)) {
+    const m = await getGenerator().imageScene({ course: course?.title, title: drop.title });
+    await logUsage(drop.userId, 'image', m, 'realtime');
+    scene = m.result;
+  }
   for (let attempt = 0; attempt < 2; attempt++) {
-    const drawn = await drawDropImage({ title: drop.title, point, course: course?.title, color, simpler: attempt > 0, userId: drop.userId });
+    const drawn = await drawDropImage({ title: drop.title, point, course: course?.title, category: course?.category, scene, color, simpler: attempt > 0, userId: drop.userId });
     await store.addUsage({
       id: newId(),
       userId: drop.userId,
@@ -585,7 +592,8 @@ async function drawCheckedImage(drop: Drop, course: Course | null, point?: strin
       searches: 0,
       costUsd: drawn.costUsd,
     });
-    const check = await getGenerator().checkImage(Buffer.from(drawn.bytes).toString('base64'));
+    const about = [course?.title, drop.title].filter(Boolean).join(' / ');
+    const check = await getGenerator().checkImage(Buffer.from(drawn.bytes).toString('base64'), about);
     await logUsage(drop.userId, 'image', check, 'realtime');
     if (check.result.ok) return store.putImage(`drops/${drop.id}.webp`, drawn.bytes, 'image/webp');
     await logFailure(drop.userId, 'image_check', new Error(check.result.problems.join('; ') || 'rejected'));

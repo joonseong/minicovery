@@ -25,6 +25,29 @@ test('그림 지시: 분야 색 하나, 해부학 규칙, 제목·정리 한 줄
   assert.doesNotMatch(early, /\n\n\n/);
 });
 
+test('그림 지시: 대중문화·문학 코스는 캐릭터 대신 사람과 물건만 그린다', () => {
+  const color = CATEGORY_COLOR['영화·대중문화']!;
+  const work = dropImagePrompt({ title: '세 친구는 어떻게 다를까?', course: '치이카와', category: '영화·대중문화', color });
+  assert.match(work, /Draw only ordinary people and everyday objects/);
+  assert.match(work, /nothing that looks like the work's characters/);
+  const science = dropImagePrompt({ title: '고양이는 왜 상자를 좋아할까?', course: '동물 행동학', category: '과학', color });
+  assert.doesNotMatch(science, /Draw only ordinary people/);
+  assert.match(science, /or anything that resembles them/);
+});
+
+test('그림 지시: 이름 없는 장면(scene)이 있으면 코스·Drop 제목을 그림 모델에 보내지 않는다', () => {
+  const color = CATEGORY_COLOR['영화·대중문화']!;
+  const p = dropImagePrompt({
+    title: '치이카와·하치와레·우사기, 세 친구는 어떻게 다를까?',
+    course: '치이카와',
+    category: '영화·대중문화',
+    scene: 'Two friends laughing over a book on a bench.',
+    color,
+  });
+  assert.match(p, /Draw this one simple scene:\nTwo friends laughing over a book on a bench\./);
+  assert.doesNotMatch(p, /치이카와|하치와레|Lesson title|Course:/);
+});
+
 test('그림 재시도: 없으면 그리고, 그리는 중(15분 안)·두 번 시도·이미 있으면 건너뛴다', () => {
   const now = Date.parse('2026-11-06T12:00:00Z');
   const ago = (min: number) => new Date(now - min * 60_000).toISOString();

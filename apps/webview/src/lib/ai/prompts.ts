@@ -186,7 +186,21 @@ export const IMAGE_CHECK_SYSTEM = `You check generated doodle illustrations befo
 For every person or animal in the image, count the hands (or paws) you can see and the arms they are attached to.
 A person may show at most two hands and two arms; every visible hand must be attached to one of that person's arms.
 Fail the image if any person has a third hand or arm, a floating or duplicated hand, a hand attached to nothing, or clearly wrong fingers or limbs.
-Also fail it if it contains readable text, letters or numbers (simple symbols such as check marks, crosses, arrows, hearts or stars are fine).`;
+Also fail it if it contains readable text, letters or numbers (simple symbols such as check marks, crosses, arrows, hearts or stars are fine).
+You are told what the lesson is about. Fail the image if any figure depicts or closely imitates an existing copyrighted character, mascot or logo (from a comic, anime, game, film or company), especially a character from the work the lesson is about. Original generic people, animals and objects are fine.`;
+
+/** 작품을 다루는 Drop 그림: 그림 모델에 보낼 장면을 작품·캐릭터 이름 없이 쓴다 */
+export const IMAGE_SCENE_SYSTEM = `You turn a lesson from a learning app into one scene for a simple doodle illustration.
+The lesson is about an existing creative work (a comic, anime, game, film or novel), and the illustration must not show that work.
+Write one English sentence of at most 35 words describing at most two ordinary people and a few everyday objects that express the lesson's idea, for example a person reading on a phone at night, friends laughing over a book, a stack of books with blank covers, or a globe with small hearts.
+Never mention the work, its title, its creator, its characters or their names, species, colors or looks, and never describe animals, creatures, mascots or cartoon characters.`;
+
+export const IMAGE_SCENE_SCHEMA = {
+  type: 'object',
+  properties: { scene: { type: 'string' } },
+  required: ['scene'],
+  additionalProperties: false,
+} as const;
 
 export const IMAGE_CHECK_SCHEMA = {
   type: 'object',
@@ -201,9 +215,10 @@ export const IMAGE_CHECK_SCHEMA = {
       },
     },
     text_found: { type: 'boolean' },
+    existing_character: { type: 'boolean' },
     problems: { type: 'array', items: { type: 'string' } },
     ok: { type: 'boolean' },
   },
-  required: ['figures', 'text_found', 'problems', 'ok'],
+  required: ['figures', 'text_found', 'existing_character', 'problems', 'ok'],
   additionalProperties: false,
 } as const;

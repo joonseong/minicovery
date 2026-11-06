@@ -32,6 +32,10 @@ export function imageRetryable(drop: Pick<Drop, 'image'>, now = Date.now()) {
   return drop.image.tries < IMAGE_MAX_TRIES && !imageInProgress(drop, now);
 }
 
+/** 기존 작품(만화·애니·게임·영화·소설)을 다루는 분야: 그림에 캐릭터 대신 사람·물건만 */
+const WORK_CATEGORIES = new Set(['영화·대중문화', '문학']);
+export const isWorkCategory = (category?: string) => WORK_CATEGORIES.has(category ?? '');
+
 export interface AccentColor {
   hex: string;
   /** 모델이 알아듣는 색 이름 (hex만 주면 가끔 다른 색을 쓴다) */
@@ -42,9 +46,21 @@ export interface AccentColor {
  * 참고한 그림은 다른 작가 것이라 넣지 않고 말로만 스타일을 정한다 (캔버스 'Drop 그림 시안'과 같은 지시).
  * point(정리 한 줄)는 글이 끝난 뒤에만 있다 — 글과 동시에 그릴 때는 제목과 코스 이름으로 그린다.
  * simpler: 검사에 걸려 다시 그릴 때 사람·손을 줄인다
+ * category: 대중문화·문학 코스는 작품 이야기라 캐릭터를 닮게 그리기 쉽다 → 사람과 물건만 그린다.
+ * scene: 그런 코스는 제목에 작품·캐릭터 이름이 있으면 그림 모델이 금지해도 그대로 그려서,
+ *   이름 없이 바꾼 장면(imageScene)만 보내고 제목·코스 이름은 보내지 않는다
  */
-export function dropImagePrompt(input: { title: string; point?: string; course?: string; color: AccentColor; simpler?: boolean }) {
+export function dropImagePrompt(input: {
+  title: string;
+  point?: string;
+  course?: string;
+  category?: string;
+  scene?: string;
+  color: AccentColor;
+  simpler?: boolean;
+}) {
   const { color } = input;
+  const aboutWork = isWorkCategory(input.category);
   const style = [
     'Minimal hand-drawn doodle illustration on a plain pure white background.',
     'Loose, confident black ink line art with slightly uneven pen strokes, like a quick editorial sketch.',
@@ -56,15 +72,20 @@ export function dropImagePrompt(input: { title: string; point?: string; course?:
     'Never draw a third hand or arm, a floating hand, or extra fingers. If an idea would need more hands, simplify the pose (for example one hand on the chin and the other resting) or show an object on its own instead.',
     input.simpler ? 'Keep this one extra simple: at most one person with both hands clearly visible, or only objects with no people.' : '',
     'No text, no letters, no numbers, no logos, no captions, no frame, no border, no shadows, no gradients, no scenery behind the subject.',
-    'Never draw existing characters, mascots or brand logos from anime, games or companies (even if the lesson is about them); use original generic figures or objects instead.',
+    'Never draw existing characters, mascots or brand logos from comics, anime, games, films or companies, or anything that resembles them, even if the lesson is about them; use original generic figures or objects instead.',
+    aboutWork
+      ? "This lesson is about an existing creative work. Draw only ordinary people and everyday objects (for example a person reading a comic book or a phone, a stack of books with blank covers, a speech bubble, a heart, a globe). Do not draw any animals, creatures, mascots or cartoon characters, and nothing that looks like the work's characters."
+      : '',
   ];
-  const scene = [
-    'Draw one simple scene that captures the core idea of this short lesson so a reader gets it at a glance.',
-    input.course ? `Course: ${input.course}` : '',
-    `Lesson title: ${input.title}`,
-    input.point ? `Key point: ${input.point}` : '',
-    'Keep it to one main subject and at most two supporting objects.',
-  ];
+  const scene = input.scene
+    ? ['Draw this one simple scene:', input.scene, 'Keep it to one main subject and at most two supporting objects.']
+    : [
+        'Draw one simple scene that captures the core idea of this short lesson so a reader gets it at a glance.',
+        input.course ? `Course: ${input.course}` : '',
+        `Lesson title: ${input.title}`,
+        input.point ? `Key point: ${input.point}` : '',
+        'Keep it to one main subject and at most two supporting objects.',
+      ];
   return [...style.filter(Boolean), '', ...scene.filter(Boolean)].join('\n');
 }
 
@@ -82,7 +103,7 @@ interface ImagesResponse {
 
 /** 1536×1024 webp 한 장. 429·5xx는 한 번 더 시도하고, 그 밖의 실패(검열 등)는 바로 던진다 */
 export async function drawDropImage(
-  input: { title: string; point?: string; course?: string; color: AccentColor; simpler?: boolean; userId: string },
+  input: { title: string; point?: string; course?: string; category?: string; scene?: string; color: AccentColor; simpler?: boolean; userId: string },
 ): Promise<DrawnImage> {
   const body = JSON.stringify({
     model: MODEL,

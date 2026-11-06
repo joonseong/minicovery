@@ -78,7 +78,10 @@ export interface Generator {
   /** '조금 헷갈려요': 같은 내용을 일상 예시로 더 쉽게 */
   easy(params: { courseTitle: string; title: string; text: string }): Promise<Metered<EasyBody>>;
   /** Drop 그림 검사 (손·팔 개수, 글자). image는 webp base64 */
-  checkImage(image: string): Promise<Metered<ImageCheck>>;
+  /** 작품을 다루는 Drop 그림에 쓸, 작품·캐릭터 이름 없는 장면 한 문장 (영어) */
+  imageScene(params: { course?: string; title: string }): Promise<Metered<string>>;
+  /** about: '코스 제목 / Drop 제목' — 다루는 작품의 캐릭터를 닮았는지 판단할 때 쓴다 */
+  checkImage(image: string, about?: string): Promise<Metered<ImageCheck>>;
   /** 야간 Batch 제출. mock은 즉시 처리하고 'mock-<n>' id를 돌려준다 */
   submitBatch(items: BatchItem[]): Promise<string>;
   pollBatch(batchId: string): Promise<BatchPoll>;
