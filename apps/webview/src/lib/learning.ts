@@ -1,8 +1,8 @@
 import { randomBytes } from 'node:crypto';
 
-import { courseQuota, deleteFreeCourses, isPlus, kstDayLabel, type Quota, track } from './service';
+import { kstDayLabel, track } from './service';
 import { getStore } from './store';
-import type { Course, Drop, User } from './types';
+import type { Course, Drop, DropBody, Report, Source, User } from './types';
 import { daysBetween, kstDate, kstWeekday, newId, nowIso, pickRecallDrop } from './util';
 
 /* ---------- 기억에 남게: 어제 되짚기 · 이번 주 복습 ---------- */
@@ -147,16 +147,19 @@ export interface Recommended {
   title: string;
   category: string;
   total: number;
-  copies: number;
+  /** 'N명이 읽었어요': 열람한 사람 + 열람으로 바뀌기 전에 받아 간 사람 */
+  readers: number;
   opens: number;
 }
+
+const readersOf = (c: Course) => (c.readers ?? 0) + (c.copies ?? 0);
 
 const toRec = (c: Course): Recommended => ({
   id: c.id,
   title: c.title,
   category: c.category,
   total: c.outline.length,
-  copies: c.copies ?? 0,
+  readers: readersOf(c),
   opens: c.opens ?? 0,
 });
 
@@ -166,12 +169,12 @@ const listed = (c: Course) => c.status === 'completed' && Boolean(c.shared) && c
 /** 새 코스 화면에 한 번에 불러오는 수 (아래로 내리면 이어서) */
 export const RECOMMEND_PAGE = 20;
 
-/** 많이 눌러본(미리보기를 연) 순 → 많이 받은 순 → 최근 순. 내가 만들었거나 이미 받은 코스는 뺀다 */
+/** 많이 눌러본(미리보기를 연) 순 → 많이 읽은 순 → 최근 순. 내가 만들었거나 전에 받은 코스는 뺀다 */
 export async function recommendedCourses(user: User, offset = 0, limit = RECOMMEND_PAGE): Promise<{ items: Recommended[]; hasMore: boolean }> {
   const mine = new Set((await getStore().listCourses(user.id)).flatMap(c => [c.id, c.copiedFrom].filter(Boolean)));
   const all = (await getStore().listSharedCourses())
     .filter(c => listed(c) && !mine.has(c.id))
-    .sort((a, b) => (b.opens ?? 0) - (a.opens ?? 0) || (b.copies ?? 0) - (a.copies ?? 0) || b.createdAt.localeCompare(a.createdAt));
+    .sort((a, b) => (b.opens ?? 0) - (a.opens ?? 0) || readersOf(b) - readersOf(a) || b.createdAt.localeCompare(a.createdAt));
   return { items: all.slice(offset, offset + limit).map(toRec), hasMore: all.length > offset + limit };
 }
 
@@ -184,10 +187,90 @@ export async function recordRecommendOpen(user: User, id: string) {
   await store.saveCourse(course);
 }
 
-export async function recommendedCourse(id: string): Promise<(Recommended & { level: Course['level']; titles: string[] }) | null> {
-  const course = await getStore().getCourse(id);
+/** 열람할 수 있는 Drop: 글이 다 만들어진 것 (건너뛴 Drop은 목차에만 남는다) */
+const readable = (d: Drop) => d.status === 'ready' && Boolean(d.body);
+
+/** 추천 코스 미리보기: 목차와 편마다 열람할 수 있는지 */
+export async function recommendedCourse(id: string): Promise<(Recommended & { level: Course['level']; titles: string[]; readable: boolean[] }) | null> {
+  const store = getStore();
+  const course = await store.getCourse(id);
   if (!course || !listed(course)) return null;
-  return { ...toRec(course), level: course.level, titles: course.outline.map(o => o.title) };
+  const drops = await store.listDrops(course.id);
+  return {
+    ...toRec(course),
+    level: course.level,
+    titles: course.outline.map(o => o.title),
+    readable: course.outline.map((_, i) => drops.some(d => d.index === i && readable(d))),
+  };
+}
+
+export interface SharedDrop {
+  courseId: string;
+  courseTitle: string;
+  category: string;
+  total: number;
+  /** 몇 번째 Drop인지 (1부터, 주소에도 쓴다) */
+  n: number;
+  title: string;
+  body: DropBody;
+  imageUrl?: string;
+  sources: Source[];
+  corrected: boolean;
+  /** 다음에 열람할 수 있는 Drop (1부터). 마지막이면 없음 */
+  nextN?: number;
+}
+
+/**
+ * 추천 코스의 n번째 Drop을 그 자리에서 열람한다 (받지 않음, 2026-11-07 대표 결정).
+ * 하루 한 편·코스 한도·내 학습과 상관없고, 만든 사람의 기록(읽음·신고 표시)은 건드리지 않는다
+ */
+export async function sharedDrop(courseId: string, n: number): Promise<SharedDrop | null> {
+  const store = getStore();
+  const course = await store.getCourse(courseId);
+  if (!course || !listed(course)) return null;
+  const drops = (await store.listDrops(course.id)).filter(readable).sort((a, b) => a.index - b.index);
+  const drop = drops.find(d => d.index === n - 1);
+  if (!drop?.body) return null;
+  const next = drops.find(d => d.index > drop.index);
+  return {
+    courseId: course.id,
+    courseTitle: course.title,
+    category: course.category,
+    total: course.outline.length,
+    n,
+    title: drop.title,
+    body: drop.body,
+    imageUrl: drop.image?.url,
+    sources: drop.sources,
+    corrected: Boolean(drop.corrected),
+    nextN: next ? next.index + 1 : undefined,
+  };
+}
+
+/** 추천 코스 Drop을 열람함. 'N명이 읽었어요'는 사람마다 한 번 센다. 만든 사람 본인은 세지 않는다 */
+export async function recordSharedRead(user: User, courseId: string, n: number) {
+  const store = getStore();
+  const course = await store.getCourse(courseId);
+  if (!course || !listed(course) || course.userId === user.id) return;
+  if (!user.readShared?.includes(course.id)) {
+    user.readShared = [...(user.readShared ?? []), course.id];
+    await store.saveUser(user);
+    course.readers = (course.readers ?? 0) + 1;
+    await store.saveCourse(course);
+  }
+  await track(user.id, 'shared_drop_read', { courseId, n });
+}
+
+/** 열람한 추천 코스 Drop 신고. 만든 사람의 Drop에는 표시하지 않고 운영자 신고 목록에만 남긴다 */
+export async function reportSharedDrop(user: User, courseId: string, n: number, reason?: Report['reason']) {
+  const store = getStore();
+  const course = await store.getCourse(courseId);
+  if (!course || !listed(course)) return false;
+  const drop = (await store.listDrops(course.id)).find(d => d.index === n - 1);
+  if (!drop) return false;
+  await store.addReport({ id: newId(), userId: user.id, dropId: drop.id, at: nowIso(), reason });
+  await track(user.id, 'shared_drop_reported', { courseId, dropId: drop.id, reason });
+  return true;
 }
 
 /** 완주 화면에서 추천 코스로 내놓기 켜고 끄기 */
@@ -200,70 +283,6 @@ export async function setCourseShared(user: User, courseId: string, on: boolean)
   await store.saveCourse(course);
   await track(user.id, on ? 'course_shared' : 'course_unshared', { courseId });
   return true;
-}
-
-export type CopyResult =
-  | { ok: true; courseId: string; firstDropId: string }
-  | { ok: false; reason: Exclude<Quota, { ok: true }>['reason'] | 'missing' }
-  /** 이미 받았거나 내가 만든 코스. 그 코스로 바로 갈 수 있게 id를 준다 */
-  | { ok: false; reason: 'already'; courseId: string };
-
-/**
- * 추천 코스 받기: 목차와 다 만든 Drop을 그대로 복사해 내 코스로 만든다 (AI 생성 없음).
- * 새 코스 만들기와 같은 한도를 쓴다. 무료 사용자가 replace로 보내면 지금 코스를 지우고 받는다
- */
-export async function copyRecommended(user: User, sourceId: string, replace: boolean): Promise<CopyResult> {
-  const store = getStore();
-  const source = await store.getCourse(sourceId);
-  if (!source || !listed(source)) return { ok: false, reason: 'missing' };
-  const already = (await store.listCourses(user.id)).find(c => c.status !== 'deleted' && (c.id === sourceId || c.copiedFrom === sourceId));
-  if (already) return { ok: false, reason: 'already', courseId: already.id };
-  const quota = await courseQuota(user);
-  if (!quota.ok) {
-    if (quota.reason === 'free' && replace && !isPlus(user)) await deleteFreeCourses(user);
-    else return { ok: false, reason: quota.reason };
-  }
-  const now = nowIso();
-  const course: Course = {
-    ...source,
-    id: newId(),
-    userId: user.id,
-    status: 'active',
-    createdAt: now,
-    completedAt: undefined,
-    explainAnswer: undefined,
-    lastReadAt: undefined,
-    openedAllAt: undefined,
-    deletedAt: undefined,
-    shared: undefined,
-    featured: undefined,
-    copies: undefined,
-    opens: undefined,
-    shareId: undefined,
-    copiedFrom: source.id,
-  };
-  await store.saveCourse(course);
-  let firstDropId = '';
-  for (const d of await store.listDrops(source.id)) {
-    const copy: Drop = {
-      ...d,
-      id: newId(),
-      courseId: course.id,
-      userId: user.id,
-      completedAt: undefined,
-      signal: undefined,
-      readAt: undefined,
-      reportedAt: undefined,
-      batchId: undefined,
-      generatingAt: undefined,
-    };
-    await store.saveDrop(copy);
-    if (copy.index === 0) firstDropId = copy.id;
-  }
-  source.copies = (source.copies ?? 0) + 1;
-  await store.saveCourse(source);
-  await track(user.id, 'course_copied', { sourceId, courseId: course.id });
-  return { ok: true, courseId: course.id, firstDropId };
 }
 
 /** 어드민: 추천 후보(추천을 켠 완주 코스) */

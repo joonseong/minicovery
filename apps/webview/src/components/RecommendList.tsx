@@ -8,7 +8,7 @@ import type { Recommended } from '@/lib/learning';
 import { CatIcon } from './CatIcon';
 import { IconArrow, cx } from './ui';
 
-/** 다른 사람들이 만든 코스 (홈·새 코스): 많이 눌러본 순, 목록 끝이 보이면 다음 20개를 불러온다 */
+/** 다른 사람들이 만든 코스 (홈·새 코스): 많이 눌러본 순, 누르면 받지 않고 바로 열람. 목록 끝이 보이면 다음 20개를 불러온다 */
 export function RecommendList({ items: first, hasMore, className }: { items: Recommended[]; hasMore: boolean; className?: string }) {
   const [items, setItems] = useState(first);
   const [more, setMore] = useState(hasMore);
@@ -40,7 +40,7 @@ export function RecommendList({ items: first, hasMore, className }: { items: Rec
     <section className={cx('flex flex-col gap-3', className)}>
       <div className="flex flex-col gap-0.5">
         <h2 className="text-base font-semibold leading-[1.3]">다른 사람들이 만든 코스</h2>
-        <p className="text-[13px] text-fuse-sub">바로 받아서 첫 Drop을 읽을 수 있어요.</p>
+        <p className="text-[13px] text-fuse-sub">처음부터 끝까지 바로 읽을 수 있어요.</p>
       </div>
       <div className="flex flex-col gap-2">
         {items.map(r => (
@@ -51,7 +51,7 @@ export function RecommendList({ items: first, hasMore, className }: { items: Rec
                 {r.category} · {r.total}편
               </span>
               <span className="text-sm font-medium leading-[1.3]">{r.title}</span>
-              {r.copies ? <span className="text-[13px] font-semibold text-fuse-hot">{r.copies}명이 받았어요</span> : null}
+              {r.readers ? <span className="text-[13px] font-semibold text-fuse-hot">{r.readers}명이 읽었어요</span> : null}
             </span>
             <IconArrow />
           </Link>
