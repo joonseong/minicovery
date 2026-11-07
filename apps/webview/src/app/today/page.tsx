@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 
 import { TodayScreen } from '@/components/screens/TodayScreen';
+import { recommendedCourses } from '@/lib/learning';
 import { currentUser } from '@/lib/session';
 import { todayData } from '@/lib/views';
 
@@ -10,5 +11,6 @@ export default async function TodayPage() {
   const user = await currentUser();
   const data = await todayData(user);
   if (data.cards.length === 0 && !data.doneToday && (user.learned?.length ?? 0) === 0) redirect('/start');
-  return <TodayScreen {...data} />;
+  const recommended = await recommendedCourses(user);
+  return <TodayScreen {...data} recommended={recommended.items} recommendedMore={recommended.hasMore} />;
 }
