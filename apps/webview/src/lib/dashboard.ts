@@ -1,7 +1,7 @@
 import { USD_KRW } from './ai/pricing';
 import { isPlus } from './service';
 import { getStore } from './store';
-import type { AppEvent, User } from './types';
+import type { AppEvent, Course, User } from './types';
 import { kstDate, nowIso } from './util';
 
 /* 어드민 대시보드 (2026-11-08 대표 요청): 일·주·월 단위 지표. GA 없이 우리 DB(사용자·이벤트·코스·AI 사용량)로 센다 */
@@ -77,6 +77,37 @@ const split = (ids: Iterable<string>, accounts: Set<string>) => {
   return { login, anon };
 };
 
+/**
+ * 사람과 처음 온 시각: 활동 이벤트나 코스가 하나라도 있는 id만 센다. 사용자 행만 있고 아무 기록이 없는 id
+ * (10/31 전에는 첫 방문마다 사용자 행을 만들었음, 로그인 뒤 기록이 계정으로 옮겨지고 남은 기기 행)는 사람이 아니다.
+ * 처음 온 시각은 그중 가장 이른 기록 (사용자 행이 더 이르면 그 시각)
+ */
+function firstSeenOf(users: User[], events: AppEvent[], courses: Course[]) {
+  const firstSeen = new Map<string, string>();
+  const seen = (id: string, at: string) => {
+    if (!real(id)) return;
+    const prev = firstSeen.get(id);
+    if (!prev || at < prev) firstSeen.set(id, at);
+  };
+  for (const e of events) if (!SYSTEM_EVENTS.has(e.name)) seen(e.userId, e.at);
+  for (const c of courses) seen(c.userId, c.createdAt);
+  const createdAt = new Map(users.map(u => [u.id, u.createdAt]));
+  for (const [id, at] of firstSeen) {
+    const created = createdAt.get(id);
+    if (created && created < at) firstSeen.set(id, created);
+  }
+  return firstSeen;
+}
+
+/** 어드민 첫 화면의 사람 수 (대시보드와 같은 기준): 로그인·비로그인, 그리고 사람이 아닌 빈 사용자 행 수 */
+export async function peopleSummary() {
+  const store = getStore();
+  const [users, events, courses] = await Promise.all([store.listUsers(), store.listEvents(), store.listAllCourses()]);
+  const firstSeen = firstSeenOf(users, events, courses);
+  const accounts = new Set(users.filter(u => !u.anon).map(u => u.id));
+  return { ...split(firstSeen.keys(), accounts), emptyRows: users.filter(u => real(u.id) && !firstSeen.has(u.id)).length };
+}
+
 export async function dashboardData(unit: Unit) {
   const store = getStore();
   const [users, allEvents, usage, allCourses] = await Promise.all([store.listUsers(), store.listEvents(), store.listUsage(), store.listAllCourses()]);
@@ -98,21 +129,8 @@ export async function dashboardData(unit: Unit) {
   };
   const named = (name: string, keep: (e: AppEvent) => boolean = () => true) => tally(events.filter(e => e.name === name && keep(e)));
 
-  // 사람: 활동 이벤트나 코스가 하나라도 있는 id. 로그인 때 기록을 계정으로 옮기고 남은 빈 기기 계정은 세지 않는다
-  // 처음 온 시각은 그중 가장 이른 기록 (사용자 행이 더 이르면 그 시각). 처음 온 날도 활동한 날로 센다
-  const firstSeen = new Map<string, string>();
-  const seen = (id: string, at: string) => {
-    if (!real(id)) return;
-    const prev = firstSeen.get(id);
-    if (!prev || at < prev) firstSeen.set(id, at);
-  };
-  for (const e of events) if (!SYSTEM_EVENTS.has(e.name)) seen(e.userId, e.at);
-  for (const c of allCourses) seen(c.userId, c.createdAt);
-  const createdAt = new Map(users.map(u => [u.id, u.createdAt]));
-  for (const [id, at] of firstSeen) {
-    const created = createdAt.get(id);
-    if (created && created < at) firstSeen.set(id, created);
-  }
+  // 처음 온 날도 활동한 날로 센다
+  const firstSeen = firstSeenOf(users, events, allCourses);
   const days = new Map<string, Set<string>>();
   const addDay = (id: string, iso: string) => {
     const set = days.get(id) ?? new Set<string>();
