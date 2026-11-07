@@ -88,7 +88,10 @@ export function DropScreen({
   );
   const [notice, setNotice] = useState(skippedAtStart ? SKIPPED_MESSAGE : '');
   const [skipNext, setSkipNext] = useState<string | undefined>(nextDropId);
-  const [stream, setStream] = useState('');
+  // 스트리밍 글은 로딩 단계·막대에만 쓴다. 조각마다 다시 그리면 아이폰 웹뷰에서 로딩 캐릭터 움직임이 끊겨서
+  // 글은 ref에 모으고 화면에는 0.5초마다 길이·완성 여부만 반영한다
+  const streamText = useRef('');
+  const [stream, setStream] = useState({ length: 0, done: false });
   const [art, setArt] = useState(false);
   const [loadingFrom] = useState(() => Date.now());
   const [now, setNow] = useState(() => Date.now());
@@ -108,7 +111,8 @@ export function DropScreen({
     if (started.current === attempt) return;
     started.current = attempt;
     setPhase('generating');
-    setStream('');
+    streamText.current = '';
+    setStream({ length: 0, done: false });
     const t0 = Date.now();
     const run = async () => {
       const res = await fetch(`/api/drops/${drop.id}/generate`, { method: 'POST' });
@@ -119,13 +123,16 @@ export function DropScreen({
       let first = true;
       await readNdjson<StreamEv>(res, e => {
         if (e.type === 'art') setArt(true);
-        if (e.type === 'retry') setStream('');
+        if (e.type === 'retry') {
+          streamText.current = '';
+          setStream({ length: 0, done: false });
+        }
         if (e.type === 'text') {
           if (first) {
             first = false;
             trackClient('drop_wait', { dropId: drop.id, ms: Date.now() - t0 });
           }
-          setStream(t => t + e.delta);
+          streamText.current += e.delta;
         }
         if (e.type === 'done' || e.type === 'ready' || e.type === 'corrected') {
           setDrop(e.drop);
@@ -169,21 +176,25 @@ export function DropScreen({
     };
   }, [initialDrop.id, initialDrop.status, initialDrop.image?.url]);
 
-  // 로딩 막대가 멈춰 보이지 않게 1초마다 다시 그린다
+  // 로딩 막대가 멈춰 보이지 않게, 그리고 모아 둔 스트리밍 글을 반영하러 0.5초마다 다시 그린다
   const loading = phase === 'generating' || phase === 'preparing';
   useEffect(() => {
     if (!loading) return;
-    const id = setInterval(() => setNow(Date.now()), 1000);
+    const id = setInterval(() => {
+      setNow(Date.now());
+      const text = streamText.current;
+      setStream(s => (s.length === text.length ? s : { length: text.length, done: isCompleteBody(parseDropText(text)) }));
+    }, 500);
     return () => clearInterval(id);
   }, [loading]);
-  const textDone = stream ? isCompleteBody(parseDropText(stream)) : false;
-  const loadingStep: DropLoadingStep = phase === 'preparing' ? 2 : !stream ? 0 : !textDone ? 1 : art ? 3 : 2;
+  const textDone = stream.done;
+  const loadingStep: DropLoadingStep = phase === 'preparing' ? 2 : !stream.length ? 0 : !textDone ? 1 : art ? 3 : 2;
   const waited = (now - loadingFrom) / 1000;
   const progress =
     phase === 'preparing'
       ? Math.min(0.74 + waited * 0.006, 0.95)
       : Math.min(
-          0.06 + (stream ? 0.12 : Math.min(waited / 20, 1) * 0.12) + Math.min(stream.length / TYPICAL_DROP_CHARS, 1) * 0.5 + (art ? 0.22 : 0),
+          0.06 + (stream.length ? 0.12 : Math.min(waited / 20, 1) * 0.12) + Math.min(stream.length / TYPICAL_DROP_CHARS, 1) * 0.5 + (art ? 0.22 : 0),
           0.96,
         );
 
