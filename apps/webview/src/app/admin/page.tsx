@@ -6,9 +6,11 @@ import { AdminShell } from '@/components/admin/AdminShell';
 import { FeatureToggle } from '@/components/admin/FeatureToggle';
 import { IapTestButton } from '@/components/admin/IapTestButton';
 import { ADMIN_COOKIE, adminTokenOk } from '@/lib/auth';
+import { accountRows } from '@/lib/dashboard';
 import { sharedCandidates } from '@/lib/learning';
 import { adminSummary } from '@/lib/metrics';
 import { getStore } from '@/lib/store';
+import { kstDate, kstTime } from '@/lib/util';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,6 +27,9 @@ export default async function AdminPage({ searchParams }: { searchParams: { toke
   if (!adminTokenOk(cookies().get(ADMIN_COOKIE)?.value) && !adminTokenOk(headers().get('x-admin-token'))) notFound();
 
   const s = await adminSummary();
+  const accounts = await accountRows();
+  const when = (iso?: string) => (iso ? `${kstDate(iso).slice(5).replace('-', '/')} ${kstTime(iso)}` : '-');
+  const NOTIFY: Record<string, string> = { granted: '허용', denied: '거절', unknown: '-' };
   const store = getStore();
   const shared = await sharedCandidates();
   const reported = await Promise.all(s.reports.map(async r => ({ r, drop: await store.getDrop(r.dropId) })));
@@ -60,6 +65,36 @@ export default async function AdminPage({ searchParams }: { searchParams: { toke
             <div className="mt-1 text-lg font-bold">{v}</div>
           </div>
         ))}
+      </div>
+      <h2 className="mt-8 font-bold">로그인한 사용자 ({accounts.length})</h2>
+      <p className="mt-1 text-xs text-txt-black-tertiary">가입한 계정만, 최근 활동 순. 한국 시간</p>
+      <div className="mt-2 overflow-x-auto rounded-xl border border-fuse-line">
+        <table className="w-full min-w-[880px] text-xs" style={{ fontVariantNumeric: 'tabular-nums' }}>
+          <thead>
+            <tr className="text-left text-txt-black-tertiary">
+              {['로그인 방법', '이메일', '가입', '마지막 활동', '코스', '완료 Drop', 'Plus', '알림', 'id'].map(h => (
+                <th key={h} className={h === '코스' || h === '완료 Drop' ? 'px-3 py-2 text-right font-medium' : 'px-3 py-2 font-medium'}>
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {accounts.map(a => (
+              <tr key={a.id} className="border-t border-fuse-line">
+                <td className="px-3 py-2">{a.methods.join(' · ') || '-'}</td>
+                <td className="px-3 py-2">{a.email ?? '-'}</td>
+                <td className="px-3 py-2">{when(a.signedUpAt)}</td>
+                <td className="px-3 py-2">{when(a.lastActiveAt)}</td>
+                <td className="px-3 py-2 text-right">{a.courses}</td>
+                <td className="px-3 py-2 text-right">{a.drops}</td>
+                <td className="px-3 py-2">{a.plus ?? '-'}</td>
+                <td className="px-3 py-2">{NOTIFY[a.notify] ?? a.notify}</td>
+                <td className="px-3 py-2 text-txt-black-tertiary">{a.id.slice(0, 8)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
       <h2 className="mt-8 font-bold">App Store 서버 알림 점검</h2>
       <p className="mt-1 text-xs text-txt-black-tertiary">
