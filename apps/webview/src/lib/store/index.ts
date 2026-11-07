@@ -25,6 +25,8 @@ export interface Store {
   listActiveCourses(): Promise<Course[]>;
   /** 추천 코스 후보: 완주한 사용자가 추천을 켠 코스 */
   listSharedCourses(): Promise<Course[]>;
+  /** 모든 코스 (어드민 대시보드 집계) */
+  listAllCourses(): Promise<Course[]>;
   /** 완주 공유 링크로 코스 찾기 */
   findCourseByShareId(shareId: string): Promise<Course | null>;
   saveCourse(course: Course): Promise<void>;

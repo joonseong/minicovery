@@ -1,6 +1,8 @@
 import { cookies, headers } from 'next/headers';
+import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
+import { AdminShell } from '@/components/admin/AdminShell';
 import { FeatureToggle } from '@/components/admin/FeatureToggle';
 import { IapTestButton } from '@/components/admin/IapTestButton';
 import { ADMIN_COOKIE, adminTokenOk } from '@/lib/auth';
@@ -44,9 +46,14 @@ export default async function AdminPage({ searchParams }: { searchParams: { toke
   ];
 
   return (
-    <main className="p-5 text-sm">
-      <h1 className="text-xl font-bold">Minicovery 어드민</h1>
-      <div className="mt-4 grid grid-cols-2 gap-2">
+    <AdminShell>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-xl font-bold">Minicovery 어드민</h1>
+        <Link href="/admin/dashboard" className="rounded-full bg-fuse-ink px-4 py-2 text-sm font-semibold text-txt-white-primary">
+          대시보드 보기
+        </Link>
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
         {cards.map(([k, v]) => (
           <div key={k} className="rounded-xl bg-shape-depth1 p-3">
             <div className="text-xs text-txt-black-tertiary">{k}</div>
@@ -88,6 +95,6 @@ export default async function AdminPage({ searchParams }: { searchParams: { toke
           </li>
         ))}
       </ul>
-    </main>
+    </AdminShell>
   );
 }
