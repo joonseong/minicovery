@@ -127,6 +127,9 @@ export class SupabaseStore implements Store {
       this.db.from('courses').select('data').eq('status', 'completed').eq('data->>shared', 'true').order('id').range(from, to),
     );
   }
+  listAllCourses() {
+    return this.many<Course>((from, to) => this.db.from('courses').select('data').order('id').range(from, to));
+  }
   findCourseByShareId(shareId: string) {
     return this.first<Course>(this.db.from('courses').select('data').eq('data->>shareId', shareId).limit(1));
   }

@@ -90,6 +90,9 @@ export class FileStore implements Store {
   async listSharedCourses() {
     return Object.values(this.db.courses).filter(c => c.status === 'completed' && c.shared);
   }
+  async listAllCourses() {
+    return Object.values(this.db.courses);
+  }
   async findCourseByShareId(shareId: string) {
     return Object.values(this.db.courses).find(c => c.shareId === shareId) ?? null;
   }

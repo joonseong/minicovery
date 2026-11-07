@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 
 import { FlashToast } from '@/components/FlashToast';
+import { VisitPing } from '@/components/VisitPing';
 
 import './globals.css';
 import './doodle.css';
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <div className="relative mx-auto flex h-dvh w-full max-w-[480px] flex-col overflow-hidden bg-shape-white">
           {children}
           <FlashToast />
+          <VisitPing />
         </div>
       </body>
     </html>
