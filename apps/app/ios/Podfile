@@ -41,6 +41,10 @@ target 'Minicovery' do
         config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
         # Xcode 26의 clang에서 fmt 11의 consteval 포맷 문자열이 컴파일되지 않아 C++17로 빌드한다
         config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17' if target.name == 'fmt'
+        # Xcode 27은 iOS 15 미만 배포 대상을 빌드하지 않아, 낮게 잡힌 Pod(Firebase·Google·카카오 등)를 앱과 같은 15.1로 올린다
+        if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < 15.1
+          config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.1'
+        end
       end
     end
   end
