@@ -1,7 +1,7 @@
 import { USD_KRW } from './ai/pricing';
 import { isPlus } from './service';
 import { getStore } from './store';
-import type { AppEvent } from './types';
+import type { AppEvent, User } from './types';
 import { kstDate, nowIso } from './util';
 
 /* 어드민 대시보드 (2026-11-08 대표 요청): 일·주·월 단위 지표. GA 없이 우리 DB(사용자·이벤트·코스·AI 사용량)로 센다 */
@@ -59,13 +59,29 @@ export interface Chart {
   values: number[];
   format?: 'won' | 'sec';
   note?: string;
+  /** 로그인·비로그인으로 나눠 쌓아 그린다 (사람 수 차트) */
+  parts?: { login: number[]; anon: number[] };
 }
+
+/** 지표에서 빼는 내부 계정인지 */
+const real = (id: string) => !INTERNAL_USERS.has(id);
+
+/** 로그인(가입한 계정) · 비로그인(기기만) 나눠 센다. 지금 기준이라, 나중에 가입하면 그 전 기록도 로그인으로 센다 */
+const split = (ids: Iterable<string>, accounts: Set<string>) => {
+  let login = 0;
+  let anon = 0;
+  for (const id of ids) {
+    if (accounts.has(id)) login++;
+    else anon++;
+  }
+  return { login, anon };
+};
 
 export async function dashboardData(unit: Unit) {
   const store = getStore();
   const [users, allEvents, usage, allCourses] = await Promise.all([store.listUsers(), store.listEvents(), store.listUsage(), store.listAllCourses()]);
-  const real = (id: string) => !INTERNAL_USERS.has(id);
   const events = allEvents.filter(e => real(e.userId));
+  const accounts = new Set(users.filter(u => !u.anon).map(u => u.id));
 
   const today = kstDate();
   const current = periodOf(today, unit);
@@ -115,8 +131,18 @@ export async function dashboardData(unit: Unit) {
       if (i !== undefined) active[i]!.add(id);
     }
   }
-  const newUsers = tally([...firstSeen.values()].map(at => ({ at })));
-  const returning = periods.map((p, i) => [...active[i]!].filter(id => firstPeriod.get(id)! < p).length);
+  const newSets = periods.map(() => [] as string[]);
+  for (const [id, at] of firstSeen) {
+    const i = slot(at);
+    if (i !== undefined) newSets[i]!.push(id);
+  }
+  const returnSets = periods.map((p, i) => [...active[i]!].filter(id => firstPeriod.get(id)! < p));
+  const parts = (sets: Iterable<string>[]) => {
+    const each = sets.map(ids => split(ids, accounts));
+    return { login: each.map(e => e.login), anon: each.map(e => e.anon) };
+  };
+  const newUsers = newSets.map(s => s.length);
+  const returning = returnSets.map(s => s.length);
 
   // 코스: 받은 코스 포함, 만들다 실패한 코스는 뺀다
   const courses = allCourses.filter(c => real(c.userId) && c.status !== 'failed');
@@ -142,9 +168,9 @@ export async function dashboardData(unit: Unit) {
     {
       title: '사용자',
       charts: [
-        { label: '새 사용자', values: newUsers, note: '처음 온 날 기준 (방문·코스 만들기 등 처음 기록)' },
-        { label: '활동한 사람', values: active.map(s => s.size), note: '앱 방문·Drop 읽기·코스 만들기 등을 한 사람' },
-        { label: '다시 온 사람', values: returning, note: '이전 기간에 처음 온 사람 중 이 기간에 활동한 사람' },
+        { label: '새 사용자', values: newUsers, parts: parts(newSets), note: '처음 온 날 기준 (방문·코스 만들기 등 처음 기록)' },
+        { label: '활동한 사람', values: active.map(s => s.size), parts: parts(active), note: '앱 방문·Drop 읽기·코스 만들기 등을 한 사람' },
+        { label: '다시 온 사람', values: returning, parts: parts(returnSets), note: '이전 기간에 처음 온 사람 중 이 기간에 활동한 사람' },
         { label: '가입', values: named('signup'), note: `이메일·카카오·Google·Apple · 지금까지 ${signedUp}명` },
       ],
     },
@@ -175,10 +201,11 @@ export async function dashboardData(unit: Unit) {
   ];
 
   // 재방문율: 처음 온 다음 날 / 7일 안에 다시 활동한 비율 (그 기간이 다 지난 사람만)
-  const returnRate = (window: number, lookbackDays: number) => {
+  const returnRate = (window: number, lookbackDays: number, keep: (id: string) => boolean = () => true) => {
     let cohort = 0;
     let back = 0;
     for (const [id, at] of firstSeen) {
+      if (!keep(id)) continue;
       const d0 = kstDate(at);
       const age = Math.round((Date.parse(`${today}T00:00:00Z`) - Date.parse(`${d0}T00:00:00Z`)) / DAY_MS);
       if (age <= window || age > lookbackDays) continue;
@@ -212,33 +239,92 @@ export async function dashboardData(unit: Unit) {
   const perUser = new Map<string, number>();
   for (const c of courses) perUser.set(c.userId, (perUser.get(c.userId) ?? 0) + 1);
   const counts = [...perUser.values()];
+  const avgOf = (list: number[]) => (list.length ? list.reduce((s, n) => s + n, 0) / list.length : 0);
+  const people = split(firstSeen.keys(), accounts);
   const dist = [1, 2, 3, 4].map(n => counts.filter(c => (n === 4 ? c >= 4 : c === n)).length);
 
   const plus = users.filter(u => real(u.id) && isPlus(u) && u.plusEnv !== 'Sandbox');
   const last = periods.length - 1;
+  const rates = (window: number, lookbackDays: number) => ({
+    all: returnRate(window, lookbackDays),
+    login: returnRate(window, lookbackDays, id => accounts.has(id)),
+    anon: returnRate(window, lookbackDays, id => !accounts.has(id)),
+  });
+  /** 이번 기간 로그인·비로그인 */
+  const nowSplit = (sets: Iterable<string>[]) => split(sets[last]!, accounts);
 
   return {
     unit,
     updatedAt: nowIso(),
     periods: periods.map(key => ({ key, label: periodLabel(key, unit) })),
     groups,
+    people,
     now: {
       newUsers: [newUsers[last]!, newUsers[last - 1]!] as const,
       active: [active[last]!.size, active[last - 1]!.size] as const,
       returning: [returning[last]!, returning[last - 1]!] as const,
+      newSplit: nowSplit(newSets),
+      activeSplit: nowSplit(active),
+      returningSplit: nowSplit(returnSets),
       drops: [drops[last]!, drops[last - 1]!] as const,
       costKrw: [Math.round(costKrw[last]!), Math.round(costKrw[last - 1]!)] as const,
     },
-    returnRates: { d1: returnRate(1, 30), d7: returnRate(7, 60) },
+    returnRates: { d1: rates(1, 30), d7: rates(7, 60) },
     retention: { cols, rows: retention },
     courses: {
       people: firstSeen.size,
       withCourse: counts.length,
-      avg: counts.length ? counts.reduce((s, n) => s + n, 0) / counts.length : 0,
+      avg: avgOf(counts),
       median: median(counts),
       dist,
+      avgLogin: avgOf([...perUser].filter(([id]) => accounts.has(id)).map(([, n]) => n)),
+      avgAnon: avgOf([...perUser].filter(([id]) => !accounts.has(id)).map(([, n]) => n)),
     },
     plus: { active: plus.length, autoRenewOff: plus.filter(u => u.plusAutoRenew === false).length },
     costByPurpose: [...costByPurpose].map(([purpose, krw]) => ({ purpose, krw: Math.round(krw) })).sort((a, b) => b.krw - a.krw),
   };
+}
+
+export interface AccountRow {
+  id: string;
+  email?: string;
+  /** 로그인 방법 (이메일·카카오·Google·Apple) */
+  methods: string[];
+  signedUpAt: string;
+  lastActiveAt?: string;
+  courses: number;
+  drops: number;
+  /** Plus 구독 중이면 거래 환경 (Sandbox = 심사·TestFlight) */
+  plus: 'Production' | 'Sandbox' | null;
+  notify: User['notifyPermission'];
+}
+
+/** 어드민: 로그인한 사용자(가입한 계정) 목록. 최근 활동 순 */
+export async function accountRows(): Promise<AccountRow[]> {
+  const store = getStore();
+  const [users, events, courses] = await Promise.all([store.listUsers(), store.listEvents(), store.listAllCourses()]);
+  const signup = new Map<string, string>();
+  const lastActive = new Map<string, string>();
+  const drops = new Map<string, number>();
+  for (const e of events) {
+    if (e.name === 'signup' && (!signup.get(e.userId) || e.at < signup.get(e.userId)!)) signup.set(e.userId, e.at);
+    if (e.name === 'drop_completed') drops.set(e.userId, (drops.get(e.userId) ?? 0) + 1);
+    if (!SYSTEM_EVENTS.has(e.name) && (!lastActive.get(e.userId) || e.at > lastActive.get(e.userId)!)) lastActive.set(e.userId, e.at);
+  }
+  const courseCount = new Map<string, number>();
+  for (const c of courses) if (c.status !== 'failed') courseCount.set(c.userId, (courseCount.get(c.userId) ?? 0) + 1);
+  return users
+    .filter(u => !u.anon && real(u.id))
+    .map(u => ({
+      id: u.id,
+      email: u.email,
+      methods: [u.kakaoId && '카카오', u.googleSub && 'Google', u.appleSub && 'Apple', u.passwordHash && '이메일'].filter((m): m is string => Boolean(m)),
+      signedUpAt: signup.get(u.id) ?? u.createdAt,
+      lastActiveAt: lastActive.get(u.id),
+      courses: courseCount.get(u.id) ?? 0,
+      drops: drops.get(u.id) ?? 0,
+      plus: isPlus(u) ? (u.plusEnv ?? 'Production') : null,
+      notify: u.notifyPermission,
+    }))
+    .sort((a, b) => (b.lastActiveAt ?? b.signedUpAt).localeCompare(a.lastActiveAt ?? a.signedUpAt));
 }

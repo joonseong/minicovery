@@ -29,15 +29,19 @@ const cx = (...a: (string | false | undefined)[]) => a.filter(Boolean).join(' ')
 
 const pct = (rate: number | null) => (rate === null ? '-' : `${Math.round(rate * 100)}%`);
 
-function Kpi({ label, value, sub }: { label: string; value: string; sub: string }) {
+function Kpi({ label, value, sub, sub2 }: { label: string; value: string; sub: string; sub2?: string }) {
   return (
     <div className="rounded-2xl border border-fuse-line bg-fuse-card p-5">
       <p className="text-xs text-fuse-sub">{label}</p>
       <p className="mt-2 text-3xl font-bold leading-none">{value}</p>
       <p className="mt-2 text-xs text-fuse-sub">{sub}</p>
+      {sub2 ? <p className="mt-0.5 text-xs text-fuse-sub">{sub2}</p> : null}
     </div>
   );
 }
+
+/** 로그인 a · 비로그인 b */
+const splitText = (s: { login: number; anon: number }, unit = '') => `로그인 ${s.login}${unit} · 비로그인 ${s.anon}${unit}`;
 
 /** 어드민 대시보드: 일·주·월 단위로 사용자·재방문·학습·수익·비용을 본다 (PC 넓은 화면) */
 export default async function DashboardPage({ searchParams }: { searchParams: { unit?: string } }) {
@@ -80,15 +84,31 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
       </header>
 
       <section aria-label="핵심 숫자" className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Kpi label={`새 사용자 (${words.now})`} value={formatValue(d.now.newUsers[0], undefined)} sub={delta(d.now.newUsers)} />
-        <Kpi label={`활동한 사람 (${words.now})`} value={formatValue(d.now.active[0], undefined)} sub={delta(d.now.active)} />
-        <Kpi label="다음 날 재방문율" value={pct(d1.rate)} sub={`${d1.back}/${d1.cohort}명 · 처음 온 지 2~30일 된 사람`} />
-        <Kpi label="7일 안 재방문율" value={pct(d7.rate)} sub={`${d7.back}/${d7.cohort}명 · 처음 온 지 8~60일 된 사람`} />
-        <Kpi label={`다시 온 사람 (${words.now})`} value={formatValue(d.now.returning[0], undefined)} sub={delta(d.now.returning)} />
+        <Kpi label={`새 사용자 (${words.now})`} value={formatValue(d.now.newUsers[0], undefined)} sub={delta(d.now.newUsers)} sub2={splitText(d.now.newSplit)} />
+        <Kpi label={`활동한 사람 (${words.now})`} value={formatValue(d.now.active[0], undefined)} sub={delta(d.now.active)} sub2={splitText(d.now.activeSplit)} />
+        <Kpi
+          label="다음 날 재방문율"
+          value={pct(d1.all.rate)}
+          sub={`${d1.all.back}/${d1.all.cohort}명 · 처음 온 지 2~30일 된 사람`}
+          sub2={`로그인 ${pct(d1.login.rate)} · 비로그인 ${pct(d1.anon.rate)}`}
+        />
+        <Kpi
+          label="7일 안 재방문율"
+          value={pct(d7.all.rate)}
+          sub={`${d7.all.back}/${d7.all.cohort}명 · 처음 온 지 8~60일 된 사람`}
+          sub2={`로그인 ${pct(d7.login.rate)} · 비로그인 ${pct(d7.anon.rate)}`}
+        />
+        <Kpi
+          label={`다시 온 사람 (${words.now})`}
+          value={formatValue(d.now.returning[0], undefined)}
+          sub={delta(d.now.returning)}
+          sub2={splitText(d.now.returningSplit)}
+        />
         <Kpi
           label="사용자당 코스 수"
           value={`${d.courses.avg.toFixed(1)}개`}
           sub={`중앙값 ${d.courses.median}개 · 코스가 있는 ${d.courses.withCourse}명 기준`}
+          sub2={`로그인 ${d.courses.avgLogin.toFixed(1)}개 · 비로그인 ${d.courses.avgAnon.toFixed(1)}개`}
         />
         <Kpi label="Plus 구독자" value={`${d.plus.active}명`} sub={`자동 갱신 끈 ${d.plus.autoRenewOff}명 · Sandbox 제외`} />
         <Kpi label={`AI 비용 (${words.now})`} value={formatValue(d.now.costKrw[0], 'won')} sub={delta(d.now.costKrw, 'won')} />
@@ -97,9 +117,12 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
       {d.groups.slice(0, 1).map(g => (
         <section key={g.title} className="mt-10">
           <h2 className="text-base font-bold">{g.title}</h2>
+          <p className="mt-1 text-xs text-fuse-sub">
+            지금까지 {d.people.login + d.people.anon}명 · {splitText(d.people, '명')}. 로그인은 지금 가입한 계정 기준이라, 나중에 가입하면 그 전 기록도 로그인으로 세요.
+          </p>
           <div className="mt-3 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {g.charts.map(c => (
-              <ColumnChart key={c.label} title={c.label} note={c.note} labels={labels} values={c.values} format={c.format} unitWord={words} />
+              <ColumnChart key={c.label} title={c.label} note={c.note} labels={labels} values={c.values} parts={c.parts} format={c.format} unitWord={words} />
             ))}
           </div>
         </section>
