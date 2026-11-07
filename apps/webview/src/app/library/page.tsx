@@ -70,9 +70,14 @@ export default async function LibraryPage() {
           <Doodle animal={d.stage.key} label={`${ch.name} 단계`} className="h-20 w-20 flex-shrink-0" />
         </section>
         {d.anon ? (
-          <Link href="/signup?next=/library" className="mt-1 text-sm font-semibold underline">
-            가입하고 학습 기록 저장하기
-          </Link>
+          <>
+            <Link href="/signup?next=/library" className="mt-1 text-sm font-semibold underline">
+              가입하고 학습 기록 저장하기
+            </Link>
+            <Link href="/login?next=/library" className="mt-3 text-sm font-medium text-fuse-sub underline">
+              이미 계정이 있어요 · 로그인
+            </Link>
+          </>
         ) : null}
 
         {d.plus ? (

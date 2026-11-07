@@ -169,10 +169,17 @@ export function SettingsScreen(props: {
                 로그아웃
               </button>
             ) : (
-              <Link href="/signup?next=/settings" className={`${ROW} min-h-[60px] border-t border-fuse-line text-sm font-semibold`}>
-                가입하고 기록 저장하기
-                <IconArrow />
-              </Link>
+              <>
+                <Link href="/signup?next=/settings" className={`${ROW} min-h-[60px] border-t border-fuse-line text-sm font-semibold`}>
+                  가입하고 기록 저장하기
+                  <IconArrow />
+                </Link>
+                {/* 로그아웃한 뒤 다시 들어올 곳 */}
+                <Link href="/login?next=/settings" className={`${ROW} min-h-[60px] border-t border-fuse-line text-sm font-semibold`}>
+                  로그인
+                  <IconArrow />
+                </Link>
+              </>
             )}
             <button
               type="button"
