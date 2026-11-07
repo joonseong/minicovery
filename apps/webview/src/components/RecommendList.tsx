@@ -51,7 +51,7 @@ export function RecommendList({ items: first, hasMore, className }: { items: Rec
                 {r.category} · {r.total}편
               </span>
               <span className="text-sm font-medium leading-[1.3]">{r.title}</span>
-              {r.readers ? <span className="text-[13px] font-semibold text-fuse-hot">{r.readers}명이 읽었어요</span> : null}
+              {r.viewers ? <span className="text-[13px] font-semibold text-fuse-hot">{r.viewers}명이 눌러봤어요</span> : null}
             </span>
             <IconArrow />
           </Link>

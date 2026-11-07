@@ -300,6 +300,31 @@ export async function sendDueNotifications() {
   return stats;
 }
 
+/**
+ * 다른 사람이 내 추천 코스에 좋아요를 누르면 만든 사람에게 바로 알린다 (좋아요마다, 2026-11-07 대표 결정).
+ * 조용한 시간(21:00~08:00)에는 보내지 않는다 (설정 화면 안내와 같은 약속). 누가 눌렀는지는 알리지 않는다
+ */
+export async function notifyCourseLiked(course: Course) {
+  const store = getStore();
+  const owner = await store.getUser(course.userId);
+  if (!owner?.pushToken || owner.notifyPermission !== 'granted') return;
+  if (inQuietHours(kstTime())) {
+    await track(owner.id, 'push_skipped', { reason: 'quiet', kind: 'like', courseId: course.id });
+    return;
+  }
+  const result = await sendPush(owner.pushToken, {
+    title: '내 코스에 좋아요가 왔어요',
+    body: `누군가 ‘${course.title}’ 코스를 좋아해요.`,
+    data: { path: `/course/${course.id}` },
+  });
+  await track(owner.id, result.ok ? 'push_sent' : 'push_failed', { kind: 'like', courseId: course.id, error: result.error });
+  if (result.invalidToken) {
+    // 앱 삭제·재설치로 죽은 토큰은 지운다 (앱이 다시 등록하면 새 토큰이 들어온다)
+    owner.pushToken = undefined;
+    await store.saveUser(owner);
+  }
+}
+
 /** 운영자 확인용: 한 사용자에게 시험 알림을 보낸다 (조용한 시간과 상관없이) */
 export async function sendTestPush(userId: string | null) {
   const user = userId ? await getStore().getUser(userId) : null;

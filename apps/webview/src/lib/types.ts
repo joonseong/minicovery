@@ -71,8 +71,14 @@ export interface User {
   approvedTopics?: { topic: string; category: string; taskType: TaskType; at: string }[];
   /** 익명 사용자가 코스를 만들 때의 IP 해시 (IP당 하루 생성 한도) */
   ipHash?: string;
-  /** Drop을 열람한 다른 사람의 추천 코스 id ('N명이 읽었어요'를 사람마다 한 번만 센다) */
+  /** Drop을 열람한 다른 사람의 추천 코스 id (readers를 사람마다 한 번만 센다) */
   readShared?: string[];
+  /** 미리보기를 열어 본 다른 사람의 추천 코스 id ('N명이 눌러봤어요'를 사람마다 한 번만 센다) */
+  openedShared?: string[];
+  /** 좋아요를 누른 다른 사람의 추천 코스 id */
+  likedShared?: string[];
+  /** 좋아요 알림을 보낸 추천 코스 id (좋아요를 껐다 다시 눌러도 또 보내지 않는다) */
+  likeNotified?: string[];
 }
 
 export interface LearnedTopic {
@@ -123,10 +129,14 @@ export interface Course {
   featured?: boolean;
   /** 다른 사람이 추천 코스 미리보기를 연 횟수 (새 코스 화면 인기순) */
   opens?: number;
-  /** 이 코스를 받아 간 횟수 (2026-11 열람으로 바뀌기 전. 'N명이 읽었어요'에 함께 센다) */
+  /** 이 코스를 받아 간 횟수 (2026-11 열람으로 바뀌기 전. 'N명이 눌러봤어요'에 함께 센다) */
   copies?: number;
-  /** 다른 사람이 이 코스의 Drop을 열람한 사람 수 (추천 코스 카드의 'N명이 읽었어요') */
+  /** 미리보기를 열어 본 사람 수 (사람마다 한 번, 2026-11-07부터 셈). 추천 코스 카드의 'N명이 눌러봤어요' */
+  openers?: number;
+  /** 다른 사람이 이 코스의 Drop을 열람한 사람 수 (사람마다 한 번, 어드민용) */
   readers?: number;
+  /** 좋아요 수. 아직 화면에 보이지 않는다 ('N명이 좋아해요'는 나중에, 2026-11-07 대표) */
+  likes?: number;
   /** 추천 코스를 받아 만든 코스면 원본 코스 id */
   copiedFrom?: string;
   /** 완주 공유 링크 /c/{shareId} */

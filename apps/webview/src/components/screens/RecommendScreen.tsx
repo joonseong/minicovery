@@ -6,10 +6,11 @@ import { useEffect } from 'react';
 import type { Recommended } from '@/lib/learning';
 
 import { CatIcon } from '../CatIcon';
+import { LikeButton } from '../LikeButton';
 import { AppHeader, Footer, IconArrow, Main, PrimaryButton, Screen } from '../ui';
 
 /** 다른 사람이 만든 코스 미리보기: 목차를 보고 받지 않고 바로 읽는다 (만든 사람은 드러나지 않음) */
-export function RecommendScreen({ course }: { course: Recommended & { titles: string[]; readable: boolean[]; levelLabel: string } }) {
+export function RecommendScreen({ course }: { course: Recommended & { titles: string[]; readable: boolean[]; liked: boolean; levelLabel: string } }) {
   // 열어 본 횟수 (새 코스 화면의 '많이 눌러본 순'). 미리 불러오기는 세지 않게 화면이 뜬 뒤에 보낸다
   useEffect(() => {
     void fetch(`/api/recommended/${course.id}/open`, { method: 'POST' });
@@ -26,7 +27,7 @@ export function RecommendScreen({ course }: { course: Recommended & { titles: st
             <span className="flex-1 text-sm text-fuse-sub">
               추천 코스 · {course.levelLabel} · {course.category}
             </span>
-            {course.readers ? <span className="flex-shrink-0 text-[13px] font-medium text-fuse-hot">{course.readers}명이 읽었어요</span> : null}
+            {course.viewers ? <span className="flex-shrink-0 text-[13px] font-medium text-fuse-hot">{course.viewers}명이 눌러봤어요</span> : null}
           </div>
           <h1 className="mt-1 text-[28px] font-bold leading-[1.3]">{course.title}</h1>
         </section>
@@ -62,11 +63,16 @@ export function RecommendScreen({ course }: { course: Recommended & { titles: st
         </ol>
         <p className="mt-3 text-[13px] text-fuse-sub">다른 사람이 만든 코스예요. 받지 않아도 처음부터 끝까지 바로 읽을 수 있어요.</p>
       </Main>
-      {first >= 0 ? (
-        <Footer>
-          <PrimaryButton href={`/recommend/${course.id}/${first + 1}`}>첫 Drop 읽기</PrimaryButton>
-        </Footer>
-      ) : null}
+      <Footer>
+        <div className="flex gap-2">
+          <LikeButton courseId={course.id} initial={course.liked} />
+          {first >= 0 ? (
+            <PrimaryButton href={`/recommend/${course.id}/${first + 1}`} className="flex-1">
+              첫 Drop 읽기
+            </PrimaryButton>
+          ) : null}
+        </div>
+      </Footer>
     </Screen>
   );
 }

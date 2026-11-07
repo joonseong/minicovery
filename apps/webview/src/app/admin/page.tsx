@@ -74,7 +74,7 @@ export default async function AdminPage({ searchParams }: { searchParams: { toke
         {shared.map(c => (
           <li key={c.id} className="flex items-center justify-between gap-2 rounded-lg border border-border-div p-2">
             <span>
-              {c.title} · {c.category} · {c.outline.length}편 · 열어 봄 {c.opens ?? 0} · 읽음 {c.readers ?? 0} · 받음 {c.copies ?? 0}
+              {c.title} · {c.category} · {c.outline.length}편 · 열어 봄 {c.opens ?? 0} · 눌러본 사람 {c.openers ?? 0} · 읽음 {c.readers ?? 0} · 좋아요 {c.likes ?? 0} · 받음 {c.copies ?? 0}
             </span>
             <FeatureToggle courseId={c.id} featured={c.featured !== false} />
           </li>

@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto';
 
+import { notifyCourseLiked } from './jobs';
 import { kstDayLabel, track } from './service';
 import { getStore } from './store';
 import type { Course, Drop, DropBody, Report, Source, User } from './types';
@@ -147,19 +148,19 @@ export interface Recommended {
   title: string;
   category: string;
   total: number;
-  /** 'N명이 읽었어요': 열람한 사람 + 열람으로 바뀌기 전에 받아 간 사람 */
-  readers: number;
+  /** 'N명이 눌러봤어요': 미리보기를 열어 본 사람 + 열람으로 바뀌기 전에 받아 간 사람 */
+  viewers: number;
   opens: number;
 }
 
-const readersOf = (c: Course) => (c.readers ?? 0) + (c.copies ?? 0);
+const viewersOf = (c: Course) => (c.openers ?? 0) + (c.copies ?? 0);
 
 const toRec = (c: Course): Recommended => ({
   id: c.id,
   title: c.title,
   category: c.category,
   total: c.outline.length,
-  readers: readersOf(c),
+  viewers: viewersOf(c),
   opens: c.opens ?? 0,
 });
 
@@ -169,29 +170,37 @@ const listed = (c: Course) => c.status === 'completed' && Boolean(c.shared) && c
 /** 새 코스 화면에 한 번에 불러오는 수 (아래로 내리면 이어서) */
 export const RECOMMEND_PAGE = 20;
 
-/** 많이 눌러본(미리보기를 연) 순 → 많이 읽은 순 → 최근 순. 내가 만들었거나 전에 받은 코스는 뺀다 */
+/** 많이 눌러본(미리보기를 연) 순 → 눌러본 사람이 많은 순 → 최근 순. 내가 만들었거나 전에 받은 코스는 뺀다 */
 export async function recommendedCourses(user: User, offset = 0, limit = RECOMMEND_PAGE): Promise<{ items: Recommended[]; hasMore: boolean }> {
   const mine = new Set((await getStore().listCourses(user.id)).flatMap(c => [c.id, c.copiedFrom].filter(Boolean)));
   const all = (await getStore().listSharedCourses())
     .filter(c => listed(c) && !mine.has(c.id))
-    .sort((a, b) => (b.opens ?? 0) - (a.opens ?? 0) || readersOf(b) - readersOf(a) || b.createdAt.localeCompare(a.createdAt));
+    .sort((a, b) => (b.opens ?? 0) - (a.opens ?? 0) || viewersOf(b) - viewersOf(a) || b.createdAt.localeCompare(a.createdAt));
   return { items: all.slice(offset, offset + limit).map(toRec), hasMore: all.length > offset + limit };
 }
 
-/** 추천 코스 미리보기를 열 때마다 하나 센다 (인기순). 만든 사람 본인은 세지 않는다 */
+/** 추천 코스 미리보기를 열 때마다 하나 센다 (인기순). 'N명이 눌러봤어요'는 사람마다 한 번. 만든 사람 본인은 세지 않는다 */
 export async function recordRecommendOpen(user: User, id: string) {
   const store = getStore();
   const course = await store.getCourse(id);
   if (!course || !listed(course) || course.userId === user.id) return;
   course.opens = (course.opens ?? 0) + 1;
+  if (!user.openedShared?.includes(course.id)) {
+    user.openedShared = [...(user.openedShared ?? []), course.id];
+    await store.saveUser(user);
+    course.openers = (course.openers ?? 0) + 1;
+  }
   await store.saveCourse(course);
 }
 
 /** 열람할 수 있는 Drop: 글이 다 만들어진 것 (건너뛴 Drop은 목차에만 남는다) */
 const readable = (d: Drop) => d.status === 'ready' && Boolean(d.body);
 
-/** 추천 코스 미리보기: 목차와 편마다 열람할 수 있는지 */
-export async function recommendedCourse(id: string): Promise<(Recommended & { level: Course['level']; titles: string[]; readable: boolean[] }) | null> {
+/** 추천 코스 미리보기: 목차와 편마다 열람할 수 있는지, 내가 좋아요를 눌렀는지 */
+export async function recommendedCourse(
+  id: string,
+  user: User,
+): Promise<(Recommended & { level: Course['level']; titles: string[]; readable: boolean[]; liked: boolean }) | null> {
   const store = getStore();
   const course = await store.getCourse(id);
   if (!course || !listed(course)) return null;
@@ -201,6 +210,7 @@ export async function recommendedCourse(id: string): Promise<(Recommended & { le
     level: course.level,
     titles: course.outline.map(o => o.title),
     readable: course.outline.map((_, i) => drops.some(d => d.index === i && readable(d))),
+    liked: Boolean(user.likedShared?.includes(course.id)),
   };
 }
 
@@ -218,13 +228,15 @@ export interface SharedDrop {
   corrected: boolean;
   /** 다음에 열람할 수 있는 Drop (1부터). 마지막이면 없음 */
   nextN?: number;
+  /** 내가 이 코스에 좋아요를 눌렀는지 */
+  liked: boolean;
 }
 
 /**
  * 추천 코스의 n번째 Drop을 그 자리에서 열람한다 (받지 않음, 2026-11-07 대표 결정).
  * 하루 한 편·코스 한도·내 학습과 상관없고, 만든 사람의 기록(읽음·신고 표시)은 건드리지 않는다
  */
-export async function sharedDrop(courseId: string, n: number): Promise<SharedDrop | null> {
+export async function sharedDrop(courseId: string, n: number, user: User): Promise<SharedDrop | null> {
   const store = getStore();
   const course = await store.getCourse(courseId);
   if (!course || !listed(course)) return null;
@@ -244,10 +256,32 @@ export async function sharedDrop(courseId: string, n: number): Promise<SharedDro
     sources: drop.sources,
     corrected: Boolean(drop.corrected),
     nextN: next ? next.index + 1 : undefined,
+    liked: Boolean(user.likedShared?.includes(course.id)),
   };
 }
 
-/** 추천 코스 Drop을 열람함. 'N명이 읽었어요'는 사람마다 한 번 센다. 만든 사람 본인은 세지 않는다 */
+/**
+ * 추천 코스 좋아요 켜고 끄기. 켤 때마다 만든 사람에게 바로 알린다 (2026-11-07 대표 결정).
+ * 같은 사람이 껐다 다시 켜면 알림은 다시 보내지 않는다. 좋아요 수는 아직 화면에 보이지 않는다
+ */
+export async function likeShared(user: User, courseId: string, on: boolean) {
+  const store = getStore();
+  const course = await store.getCourse(courseId);
+  if (!course || !listed(course) || course.userId === user.id) return false;
+  const liked = Boolean(user.likedShared?.includes(course.id));
+  if (on === liked) return true;
+  user.likedShared = on ? [...(user.likedShared ?? []), course.id] : (user.likedShared ?? []).filter(id => id !== course.id);
+  course.likes = Math.max(0, (course.likes ?? 0) + (on ? 1 : -1));
+  const notify = on && !user.likeNotified?.includes(course.id);
+  if (notify) user.likeNotified = [...(user.likeNotified ?? []), course.id];
+  await store.saveUser(user);
+  await store.saveCourse(course);
+  await track(user.id, on ? 'shared_course_liked' : 'shared_course_unliked', { courseId });
+  if (notify) await notifyCourseLiked(course);
+  return true;
+}
+
+/** 추천 코스 Drop을 열람함 (사람마다 한 번 readers에 센다). 만든 사람 본인은 세지 않는다 */
 export async function recordSharedRead(user: User, courseId: string, n: number) {
   const store = getStore();
   const course = await store.getCourse(courseId);

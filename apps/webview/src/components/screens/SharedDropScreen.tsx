@@ -6,6 +6,7 @@ import { postJson } from '@/lib/client/ndjson';
 import type { SharedDrop } from '@/lib/learning';
 
 import { DropArticle, DropProgress, DropSources, ReportSheet, type ReportReason } from '../DropParts';
+import { LikeButton } from '../LikeButton';
 import { AppHeader, Main, PrimaryButton, Screen, Toast, useToast } from '../ui';
 
 /**
@@ -43,18 +44,19 @@ export function SharedDropScreen({ drop }: { drop: SharedDrop }) {
         <DropArticle body={drop.body} className={drop.imageUrl ? 'mt-3' : 'mt-6'} />
         <DropSources sources={drop.sources} corrected={drop.corrected} reported={reported} onReport={() => setReportSheet(true)} />
         <section className="mt-10 flex flex-col gap-4">
-          {drop.nextN ? (
-            <PrimaryButton href={`/recommend/${drop.courseId}/${drop.nextN}`} replace>
-              다음 Drop 읽기
-            </PrimaryButton>
-          ) : (
-            <>
-              <p className="text-center text-sm text-fuse-sub">이 코스를 끝까지 읽었어요.</p>
-              <PrimaryButton href="/today" replace>
+          {drop.nextN ? null : <p className="text-center text-sm text-fuse-sub">이 코스를 끝까지 읽었어요.</p>}
+          <div className="flex gap-2">
+            <LikeButton courseId={drop.courseId} initial={drop.liked} />
+            {drop.nextN ? (
+              <PrimaryButton href={`/recommend/${drop.courseId}/${drop.nextN}`} replace className="flex-1">
+                다음 Drop 읽기
+              </PrimaryButton>
+            ) : (
+              <PrimaryButton href="/today" replace className="flex-1">
                 다른 코스 보기
               </PrimaryButton>
-            </>
-          )}
+            )}
+          </div>
         </section>
       </Main>
       <ReportSheet open={reportSheet} onClose={() => setReportSheet(false)} onPick={r => void report(r)} />
