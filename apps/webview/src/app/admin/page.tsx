@@ -6,7 +6,7 @@ import { AdminShell } from '@/components/admin/AdminShell';
 import { FeatureToggle } from '@/components/admin/FeatureToggle';
 import { IapTestButton } from '@/components/admin/IapTestButton';
 import { ADMIN_COOKIE, adminTokenOk } from '@/lib/auth';
-import { accountRows } from '@/lib/dashboard';
+import { accountRows, peopleSummary } from '@/lib/dashboard';
 import { sharedCandidates } from '@/lib/learning';
 import { adminSummary } from '@/lib/metrics';
 import { getStore } from '@/lib/store';
@@ -28,6 +28,7 @@ export default async function AdminPage({ searchParams }: { searchParams: { toke
 
   const s = await adminSummary();
   const accounts = await accountRows();
+  const people = await peopleSummary();
   const when = (iso?: string) => (iso ? `${kstDate(iso).slice(5).replace('-', '/')} ${kstTime(iso)}` : '-');
   const NOTIFY: Record<string, string> = { granted: '허용', denied: '거절', unknown: '-' };
   const store = getStore();
@@ -36,7 +37,7 @@ export default async function AdminPage({ searchParams }: { searchParams: { toke
   const REASON: Record<string, string> = { wrong: '틀린 사실', unclear: '이해 안 됨', inappropriate: '부적절' };
 
   const cards: [string, string | number][] = [
-    ['사용자', s.users],
+    ['사용자 (기록이 있는 사람, 시드 제외)', `${people.login + people.anon}명 · 로그인 ${people.login} · 비로그인 ${people.anon}`],
     ['활성화', s.activated],
     ['주간 학습일 평균 (최근 7일, 활성화)', s.weeklyLearningDays],
     ['D7 학습 리텐션 (명)', s.d7Retained],
@@ -48,6 +49,7 @@ export default async function AdminPage({ searchParams }: { searchParams: { toke
     ['알림 허용', s.notifyGranted],
     ['코스 완료자 / 사전 구독 신청', `${s.courseCompleters} / ${s.presubscribed}`],
     ['Plus 구독자 (그중 Sandbox)', `${s.plusUsers} (${s.plusSandbox})`],
+    ['빈 사용자 행 (사람 수에서 뺌: 10/31 전 첫 방문마다 생긴 행 등)', people.emptyRows],
   ];
 
   return (
