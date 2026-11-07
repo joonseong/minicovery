@@ -1,10 +1,12 @@
 # 1.0.1 제출 (2026-11-07)
 
-1.0(8) 출시 뒤 첫 업데이트. 네이티브 변경은 앱 아이콘뿐이고, 화면(Fuse 디자인·Drop 그림·다른 사람들이 만든 코스)은 운영 웹으로 이미 나가 있다.
+1.0(8) 출시 뒤 첫 업데이트. 네이티브 변경은 앱 아이콘과 UIScene 전환이고, 화면(Fuse 디자인·Drop 그림·다른 사람들이 만든 코스)은 운영 웹으로 이미 나가 있다.
+
+빌드 9는 같은 날 심사에서 거절됐다 (2.1(a), iPhone 17 Pro Max·iOS 27.2에서 켜자마자 종료). Xcode 27(iOS 27 SDK)로 빌드한 앱은 UIScene 생명주기를 쓰지 않으면 iOS 27에서 UIKit이 앱을 멈춘다. 빌드 10에서 창 띄우기와 로그인 복귀 주소 처리를 SceneDelegate로 옮겼다. Xcode를 올린 뒤에는 제출 전에 TestFlight로 실기기에서 켜 본다.
 
 ## App Store Connect 입력값
 
-- 새 버전: 1.0.1, 빌드 1.0.1 (9)
+- 새 버전: 1.0.1, 빌드 1.0.1 (10)
 - 스크린샷: iPhone 6.9형에 `~/Desktop/2026/minicovery/store-2026-11/1290x2796/01~06`. 기존 것은 지운다. 6.3형(`1206x2622`)은 선택.
 - 앱 심사 정보: 로그인 필요 체크, 데모 계정은 1.0 심사 때 쓴 이메일 계정 그대로 (제출 전에 앱에서 로그인되는지 확인)
 - 출시: 승인 후 자동 출시, 단계적 출시 끔
@@ -25,6 +27,8 @@
 
 ```
 Hello App Review team,
+
+Build 10 fixes the launch crash on iOS 27 that you found in build 9. The app now uses the UIScene life cycle.
 
 What's new in 1.0.1: a new app icon, a refreshed design, one illustration with each Drop, and a list of courses that other users finished and chose to share ("다른 사람들이 만든 코스").
 
