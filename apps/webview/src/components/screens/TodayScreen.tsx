@@ -6,6 +6,7 @@ import { type ReactNode, useState } from 'react';
 
 import { postJson } from '@/lib/client/ndjson';
 import { josa } from '@/lib/josa';
+import type { Recommended } from '@/lib/learning';
 import type { PlusUsage } from '@/lib/service';
 import type { HomeStats } from '@/lib/stats';
 import type { CourseCard } from '@/lib/views';
@@ -14,6 +15,7 @@ import { CatIcon } from '../CatIcon';
 import { Doodle } from '../Doodle';
 import { PlusLeft } from '../PlusLeft';
 import { RecallCard, type RecallLike } from '../RecallCard';
+import { RecommendList } from '../RecommendList';
 import { TomorrowList } from '../TomorrowList';
 import { AppHeader, Badge, BottomNav, CHARACTER, IconArrow, IconClose, Main, OutlineButton, PrimaryButton, Screen, cx } from '../ui';
 
@@ -41,6 +43,10 @@ type Props = {
   mergeNotice?: { topics: string[] } | null;
   /** 가입 전 임시 계정이면 가입 카드를 보여 준다 */
   anon?: boolean;
+  /** 다른 사람들이 만든 코스 (첫 20개, 많이 눌러본 순) */
+  recommended?: Recommended[];
+  /** 더 불러올 추천 코스가 있음 (아래로 내리면 20개씩) */
+  recommendedMore?: boolean;
 };
 
 const TOPICS = [
@@ -51,7 +57,7 @@ const TOPICS = [
 
 const CARD = 'rounded-card border border-fuse-line bg-fuse-card p-4';
 
-/** 홈 (캔버스 홈 · 홈 · 다 읽음 · 홈 · 코스 없음): 읽을 Drop이 있을 때 · 오늘 다 읽음 · 코스 없음 세 상태 */
+/** 홈 (캔버스 홈 · 홈 · 다 읽음 · 홈 · 코스 없음): 읽을 Drop이 있을 때 · 오늘 다 읽음 · 코스 없음 세 상태. 맨 아래는 다른 사람들이 만든 코스 */
 export function TodayScreen({
   dateLabel,
   cards,
@@ -68,6 +74,8 @@ export function TodayScreen({
   recall,
   mergeNotice,
   anon,
+  recommended = [],
+  recommendedMore = false,
 }: Props) {
   const router = useRouter();
   const [picked, setPicked] = useState(pickedId ?? cards[0]?.id);
@@ -139,6 +147,8 @@ export function TodayScreen({
     </>
   );
 
+  const recs = <RecommendList items={recommended} hasMore={recommendedMore} className="mt-10" />;
+
   const review = weekDays ? (
     <Link href="/review" className={cx('mt-3 flex items-center gap-3.5', CARD)}>
       <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[10px] bg-fuse-ink">
@@ -203,6 +213,7 @@ export function TodayScreen({
           )}
           <PlusLeft usage={usage} />
           {review}
+          {recs}
         </Main>
         <BottomNav active="today" />
       </Screen>
@@ -242,6 +253,7 @@ export function TodayScreen({
           <PrimaryButton href="/start" className="mt-6">
             주제 입력하기
           </PrimaryButton>
+          {recs}
         </Main>
         <BottomNav active="today" />
       </Screen>
@@ -323,6 +335,7 @@ export function TodayScreen({
         {cards.length > 1 ? <p className="mt-2 text-[13px] text-fuse-sub">다른 코스 카드를 누르면 오늘은 그 코스로 읽어요. 읽기 전까지 바꿀 수 있어요.</p> : null}
         <PlusLeft usage={usage} className="mt-3" />
         {review}
+        {recs}
       </Main>
       <BottomNav active="today" />
     </Screen>

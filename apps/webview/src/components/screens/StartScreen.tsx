@@ -1,17 +1,16 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-
-import Link from 'next/link';
 
 import { checkTopic, levelHref } from '@/lib/client/start';
 import { josa } from '@/lib/josa';
 import type { Recommended } from '@/lib/learning';
 
-import { CatIcon } from '../CatIcon';
 import { LimitSheet, MonthlySheet, ReplaceSheet } from '../QuotaSheets';
-import { BottomNav, IconArrow, Main, PrimaryButton, Screen, Toast, useToast } from '../ui';
+import { RecommendList } from '../RecommendList';
+import { BottomNav, Main, PrimaryButton, Screen, Toast, useToast } from '../ui';
 
 const MAX = 100;
 
@@ -40,7 +39,7 @@ export function StartScreen({
   currentTopic,
   replace,
   resetLabel,
-  recommended: firstRecommended = [],
+  recommended = [],
   recommendedMore = false,
   autoGo,
   notice: arrivalNotice,
@@ -52,10 +51,6 @@ export function StartScreen({
   const [sheet, setSheet] = useState<null | { kind: 'free' | 'monthly' | 'daily' | 'over'; replaceHref: string }>(null);
   const [toast, showToast] = useToast();
   const autoRan = useRef(false);
-  const [recommended, setRecommended] = useState(firstRecommended);
-  const [more, setMore] = useState(recommendedMore);
-  const loadingMore = useRef(false);
-  const listEnd = useRef<HTMLDivElement>(null);
   const trimmed = topic.trim();
   // 이번 달 3개를 다 만들었으면 입력 전에 막는다 (AI 검사까지 돌리지 않는다)
   const blocked = quota === 'monthly';
@@ -127,27 +122,6 @@ export function StartScreen({
   useEffect(() => {
     if (arrivalNotice) showToast(arrivalNotice);
   }, [arrivalNotice, showToast]);
-
-  // 다른 사람들이 만든 코스: 목록 끝이 보이면 다음 20개를 불러온다
-  useEffect(() => {
-    if (!more || !listEnd.current) return;
-    const observer = new IntersectionObserver(async entries => {
-      if (!entries.some(e => e.isIntersecting) || loadingMore.current) return;
-      loadingMore.current = true;
-      try {
-        const res = await fetch(`/api/recommended?offset=${recommended.length}`);
-        const page = (await res.json()) as { items: Recommended[]; hasMore: boolean };
-        setRecommended(list => [...list, ...page.items.filter(r => !list.some(x => x.id === r.id))]);
-        setMore(page.hasMore && page.items.length > 0);
-      } catch {
-        setMore(false);
-      } finally {
-        loadingMore.current = false;
-      }
-    });
-    observer.observe(listEnd.current);
-    return () => observer.disconnect();
-  }, [more, recommended.length]);
 
   return (
     <Screen className="relative">
@@ -230,34 +204,7 @@ export function StartScreen({
           </div>
         ) : null}
 
-        {recommended.length ? (
-          <section className="mt-9 flex flex-col gap-3">
-            <div className="flex flex-col gap-0.5">
-              <h2 className="text-base font-semibold leading-[1.3]">다른 사람들이 만든 코스</h2>
-              <p className="text-[13px] text-fuse-sub">바로 받아서 첫 Drop을 읽을 수 있어요.</p>
-            </div>
-            <div className="flex flex-col gap-2">
-              {recommended.map(r => (
-                <Link key={r.id} href={`/recommend/${r.id}`} className="mc-press flex min-h-14 items-center gap-3.5 rounded-card border border-fuse-line bg-fuse-card p-4">
-                  <CatIcon category={r.category} />
-                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <span className="text-[13px] text-fuse-sub">
-                      {r.category} · {r.total}편
-                    </span>
-                    <span className="text-sm font-medium leading-[1.3]">{r.title}</span>
-                    {r.copies ? <span className="text-[13px] font-semibold text-fuse-hot">{r.copies}명이 받았어요</span> : null}
-                  </span>
-                  <IconArrow />
-                </Link>
-              ))}
-            </div>
-            {more ? (
-              <div ref={listEnd} className="flex h-12 items-center justify-center text-[13px] text-fuse-faint">
-                더 불러오는 중…
-              </div>
-            ) : null}
-          </section>
-        ) : null}
+        <RecommendList items={recommended} hasMore={recommendedMore} className="mt-9" />
 
         <section className={recommended.length ? 'mt-8 flex flex-col gap-3' : 'mt-10 flex flex-col gap-3'}>
           <h2 className="text-base font-semibold leading-[1.3]">{recommended.length ? '직접 만들 주제 예시' : '이런 주제는 어때요?'}</h2>
