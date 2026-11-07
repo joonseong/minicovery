@@ -21,7 +21,7 @@
 
 ## 앱 심사 메모 (App Review Information › Notes)
 
-`[ ]`는 대표님이 채운다.
+데모 계정은 '로그인 정보'의 사용자 이름·암호 칸에 넣고, 아래 문구는 고칠 것 없이 그대로 붙인다.
 
 ```
 Hello App Review team,
@@ -31,7 +31,7 @@ What's new in 1.0.1: a new app icon, a refreshed design, one illustration with e
 How to review
 - No login is required. On first launch, type a topic, choose a level and tap "코스 만들기". Today's Drop opens. Each Drop now has one illustration.
 - "다른 사람들이 만든 코스" is at the bottom of Home and on the new-course screen (+ button). Tap a course to preview its outline, then "이 코스 받기" to copy it.
-- Demo account (email login): Profile tab › Settings (top right) › 가입하고 기록 저장하기 › 이미 계정이 있어요 · 로그인. Email: [ ] / Password: [ ]
+- Demo account: the email account in Sign-In Information. To sign in: Profile tab › Settings (top right) › 가입하고 기록 저장하기 › 이미 계정이 있어요 · 로그인.
 - Minicovery Plus (auto-renewable monthly subscription, ₩3,900, 7-day free trial for first-time subscribers): Profile › Settings › 미니커버리 Plus. "구매 복원" is on the same screen.
 - Account deletion: Profile › Settings › 계정 삭제.
 
