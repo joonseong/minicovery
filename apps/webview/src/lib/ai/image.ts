@@ -14,6 +14,9 @@ export const IMAGE_SIZE = { width: 1536, height: 1024 };
 
 export const imageEnabled = () => Boolean(process.env.OPENAI_API_KEY);
 
+/** 다 그린 그림을 Claude로 한 번 더 확인할지 (손·팔 개수, 글자, 작품 캐릭터). 2026-11-07부터 꺼 둠, 환경 변수 IMAGE_CHECK=on 이면 켠다 */
+export const imageCheckEnabled = () => process.env.IMAGE_CHECK === 'on';
+
 /** 시작한 지 이 시간이 지나도 끝나지 않은 그림은 멈춘 것으로 본다 */
 const IMAGE_STALE_MS = 15 * 60_000;
 /** 한 번 시도 = 그리기·검사 최대 두 번. 두 번 시도해도 안 되면 그 Drop은 그림 없이 둔다 */
