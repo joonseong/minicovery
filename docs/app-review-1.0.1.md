@@ -41,7 +41,7 @@ Content shared by other users
 - Every Drop has a "내용이 이상해요" button to report wrong or inappropriate content. The operator reviews reports and can hide any shared course at any time. Contact: minimalReading@gmail.com
 
 External services
-- Anthropic Claude API: writes course outlines and Drops (with web search to check facts) and checks each illustration.
+- Anthropic Claude API: writes course outlines and Drops (with web search to check facts).
 - OpenAI Image API: draws one illustration per Drop from the Drop's title and key points. No account information is sent.
 - Supabase (database and image storage, Seoul region), Vercel (hosting), Firebase Cloud Messaging (opt-in daily reminders), Sign in with Apple / Google / Kakao, Apple In-App Purchase.
 

@@ -1,5 +1,5 @@
 import { getGenerator } from './ai';
-import { drawDropImage, imageEnabled, imageInProgress, imageRetryable, isWorkCategory } from './ai/image';
+import { drawDropImage, imageCheckEnabled, imageEnabled, imageInProgress, imageRetryable, isWorkCategory } from './ai/image';
 import { costUsd } from './ai/pricing';
 import type { Metered } from './ai/types';
 import {
@@ -564,7 +564,7 @@ export async function generateDrop(user: User, dropId: string, mode: GenerationM
 const IMAGE_WAIT_MS = 30_000;
 
 /**
- * 그림 한 장: 그리고 → Claude가 검사(손·팔 개수, 글자) → 걸리면 한 번 더 단순하게 → 또 걸리면 그림 없이.
+ * 그림 한 장: 그리고 → (IMAGE_CHECK=on일 때만) Claude가 검사(손·팔 개수, 글자) → 걸리면 한 번 더 단순하게 → 또 걸리면 그림 없이.
  * 올린 주소나 null. point(정리 한 줄)가 없으면 제목·코스 이름으로 그린다
  */
 async function drawCheckedImage(drop: Drop, course: Course | null, point?: string): Promise<string | null> {
@@ -592,6 +592,7 @@ async function drawCheckedImage(drop: Drop, course: Course | null, point?: strin
       searches: 0,
       costUsd: drawn.costUsd,
     });
+    if (!imageCheckEnabled()) return store.putImage(`drops/${drop.id}.webp`, drawn.bytes, 'image/webp');
     const about = [course?.title, drop.title].filter(Boolean).join(' / ');
     const check = await getGenerator().checkImage(Buffer.from(drawn.bytes).toString('base64'), about);
     await logUsage(drop.userId, 'image', check, 'realtime');
