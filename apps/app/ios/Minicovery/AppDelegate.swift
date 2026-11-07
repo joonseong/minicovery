@@ -12,6 +12,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
   var reactNativeDelegate: ReactNativeDelegate?
   var reactNativeFactory: RCTReactNativeFactory?
+  var launchOptions: [UIApplication.LaunchOptionsKey: Any]?
 
   func application(
     _ application: UIApplication,
@@ -32,22 +33,43 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     reactNativeDelegate = delegate
     reactNativeFactory = factory
+    self.launchOptions = launchOptions
 
-    window = UIWindow(frame: UIScreen.main.bounds)
+    // 창은 SceneDelegate가 띄운다
+    return true
+  }
+}
 
-    factory.startReactNative(
+/// 앱 창 (UIScene 생명주기, Info.plist의 UIApplicationSceneManifest).
+/// iOS 27 SDK로 빌드한 앱이 UIScene을 쓰지 않으면 iOS 27에서 켜자마자 종료된다 (1.0.1 빌드 9 심사 거절)
+class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+  var window: UIWindow?
+
+  func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+    guard let windowScene = scene as? UIWindowScene, let app = UIApplication.shared.delegate as? AppDelegate else { return }
+
+    let window = UIWindow(windowScene: windowScene)
+    self.window = window
+    // Firebase 메시징 등 일부 라이브러리는 AppDelegate.window로 창을 찾는다
+    app.window = window
+
+    app.reactNativeFactory?.startReactNative(
       withModuleName: "Minicovery",
       in: window,
-      launchOptions: launchOptions
+      launchOptions: app.launchOptions
     )
 
-    return true
+    self.scene(scene, openURLContexts: connectionOptions.urlContexts)
   }
 
   // 카카오톡·Google 로그인을 마치고 앱으로 돌아올 때
-  func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
-    if AuthApi.isKakaoTalkLoginUrl(url) { return AuthController.handleOpenUrl(url: url) }
-    return GIDSignIn.sharedInstance.handle(url)
+  func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
+    guard let url = URLContexts.first?.url else { return }
+    if AuthApi.isKakaoTalkLoginUrl(url) {
+      _ = AuthController.handleOpenUrl(url: url)
+    } else {
+      _ = GIDSignIn.sharedInstance.handle(url)
+    }
   }
 }
 
