@@ -20,13 +20,15 @@ const BENEFITS = [
   },
   { title: '한 달에 한 코스는 전체 열기', desc: '기다리지 않고 끝까지 읽어요. 해지해도 열린 코스는 계속 읽을 수 있어요.' },
   { title: '여러 코스를 함께 배우기', desc: '진행 중인 코스 중 내일 받을 하나를 골라요.' },
+  { title: '다른 사람이 만든 코스 모두 읽기', desc: '무료로는 코스마다 3번째 Drop 앞부분까지 볼 수 있어요. 구독하면 모든 Drop을 끝까지 읽을 수 있어요.' },
 ];
 
-/** 들어온 곳에 맞춘 첫 줄 (done 무료 코스 완료 · keep 코스 바꾸기 안내 · 그 밖은 profile) */
+/** 들어온 곳에 맞춘 첫 줄 (done 무료 코스 완료 · keep 코스 바꾸기 안내 · shared 다른 사람 코스 이어 읽기 · 그 밖은 profile) */
 const HEADS = {
   done: { sub: '첫 코스를 다 배웠어요', line1: '다음 주제도', line2: '계속 배워 볼까요?' },
   keep: { sub: '지금 코스는 그대로 두고', line1: '새 주제를', line2: '하나 더 시작해 볼까요?' },
   profile: { sub: '미니커버리 Plus', line1: '궁금한 주제를', line2: '더 많이 배워 보세요' },
+  shared: { sub: '다른 사람이 만든 코스', line1: '다른 사람의 Drop도', line2: '끝까지 읽어 보세요' },
 } as const;
 export type PaywallFrom = keyof typeof HEADS;
 
@@ -131,7 +133,7 @@ export function PaywallScreen({
           <Doodle animal={stageKey} act={plus ? 'idle' : 'tilt'} label={`${ch.name} 단계 캐릭터`} className="h-[72px] w-[72px] flex-shrink-0" />
         </section>
         <ul className="mt-7 flex flex-col">
-          {BENEFITS.map(b => (
+          {(from === 'shared' && !plus ? [BENEFITS[3]!, ...BENEFITS.slice(0, 3)] : BENEFITS).map(b => (
             <li key={b.title} className="flex items-start gap-3.5 border-b border-[#F2F2F4] py-4">
               <span className="flex h-[30px] w-[30px] flex-shrink-0 items-center justify-center rounded-[9px] bg-fuse-ink">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">

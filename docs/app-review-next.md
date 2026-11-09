@@ -1,7 +1,7 @@
 # 다음 업데이트 제출용 메모 (2026-11-09 기준)
 
 1.0.1 승인 뒤 바뀐 점을 반영한 심사 메모다. 1.0.1 때 원문은 `app-review-1.0.1.md`.
-1.0.1 뒤 운영 웹에 바로 나간 변경: 다른 사람들이 만든 코스를 '받기' 대신 그 자리에서 열람(PR #19), 그 코스에 좋아요를 누르면 만든 사람에게 알림.
+1.0.1 뒤 운영 웹에 바로 나간 변경: 다른 사람들이 만든 코스를 '받기' 대신 그 자리에서 열람(PR #19), 그 코스에 좋아요를 누르면 만든 사람에게 알림, 무료는 3번째 Drop 앞부분까지·나머지는 Plus(PR 공유 코스 Plus), 다음 Drop 알림은 모두 아침 8시(PR #26).
 
 ## 제출 전에 할 것
 
@@ -22,7 +22,7 @@ What's new in <버전>: <이번 버전 변경>.
 
 How to review
 - No login is required. On first launch, type a topic, choose a level and tap "코스 만들기". Today's Drop opens. Each Drop has one illustration.
-- "다른 사람들이 만든 코스" is at the bottom of Home and on the new-course screen (+ button). Tap a course to see its outline, then "첫 Drop 읽기" or any Drop to read it right away. Reading does not add the course to your own courses.
+- "다른 사람들이 만든 코스" is at the bottom of Home and on the new-course screen (+ button). Tap a course to see its outline, then "첫 Drop 읽기" to read it right away. Reading does not add the course to your own courses. Free users can read the first two Drops and the beginning of the third; the rest of each shared course is part of Minicovery Plus ("Plus로 이어 읽기" opens the subscription screen).
 - The heart button on that screen is a like. The person who made the course gets a push notification that someone liked it. It does not say who.
 - Demo account: the email account in Sign-In Information. To sign in: Profile tab › Settings (top right) › 로그인.
 - Minicovery Plus (auto-renewable monthly subscription, ₩3,900, 7-day free trial for first-time subscribers): Profile › Settings › 미니커버리 Plus. "구매 복원" is on the same screen.

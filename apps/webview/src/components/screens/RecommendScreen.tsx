@@ -10,12 +10,17 @@ import { LikeButton } from '../LikeButton';
 import { AppHeader, Footer, IconArrow, Main, PrimaryButton, Screen } from '../ui';
 
 /** 다른 사람이 만든 코스 미리보기: 목차를 보고 받지 않고 바로 읽는다 (만든 사람은 드러나지 않음) */
-export function RecommendScreen({ course }: { course: Recommended & { titles: string[]; readable: boolean[]; liked: boolean; levelLabel: string } }) {
+export function RecommendScreen({
+  course,
+}: {
+  course: Recommended & { titles: string[]; readable: boolean[]; access: ('full' | 'teaser' | 'locked')[]; liked: boolean; levelLabel: string };
+}) {
   // 열어 본 횟수 (새 코스 화면의 '많이 눌러본 순'). 미리 불러오기는 세지 않게 화면이 뜬 뒤에 보낸다
   useEffect(() => {
     void fetch(`/api/recommended/${course.id}/open`, { method: 'POST' });
   }, [course.id]);
   const first = course.readable.indexOf(true);
+  const gated = course.access.includes('locked');
 
   return (
     <Screen className="relative">
@@ -45,11 +50,16 @@ export function RecommendScreen({ course }: { course: Recommended & { titles: st
                   {i + 1}
                 </span>
                 <span className="flex-1 text-sm">{t}</span>
+                {course.access[i] === 'locked' ? <span className="flex-shrink-0 text-[13px] font-medium text-fuse-sub">Plus</span> : null}
               </>
             );
             return (
               <li key={i} className={i ? 'border-t border-[#F2F2F4]' : ''}>
-                {course.readable[i] ? (
+                {course.readable[i] && course.access[i] === 'locked' ? (
+                  <Link href="/plus?from=shared" className="flex min-h-[60px] items-center gap-3 py-2 text-fuse-sub">
+                    {row}
+                  </Link>
+                ) : course.readable[i] ? (
                   <Link href={`/recommend/${course.id}/${i + 1}`} className="flex min-h-[60px] items-center gap-3 py-2">
                     {row}
                     <IconArrow />
@@ -61,7 +71,11 @@ export function RecommendScreen({ course }: { course: Recommended & { titles: st
             );
           })}
         </ol>
-        <p className="mt-3 text-[13px] text-fuse-sub">다른 사람이 만든 코스예요. 받지 않아도 처음부터 끝까지 바로 읽을 수 있어요.</p>
+        <p className="mt-3 text-[13px] text-fuse-sub">
+          {gated
+            ? '다른 사람이 만든 코스예요. 3번째 Drop까지 바로 볼 수 있고, Plus를 구독하면 모두 읽을 수 있어요.'
+            : '다른 사람이 만든 코스예요. 받지 않아도 처음부터 끝까지 바로 읽을 수 있어요.'}
+        </p>
       </Main>
       <Footer>
         <div className="flex gap-2">

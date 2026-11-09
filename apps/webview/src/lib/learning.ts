@@ -1,7 +1,8 @@
 import { randomBytes } from 'node:crypto';
 
+import { SHARED_FREE_DROPS } from './constants';
 import { notifyCourseLiked } from './jobs';
-import { kstDayLabel, track } from './service';
+import { isPlus, kstDayLabel, track } from './service';
 import { getStore } from './store';
 import type { Course, Drop, DropBody, Report, Source, User } from './types';
 import { daysBetween, kstDate, kstWeekday, newId, nowIso, pickRecallDrop } from './util';
@@ -198,11 +199,17 @@ export async function recordRecommendOpen(user: User, id: string) {
 /** 열람할 수 있는 Drop: 글이 다 만들어진 것 (건너뛴 Drop은 목차에만 남는다) */
 const readable = (d: Drop) => d.status === 'ready' && Boolean(d.body);
 
-/** 추천 코스 미리보기: 목차와 편마다 열람할 수 있는지, 내가 좋아요를 눌렀는지 */
+/** 무료 사용자가 이 편(1부터)을 어디까지 볼 수 있는지: 전체 · 앞부분만(마지막 무료 편) · 잠김. Plus는 모두 전체 */
+export function sharedAccess(user: User, n: number): 'full' | 'teaser' | 'locked' {
+  if (isPlus(user) || n < SHARED_FREE_DROPS) return 'full';
+  return n === SHARED_FREE_DROPS ? 'teaser' : 'locked';
+}
+
+/** 추천 코스 미리보기: 목차와 편마다 열람할 수 있는지(글이 있는지)·무료로 어디까지 보는지, 내가 좋아요를 눌렀는지 */
 export async function recommendedCourse(
   id: string,
   user: User,
-): Promise<(Recommended & { level: Course['level']; titles: string[]; readable: boolean[]; liked: boolean }) | null> {
+): Promise<(Recommended & { level: Course['level']; titles: string[]; readable: boolean[]; access: ReturnType<typeof sharedAccess>[]; liked: boolean }) | null> {
   const store = getStore();
   const course = await store.getCourse(id);
   if (!course || !listed(course)) return null;
@@ -212,6 +219,7 @@ export async function recommendedCourse(
     level: course.level,
     titles: course.outline.map(o => o.title),
     readable: course.outline.map((_, i) => drops.some(d => d.index === i && readable(d))),
+    access: course.outline.map((_, i) => sharedAccess(user, i + 1)),
     liked: Boolean(user.likedShared?.includes(course.id)),
   };
 }
@@ -232,13 +240,17 @@ export interface SharedDrop {
   nextN?: number;
   /** 내가 이 코스에 좋아요를 눌렀는지 */
   liked: boolean;
+  /** 무료 사용자의 마지막 무료 편: 본문 앞부분만 담아 보내고 화면은 아래를 흐리게 가린다 */
+  teaser: boolean;
 }
 
 /**
  * 추천 코스의 n번째 Drop을 그 자리에서 열람한다 (받지 않음, 2026-11-07 대표 결정).
  * 하루 한 편·코스 한도·내 학습과 상관없고, 만든 사람의 기록(읽음·신고 표시)은 건드리지 않는다
  */
-export async function sharedDrop(courseId: string, n: number, user: User): Promise<SharedDrop | null> {
+export async function sharedDrop(courseId: string, n: number, user: User): Promise<SharedDrop | 'locked' | null> {
+  const access = sharedAccess(user, n);
+  if (access === 'locked') return 'locked';
   const store = getStore();
   const course = await store.getCourse(courseId);
   if (!course || !listed(course)) return null;
@@ -253,12 +265,14 @@ export async function sharedDrop(courseId: string, n: number, user: User): Promi
     total: course.outline.length,
     n,
     title: drop.title,
-    body: drop.body,
+    // 앞부분만: 도입과 핵심 개념까지. 나머지는 보내지 않는다
+    body: access === 'teaser' ? { hook: drop.body.hook, concept: drop.body.concept } as DropBody : drop.body,
     imageUrl: drop.image?.url,
-    sources: drop.sources,
+    sources: access === 'teaser' ? [] : drop.sources,
     corrected: Boolean(drop.corrected),
-    nextN: next ? next.index + 1 : undefined,
+    nextN: next && access === 'full' ? next.index + 1 : undefined,
     liked: Boolean(user.likedShared?.includes(course.id)),
+    teaser: access === 'teaser',
   };
 }
 

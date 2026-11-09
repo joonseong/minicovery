@@ -40,7 +40,7 @@ export function RecommendList({ items: first, hasMore, className }: { items: Rec
     <section className={cx('flex flex-col gap-3', className)}>
       <div className="flex flex-col gap-0.5">
         <h2 className="text-base font-semibold leading-[1.3]">다른 사람들이 만든 코스</h2>
-        <p className="text-[13px] text-fuse-sub">처음부터 끝까지 바로 읽을 수 있어요.</p>
+        <p className="text-[13px] text-fuse-sub">받지 않고 바로 읽을 수 있어요.</p>
       </div>
       <div className="flex flex-col gap-2">
         {items.map(r => (
