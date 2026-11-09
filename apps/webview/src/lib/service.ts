@@ -754,9 +754,6 @@ export async function completeDrop(user: User, dropId: string, signal: Understan
   course.lastReadAt = nowIso();
   if (!already) await track(user.id, 'drop_completed', { dropId, courseId: course.id, index: drop.index, signal });
 
-  // 첫 Drop을 읽은 시각을 기본 알림 시각으로 (PRD §17.2)
-  if (firstEver && !user.notifyTime) user.notifyTime = nextQuietSafeTime();
-
   const finished = allDropsDone(await store.listDrops(course.id));
   let levelUp = false;
   if (finished && course.status !== 'completed') levelUp = await completeCourse(user, course);
@@ -801,13 +798,6 @@ export async function consumeLevelUp(user: User): Promise<{ stage: (typeof STAGE
   user.pendingLevelUp = undefined;
   await getStore().saveUser(user);
   return stage ? { stage } : null;
-}
-
-function nextQuietSafeTime() {
-  const hhmm = new Date(Date.now() + 9 * 3600_000).toISOString().slice(11, 16);
-  // 21시~08시에는 보내지 않는다
-  if (hhmm >= '21:00' || hhmm < '08:00') return '08:00';
-  return hhmm;
 }
 
 export async function answerExplain(user: User, courseId: string, answer: ExplainAnswer) {

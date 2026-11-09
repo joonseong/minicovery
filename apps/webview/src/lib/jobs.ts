@@ -2,7 +2,7 @@ import { getGenerator } from './ai';
 import { imageEnabled, imageRetryable } from './ai/image';
 import { costUsd } from './ai/pricing';
 import type { BatchPoll } from './ai/types';
-import { QUIET_HOURS } from './constants';
+import { DROP_NOTIFY_TIME, QUIET_HOURS } from './constants';
 import { isCompleteBody, parseDropText } from './drop-format';
 import { sendPush } from './push';
 import { completedToday, ensureDropImage, track, verifyDrop } from './service';
@@ -14,8 +14,6 @@ import { kstDate, kstTime, newId, nowIso } from './util';
 const INACTIVE_DAYS = 7;
 /** Batch generating이 이 시간 넘게 머물면 멈춘 것으로 보고 다시 제출한다 (Batch API는 24시간 안에 끝난다) */
 const BATCH_STALE_MS = 20 * 3600_000;
-/** 21:00 직후 호출(스케줄러 지연 몇 분)은 20:50~21:00 사이 알림 시각을 마저 보낸다 */
-const QUIET_START_GRACE_MIN = 5;
 
 type BatchResult = Extract<BatchPoll, { status: 'ended' }>['results'][number];
 
@@ -230,36 +228,28 @@ async function fillDropImages(drops: Drop[]) {
 
 /** 조용한 시간(21:00~08:00)인지 */
 const inQuietHours = (hhmm: string) => hhmm >= QUIET_HOURS.start || hhmm < QUIET_HOURS.end;
-const toMinutes = (hhmm: string) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5));
 
 /**
- * 알림 발송 (PRD §17.2). 10분마다 호출된다. 알림 시각(KST)이 지났고 오늘(KST) 아직 안 보낸 사용자에게 보낸다.
- * 다음 Drop이 준비되지 않았으면 보내지 않는다 (실시간 생성은 비용 때문에 하지 않는다).
+ * 다음 Drop 알림 (PRD §17.2). 10분마다 호출된다. 아침 8시(KST)에 오늘 아직 안 읽은 사용자에게 한 번 보낸다
+ * (2026-11-10 대표 결정: 알림 시간은 모두 8시, 고르지 않는다). 다음 Drop이 준비되지 않았으면 보내지 않는다.
  */
 export async function sendDueNotifications() {
   const store = getStore();
   const now = new Date();
   const hhmm = kstTime(now);
   const today = kstDate(now);
-  const stats = { sent: 0, failed: 0, skippedQuiet: 0, skippedNoToken: 0, skippedNotReady: 0, invalidTokens: 0, quiet: false };
-  // 21:00 정각 호출은 20:50~21:00 사이 알림 시각을 마저 보내고, 그 뒤 08:00까지는 보내지 않는다
-  const justAfterQuietStart = hhmm >= QUIET_HOURS.start && toMinutes(hhmm) - toMinutes(QUIET_HOURS.start) < QUIET_START_GRACE_MIN;
-  if (inQuietHours(hhmm) && !justAfterQuietStart) return { ...stats, quiet: true };
+  const stats = { sent: 0, failed: 0, skippedNoToken: 0, skippedNotReady: 0, invalidTokens: 0, quiet: false };
+  if (hhmm < DROP_NOTIFY_TIME.start || hhmm >= DROP_NOTIFY_TIME.end) return { ...stats, quiet: inQuietHours(hhmm) };
 
-  // 오늘(KST) 이미 보낸 사용자 — 루프 밖에서 한 번만 조회
+  // 오늘(KST) 이미 Drop 알림을 보낸 사용자 — 루프 밖에서 한 번만 조회 (좋아요 알림은 세지 않는다)
   const todayStart = new Date(`${today}T00:00:00+09:00`).toISOString();
-  const sentToday = new Set((await store.listEventsByName('push_sent', todayStart)).map(e => e.userId));
+  const sentToday = new Set((await store.listEventsByName('push_sent', todayStart)).filter(e => e.props?.kind !== 'like').map(e => e.userId));
 
   const run = limiter(5);
   const results = await Promise.allSettled(
     (await store.listUsers()).map(user =>
       run(async () => {
-        if (user.notifyPermission !== 'granted' || !user.notifyTime) return;
-        if (user.notifyTime > hhmm || sentToday.has(user.id)) return;
-        if (inQuietHours(user.notifyTime)) {
-          stats.skippedQuiet++;
-          return;
-        }
+        if (user.notifyPermission !== 'granted' || sentToday.has(user.id)) return;
         if (!user.pushToken) {
           stats.skippedNoToken++;
           return;

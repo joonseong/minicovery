@@ -19,7 +19,7 @@ export interface User {
   /** scrypt 'salt:hash' (Supabase Auth로 옮기기 전 MVP용) */
   passwordHash?: string;
   createdAt: string;
-  /** 'HH:mm' KST. 비어 있으면 첫 Drop을 읽은 시각 */
+  /** 예전 알림 시간 'HH:mm' (2026-11-10부터 쓰지 않음: 알림은 모두 아침 8시) */
   notifyTime?: string;
   notifyPermission: 'unknown' | 'granted' | 'denied';
   /** Drop 완료 뒤 알림 권한을 마지막으로 물어본 시각 (3일에 한 번까지) */

@@ -10,7 +10,6 @@ export default async function SettingsPage() {
   return (
     <SettingsScreen
       notifyOn={user.notifyPermission === 'granted'}
-      notifyTime={user.notifyTime ?? '08:00'}
       account={user.anon ? null : user.appleSub ? 'Apple' : user.kakaoId ? '카카오' : user.googleSub ? 'Google' : user.email ?? '이메일'}
       plus={plus}
       renewLabel={user.plusExpiresAt ? kstDayLabel(user.plusExpiresAt) : undefined}

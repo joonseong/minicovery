@@ -67,7 +67,7 @@ export function AfterComplete({ result, dropId }: { result: CompleteResult | nul
     const r = await requestPushPermission();
     if (r.granted) {
       await postJson('/api/me/notify', { permission: 'granted', pushToken: r.token });
-      showToast('알림을 켰어요. 시간은 설정에서 바꿀 수 있어요');
+      showToast('알림을 켰어요. 아침 8시에 알려 드릴게요');
       goSoon(1200);
       return;
     }
@@ -100,10 +100,7 @@ export function AfterComplete({ result, dropId }: { result: CompleteResult | nul
           <br />
           알려드릴까요?
         </h2>
-        <p className="mt-2.5 text-sm text-fuse-sub">
-          새 Drop은 매일 0시에 열려요. 알림은 하루 한 번, 오늘 읽은 시간쯤 아직 안 읽었을 때만 보내요.
-        </p>
-        <p className="mt-1 text-[13px] text-fuse-sub">밤 9시~아침 8시에 읽었다면 아침 8시로 맞춰요. 시간은 설정에서 바꿀 수 있어요.</p>
+        <p className="mt-2.5 text-sm text-fuse-sub">새 Drop은 매일 0시에 열려요. 아침 8시까지 안 읽었으면 한 번 알려 드려요.</p>
         <div className="mt-7 flex flex-col gap-1">
           <PrimaryButton onClick={() => void allow()}>{busy ? '확인하는 중…' : '알림 받기'}</PrimaryButton>
           <TextButton onClick={() => void later(false)}>나중에</TextButton>
