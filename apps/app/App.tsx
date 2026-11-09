@@ -8,6 +8,7 @@ import messaging from '@react-native-firebase/messaging';
 
 import { PLUS_PRODUCT_ID, WEB_URL } from './src/config';
 import { ErrorScreen, LoadingScreen } from './src/fallback';
+import { Splash } from './src/splash';
 import { entitlements, iapAvailable, onTransaction, purchase, requestReview, trialEligible } from './src/iap';
 import { signInWithGoogle, signInWithKakao, socialAvailable } from './src/social';
 import { pathFromMessage, pushAvailable, requestPush } from './src/push';
@@ -107,6 +108,9 @@ export default function App() {
   const [canGoBack, setCanGoBack] = useState(false);
   // 서버 오류(5xx) 덮개. 네트워크 오류는 WebView의 renderError가 맡는다
   const [overlay, setOverlay] = useState<'none' | 'loading' | 'error'>('none');
+  // 스플래시: 웹 첫 화면이 뜨거나(성공·오류) 오래 걸리면 걷는다
+  const [booting, setBooting] = useState(true);
+  const endBoot = useCallback(() => setBooting(false), []);
   const httpFailed = useRef(false);
   const synced = useRef(false);
 
@@ -210,7 +214,7 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle={booting ? 'light-content' : 'dark-content'} backgroundColor={booting ? '#000000' : '#FFFFFF'} />
       <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
         <WebView
           ref={webview}
@@ -228,10 +232,15 @@ export default function App() {
             if (event.nativeEvent.statusCode < 500) return;
             httpFailed.current = true;
             setOverlay('error');
+            endBoot();
           }}
           // 네트워크 오류는 WebView가 renderError를 보이므로 덮개를 걷는다
-          onError={() => setOverlay('none')}
+          onError={() => {
+            setOverlay('none');
+            endBoot();
+          }}
           onLoad={() => {
+            endBoot();
             if (httpFailed.current) return;
             setOverlay('none');
             if (synced.current || !iapAvailable()) return;
@@ -259,6 +268,7 @@ export default function App() {
         {overlay === 'loading' && <LoadingScreen />}
         {overlay === 'error' && <ErrorScreen onRetry={retry} />}
       </SafeAreaView>
+      <Splash visible={booting} onTimeout={endBoot} />
     </SafeAreaProvider>
   );
 }

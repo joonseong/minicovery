@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="15702" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="01J-lp-oVM">
-    <device id="retina4_7" orientation="portrait" appearance="light"/>
+    <device id="retina6_12" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="15704"/>
@@ -8,25 +8,62 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
+        <!-- 스플래시 (2026-11-10 대표 확정): 검은 바탕, 두들 말풍선 + MINICOVERY + 슬로건(라이트). 묶음 위·아래 빈 공간 4:6.
+             앱의 RN 스플래시(src/splash.tsx)와 같은 배치라 웹 첫 화면이 뜰 때까지 이어진다 -->
         <scene sceneID="EHf-IW-A2E">
             <objects>
                 <viewController id="01J-lp-oVM" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="Ze5-6b-2t3">
-                        <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" image="LaunchFace" translatesAutoresizingMaskIntoConstraints="NO" id="Fce-1a-aaa">
-                                <rect key="frame" x="127.5" y="273.5" width="120" height="120"/>
+                            <view hidden="YES" userInteractionEnabled="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Spc-Top-001">
+                                <rect key="frame" x="0.0" y="0.0" width="1" height="266"/>
                                 <constraints>
-                                    <constraint firstAttribute="width" constant="120" id="Fce-w1-aaa"/>
-                                    <constraint firstAttribute="height" constant="120" id="Fce-h1-aaa"/>
+                                    <constraint firstAttribute="width" constant="1" id="Spc-Top-w01"/>
+                                </constraints>
+                            </view>
+                            <imageView userInteractionEnabled="NO" contentMode="scaleAspectFit" image="SplashBubbles" translatesAutoresizingMaskIntoConstraints="NO" id="Spl-Bub-001">
+                                <rect key="frame" x="141.5" y="266" width="110" height="80"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="110" id="Spl-Bub-w01"/>
+                                    <constraint firstAttribute="height" constant="80" id="Spl-Bub-h01"/>
                                 </constraints>
                             </imageView>
+                            <imageView userInteractionEnabled="NO" contentMode="scaleAspectFit" image="SplashWordmark" translatesAutoresizingMaskIntoConstraints="NO" id="Spl-Wmk-001">
+                                <rect key="frame" x="56.5" y="374" width="280" height="34"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="280" id="Spl-Wmk-w01"/>
+                                    <constraint firstAttribute="height" constant="34" id="Spl-Wmk-h01"/>
+                                </constraints>
+                            </imageView>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="출근길 한 편이면 대화가 달라져요" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Spl-Txt-001">
+                                <rect key="frame" x="70" y="428" width="253" height="20.5"/>
+                                <fontDescription key="fontDescription" type="system" weight="light" pointSize="17"/>
+                                <color key="textColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <view hidden="YES" userInteractionEnabled="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Spc-Bot-001">
+                                <rect key="frame" x="0.0" y="448.5" width="1" height="403.5"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="1" id="Spc-Bot-w01"/>
+                                </constraints>
+                            </view>
                         </subviews>
-                        <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <color key="backgroundColor" red="0" green="0" blue="0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
-                            <constraint firstItem="Fce-1a-aaa" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="Fce-cx-aaa"/>
-                            <constraint firstItem="Fce-1a-aaa" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="Fce-cy-aaa"/>
+                            <constraint firstItem="Spc-Top-001" firstAttribute="top" secondItem="Ze5-6b-2t3" secondAttribute="top" id="Spl-c01"/>
+                            <constraint firstItem="Spc-Top-001" firstAttribute="leading" secondItem="Ze5-6b-2t3" secondAttribute="leading" id="Spl-c02"/>
+                            <constraint firstItem="Spl-Bub-001" firstAttribute="top" secondItem="Spc-Top-001" secondAttribute="bottom" id="Spl-c03"/>
+                            <constraint firstItem="Spl-Bub-001" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="Spl-c04"/>
+                            <constraint firstItem="Spl-Wmk-001" firstAttribute="top" secondItem="Spl-Bub-001" secondAttribute="bottom" constant="28" id="Spl-c05"/>
+                            <constraint firstItem="Spl-Wmk-001" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="Spl-c06"/>
+                            <constraint firstItem="Spl-Txt-001" firstAttribute="top" secondItem="Spl-Wmk-001" secondAttribute="bottom" constant="20" id="Spl-c07"/>
+                            <constraint firstItem="Spl-Txt-001" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="Spl-c08"/>
+                            <constraint firstItem="Spc-Bot-001" firstAttribute="top" secondItem="Spl-Txt-001" secondAttribute="bottom" id="Spl-c09"/>
+                            <constraint firstItem="Spc-Bot-001" firstAttribute="leading" secondItem="Ze5-6b-2t3" secondAttribute="leading" id="Spl-c10"/>
+                            <constraint firstItem="Spc-Bot-001" firstAttribute="bottom" secondItem="Ze5-6b-2t3" secondAttribute="bottom" id="Spl-c11"/>
+                            <constraint firstItem="Spc-Top-001" firstAttribute="height" secondItem="Spc-Bot-001" secondAttribute="height" multiplier="0.66666666666666663" id="Spl-c12"/>
                         </constraints>
                         <viewLayoutGuide key="safeArea" id="Bcu-3y-fUS"/>
                     </view>
@@ -37,6 +74,7 @@
         </scene>
     </scenes>
     <resources>
-        <image name="LaunchFace" width="120" height="120"/>
+        <image name="SplashBubbles" width="110" height="80"/>
+        <image name="SplashWordmark" width="280" height="34"/>
     </resources>
 </document>
