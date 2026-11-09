@@ -128,6 +128,15 @@ export async function dashboardData(unit: Unit) {
     return out;
   };
   const named = (name: string, keep: (e: AppEvent) => boolean = () => true) => tally(events.filter(e => e.name === name && keep(e)));
+  /** 기간마다 그 이벤트를 남긴 사람들 */
+  const whoDid = (name: string) => {
+    const sets = periods.map(() => new Set<string>());
+    for (const e of events) {
+      const i = e.name === name ? slot(e.at) : undefined;
+      if (i !== undefined) sets[i]!.add(e.userId);
+    }
+    return sets;
+  };
 
   // 처음 온 날도 활동한 날로 센다
   const firstSeen = firstSeenOf(users, events, allCourses);
@@ -181,6 +190,9 @@ export async function dashboardData(unit: Unit) {
     if (i !== undefined && ms > 0) ttfd[i]!.push(ms);
   }
 
+  const openers = whoDid('shared_course_opened');
+  const readers = whoDid('shared_drop_read');
+
   const signedUp = users.filter(u => real(u.id) && !u.anon).length;
   const groups: { title: string; charts: Chart[] }[] = [
     {
@@ -204,8 +216,10 @@ export async function dashboardData(unit: Unit) {
     {
       title: '다른 사람이 만든 코스',
       charts: [
-        { label: '열람한 Drop', values: named('shared_drop_read') },
-        { label: '좋아요', values: named('shared_course_liked') },
+        { label: '미리보기 연 사람', values: openers.map(s => s.size), parts: parts(openers), note: '코스 목차를 연 사람 · 11/9부터 기록' },
+        { label: 'Drop을 열람한 사람', values: readers.map(s => s.size), parts: parts(readers), note: '코스의 Drop을 하나라도 연 사람' },
+        { label: '열람한 Drop', values: named('shared_drop_read'), note: '같은 Drop을 다시 열어도 셈' },
+        { label: '좋아요', values: named('shared_course_liked'), note: `누른 횟수 (취소는 빼지 않음) · 좋아요 알림 ${named('push_sent', e => e.props?.kind === 'like').reduce((a, b) => a + b, 0)}번 보냄` },
       ],
     },
     {

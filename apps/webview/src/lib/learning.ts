@@ -185,12 +185,14 @@ export async function recordRecommendOpen(user: User, id: string) {
   const course = await store.getCourse(id);
   if (!course || !listed(course) || course.userId === user.id) return;
   course.opens = (course.opens ?? 0) + 1;
-  if (!user.openedShared?.includes(course.id)) {
+  const first = !user.openedShared?.includes(course.id);
+  if (first) {
     user.openedShared = [...(user.openedShared ?? []), course.id];
     await store.saveUser(user);
     course.openers = (course.openers ?? 0) + 1;
   }
   await store.saveCourse(course);
+  await track(user.id, 'shared_course_opened', { courseId: course.id, first });
 }
 
 /** 열람할 수 있는 Drop: 글이 다 만들어진 것 (건너뛴 Drop은 목차에만 남는다) */
