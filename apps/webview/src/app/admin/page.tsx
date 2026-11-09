@@ -68,8 +68,8 @@ export default async function AdminPage({ searchParams }: { searchParams: { toke
           </div>
         ))}
       </div>
-      <h2 className="mt-8 font-bold">로그인한 사용자 ({accounts.length})</h2>
-      <p className="mt-1 text-xs text-txt-black-tertiary">가입한 계정만, 최근 활동 순. 한국 시간</p>
+      <h2 className="mt-8 font-bold">로그인한 사용자 ({accounts.filter(a => !a.staff).length})</h2>
+      <p className="mt-1 text-xs text-txt-black-tertiary">가입한 계정만, 최근 활동 순. 한국 시간. &apos;내부&apos;는 대표·데모 계정이라 숫자와 대시보드에서 뺌</p>
       <div className="mt-2 overflow-x-auto rounded-xl border border-fuse-line">
         <table className="w-full min-w-[880px] text-xs" style={{ fontVariantNumeric: 'tabular-nums' }}>
           <thead>
@@ -92,7 +92,10 @@ export default async function AdminPage({ searchParams }: { searchParams: { toke
                 <td className="px-3 py-2 text-right">{a.drops}</td>
                 <td className="px-3 py-2">{a.plus ?? '-'}</td>
                 <td className="px-3 py-2">{NOTIFY[a.notify] ?? a.notify}</td>
-                <td className="px-3 py-2 text-txt-black-tertiary">{a.id.slice(0, 8)}</td>
+                <td className="px-3 py-2 text-txt-black-tertiary">
+                  {a.id.slice(0, 8)}
+                  {a.staff ? ' · 내부' : ''}
+                </td>
               </tr>
             ))}
           </tbody>

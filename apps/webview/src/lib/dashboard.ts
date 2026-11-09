@@ -17,6 +17,14 @@ const COHORTS: Record<Unit, { rows: number; cols: number }> = { day: { rows: 14,
 
 /** 출시용 추천 코스 시드를 만든 기기 계정 (2026-11-07). 지표에서 뺀다 */
 const INTERNAL_USERS = new Set(['eb0c1bdd-79e6-43be-a2ab-8e1119c8be11', '55ad7ccd-0b90-4545-98f7-962f273427df', 'd2b42684-8202-49cb-b1f9-d42d5e05b004']);
+/** 대표 본인 계정(이메일·Google·Apple·카카오 테스트)과 심사용 데모 계정 (2026-11-09 대표 요청). 지표에서 빼고, 로그인 사용자 표에는 '내부'로 표시 */
+const STAFF_USERS = new Set([
+  'de322192-ba3d-4ce0-81fc-972d1837865d',
+  'efce9052-30b2-47e4-b9f0-b3752116930a',
+  '172845cc-82b6-4551-8313-cc77555444dd',
+  'a37b4483-37a5-49e1-ba3f-9a79d81aab40',
+  'd3888bae-34c3-433e-a652-e31a58b312b1',
+]);
 
 /** 사용자가 한 행동이 아닌 이벤트 (서버의 알림 발송·결제 알림 등). 활동·재방문에서 뺀다 */
 const SYSTEM_EVENTS = new Set(['system', 'push_sent', 'push_skipped', 'push_failed', 'iap_notification', 'account_deleted', 'plus_sandbox_rejected']);
@@ -64,7 +72,7 @@ export interface Chart {
 }
 
 /** 지표에서 빼는 내부 계정인지 */
-const real = (id: string) => !INTERNAL_USERS.has(id);
+const real = (id: string) => !INTERNAL_USERS.has(id) && !STAFF_USERS.has(id);
 
 /** 로그인(가입한 계정) · 비로그인(기기만) 나눠 센다. 지금 기준이라, 나중에 가입하면 그 전 기록도 로그인으로 센다 */
 const split = (ids: Iterable<string>, accounts: Set<string>) => {
@@ -329,6 +337,8 @@ export interface AccountRow {
   /** Plus 구독 중이면 거래 환경 (Sandbox = 심사·TestFlight) */
   plus: 'Production' | 'Sandbox' | null;
   notify: User['notifyPermission'];
+  /** 대표·데모 계정 (지표에서 뺌) */
+  staff: boolean;
 }
 
 /** 어드민: 로그인한 사용자(가입한 계정) 목록. 최근 활동 순 */
@@ -346,7 +356,7 @@ export async function accountRows(): Promise<AccountRow[]> {
   const courseCount = new Map<string, number>();
   for (const c of courses) if (c.status !== 'failed') courseCount.set(c.userId, (courseCount.get(c.userId) ?? 0) + 1);
   return users
-    .filter(u => !u.anon && real(u.id))
+    .filter(u => !u.anon && !INTERNAL_USERS.has(u.id))
     .map(u => ({
       id: u.id,
       email: u.email,
@@ -357,6 +367,7 @@ export async function accountRows(): Promise<AccountRow[]> {
       drops: drops.get(u.id) ?? 0,
       plus: isPlus(u) ? (u.plusEnv ?? 'Production') : null,
       notify: u.notifyPermission,
+      staff: STAFF_USERS.has(u.id),
     }))
     .sort((a, b) => (b.lastActiveAt ?? b.signedUpAt).localeCompare(a.lastActiveAt ?? a.signedUpAt));
 }
