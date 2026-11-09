@@ -140,7 +140,7 @@ export function SettingsScreen(props: {
               </button>
             </p>
           ) : null}
-          {on ? <p className={NOTE}>새 Drop은 매일 0시에 열려요. 알림은 정한 시간에 하루 한 번, 아직 안 읽은 날만 보내요. 밤 9시부터 아침 8시까지는 보내지 않아요.</p> : null}
+          {on ? <p className={NOTE}>새 Drop은 매일 0시에 열려요. Drop 알림은 정한 시간에 하루 한 번, 아직 안 읽은 날만 보내요. 내가 추천한 코스에 좋아요가 오면 그때도 알려요. 밤 9시부터 아침 8시까지는 보내지 않아요.</p> : null}
         </section>
 
         <section className="flex flex-col gap-2.5">
