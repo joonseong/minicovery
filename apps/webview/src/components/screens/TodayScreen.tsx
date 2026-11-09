@@ -129,7 +129,7 @@ export function TodayScreen({
         <div className={cx('mt-3 flex items-center justify-between gap-2', CARD, 'py-3 pr-1')}>
           <Link href="/settings" className="flex flex-col gap-0.5">
             <span className="text-sm font-semibold">내일 Drop 알림을 받아 보세요</span>
-            <span className="text-[13px] text-fuse-sub">바쁜 날에도 잊지 않게 하루 한 번 알려드려요.</span>
+            <span className="text-[13px] text-fuse-sub">새 Drop을 잊지 않게 아침 8시에 알려드려요.</span>
           </Link>
           <button
             type="button"

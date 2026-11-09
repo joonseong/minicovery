@@ -65,6 +65,9 @@ export const DAILY_PREMIUM_REALTIME = 2;
 
 /** 알림을 보내지 않는 시간대 (PRD §17.2) */
 export const QUIET_HOURS = { start: '21:00', end: '08:00' };
+/** 다음 Drop 알림: 모두 아침 8시 (2026-11-10 대표 결정). Drop은 0시에 열리고, 그날 아직 안 읽었으면 이때 한 번 보낸다.
+ *  알림 크론(10분마다)이 늦어도 보내도록 9시 전까지는 보내고, 그 뒤에는 보내지 않는다 */
+export const DROP_NOTIFY_TIME = { start: '08:00', end: '09:00' };
 
 /** 무료는 코스 1개, Plus는 새 코스 한 달 3개 (2026-10-22 대표 결정) */
 export const FREE_COURSE_LIMIT = 1;

@@ -12,8 +12,6 @@ import type { PlusUsage } from '@/lib/service';
 import { AppHeader, IconArrow, Main, OutlineButton, PrimaryButton, Screen, Sheet, Toast, useToast } from '../ui';
 
 // 21시~08시는 고를 수 없다
-const TIMES: string[] = [];
-for (let m = 8 * 60; m <= 20 * 60 + 30; m += 30) TIMES.push(`${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`);
 
 const ROW = 'flex items-center justify-between gap-4';
 const CARD = 'rounded-card border border-fuse-line bg-fuse-card px-4';
@@ -39,7 +37,6 @@ function Switch({ on, onChange, label }: { on: boolean; onChange: (v: boolean) =
 
 export function SettingsScreen(props: {
   notifyOn: boolean;
-  notifyTime: string;
   account: string | null;
   plus: boolean;
   /** 다음 결제일 'M월 D일' (Plus일 때) */
@@ -52,7 +49,6 @@ export function SettingsScreen(props: {
 }) {
   const router = useRouter();
   const [on, setOn] = useState(props.notifyOn);
-  const [time, setTime] = useState(props.notifyTime);
   const [notice, setNotice] = useState('');
   const [toast, showToast] = useToast();
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -102,35 +98,10 @@ export function SettingsScreen(props: {
             <div className={`${ROW} min-h-[68px]`}>
               <div className="flex flex-col gap-0.5">
                 <span className={LABEL}>다음 Drop 알림</span>
-                <span className="text-[13px] text-fuse-sub">{on ? `매일 ${time}쯤 알려드려요` : '알림이 꺼져 있어요'}</span>
+                <span className="text-[13px] text-fuse-sub">{on ? '매일 아침 8시에 알려드려요' : '알림이 꺼져 있어요'}</span>
               </div>
               <Switch on={on} onChange={v => void toggle(v)} label="다음 Drop 알림" />
             </div>
-            {on ? (
-              <label htmlFor="notify-time" className={`${ROW} min-h-16 border-t border-fuse-line`}>
-                <span className={LABEL}>알림 시간</span>
-                <span className="relative inline-flex flex-shrink-0 items-center">
-                  <select
-                    id="notify-time"
-                    value={time}
-                    onChange={e => {
-                      setTime(e.target.value);
-                      void postJson('/api/me/notify', { notifyTime: e.target.value });
-                    }}
-                    className="h-11 appearance-none rounded-full border border-fuse-edge bg-shape-white py-0 pl-4 pr-[38px] text-sm font-semibold text-fuse-ink"
-                  >
-                    {TIMES.map(t => (
-                      <option key={t} value={t}>
-                        {t}
-                      </option>
-                    ))}
-                  </select>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="pointer-events-none absolute right-4">
-                    <path d="m6 9 6 6 6-6" stroke="#8E8E93" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </span>
-              </label>
-            ) : null}
           </div>
           {notice ? (
             <p className={NOTE}>
@@ -140,7 +111,7 @@ export function SettingsScreen(props: {
               </button>
             </p>
           ) : null}
-          {on ? <p className={NOTE}>새 Drop은 매일 0시에 열려요. Drop 알림은 정한 시간에 하루 한 번, 아직 안 읽은 날만 보내요. 내가 추천한 코스에 좋아요가 오면 그때도 알려요. 밤 9시부터 아침 8시까지는 보내지 않아요.</p> : null}
+          {on ? <p className={NOTE}>새 Drop은 매일 0시에 열려요. 아침 8시까지 그날 Drop을 안 읽었으면 한 번 알려 드려요. 내가 추천한 코스에 좋아요가 오면 그때도 알려요(밤 9시~아침 8시 제외).</p> : null}
         </section>
 
         <section className="flex flex-col gap-2.5">
