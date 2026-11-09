@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 
 import { CourseScreen } from '@/components/screens/CourseScreen';
-import { activeCourses, completedToday, isPlus, openAllStatus, pickedCourseId, plusUsage } from '@/lib/service';
+import { activeCourses, canReadCourseToday, dailyState, isPlus, openAllStatus, pickedCourseId, plusUsage } from '@/lib/service';
 import { currentUser } from '@/lib/session';
 import { getStore } from '@/lib/store';
 import { LEVEL_LABEL } from '@/lib/types';
@@ -15,9 +15,12 @@ export default async function CoursePage({ params }: { params: { id: string } })
   if (!course || course.userId !== user.id || course.status === 'deleted') notFound();
   const drops = await store.listDrops(course.id);
   const next = drops.find(d => !d.completedAt && d.status !== 'skipped');
-  const doneToday = await completedToday(user.id);
+  const state = await dailyState(user);
   const items = await activeCourses(user.id);
-  const picked = pickedCourseId(user, items);
+  const picked = pickedCourseId(user, items, state.readToday);
+  // 오늘 이 코스를 더 못 읽으면 '내일' (무료는 하루 한 편, Plus는 코스마다 한 편씩 하루 2편)
+  const doneToday = !canReadCourseToday(state, course.id);
+  const plus = isPlus(user);
   const openAll = openAllStatus(user);
   const usage = await plusUsage(user);
   // 내일 받을 코스를 전체 열면 다른 진행 중 코스로 넘어간다 (openAllCourse와 같은 규칙)
@@ -31,8 +34,9 @@ export default async function CoursePage({ params }: { params: { id: string } })
       category={course.category}
       drops={drops.map(d => ({ id: d.id, index: d.index, title: d.title, done: Boolean(d.completedAt), skipped: d.status === 'skipped' }))}
       nextId={course.status === 'active' ? next?.id : undefined}
-      doneToday={Boolean(doneToday)}
-      isPicked={picked === course.id}
+      doneToday={doneToday}
+      // Plus는 고를 필요 없이 오늘 읽을 수 있는 코스면 바로 읽는다
+      isPicked={plus ? !doneToday : picked === course.id}
       isTomorrow={isTomorrow}
       multiple={items.filter(i => !i.course.openedAllAt).length > 1}
       completed={course.status === 'completed'}
@@ -40,7 +44,7 @@ export default async function CoursePage({ params }: { params: { id: string } })
       canOpenAll={openAll.available}
       openAllNext={usage?.resetLabel ?? ''}
       // Plus인데 이번 달 전체 열기를 이미 썼으면 비활성 줄로 남긴다
-      openAllUsedUntil={isPlus(user) && !openAll.available ? openAll.nextLabel ?? usage?.resetLabel : undefined}
+      openAllUsedUntil={plus && !openAll.available ? openAll.nextLabel ?? usage?.resetLabel : undefined}
       nextTomorrowTopic={nextTomorrow}
       shared={Boolean(course.shared)}
       copied={Boolean(course.copiedFrom)}

@@ -171,9 +171,12 @@ const listed = (c: Course) => c.status === 'completed' && Boolean(c.shared) && c
 /** 새 코스 화면에 한 번에 불러오는 수 (아래로 내리면 이어서) */
 export const RECOMMEND_PAGE = 20;
 
-/** 많이 눌러본(미리보기를 연) 순 → 눌러본 사람이 많은 순 → 최근 순. 내가 만들었거나 전에 받은 코스는 뺀다 */
+/**
+ * 많이 눌러본(미리보기를 연) 순 → 눌러본 사람이 많은 순 → 최근 순. 내가 만든 코스만 뺀다.
+ * (예전 '받기'로 만든 사본은 지워도 남아 있어서, 사본을 기준으로 빼면 원본이 계속 숨는다 — 2026-11-10)
+ */
 export async function recommendedCourses(user: User, offset = 0, limit = RECOMMEND_PAGE): Promise<{ items: Recommended[]; hasMore: boolean }> {
-  const mine = new Set((await getStore().listCourses(user.id)).flatMap(c => [c.id, c.copiedFrom].filter(Boolean)));
+  const mine = new Set((await getStore().listCourses(user.id)).map(c => c.id));
   const all = (await getStore().listSharedCourses())
     .filter(c => listed(c) && !mine.has(c.id))
     .sort((a, b) => (b.opens ?? 0) - (a.opens ?? 0) || viewersOf(b) - viewersOf(a) || b.createdAt.localeCompare(a.createdAt));

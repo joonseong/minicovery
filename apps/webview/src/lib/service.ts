@@ -13,6 +13,7 @@ import {
   LEARNED_COMPLETION_RATIO,
   LOGIN_FAIL_WINDOW_MIN,
   NOTIFY_ASK_INTERVALS_DAYS,
+  PLUS_DAILY_COURSES,
   PLUS_MONTHLY_COURSES,
   REVIEW_AT_DROPS,
   STAGES,
@@ -346,7 +347,7 @@ export async function createCourse(
   }
   const first = (await store.listDrops(course.id))[0];
   // 새 코스는 바로 읽을 수 있게 오늘의 코스로 고른다. 임시 계정은 여기서 처음 저장될 수 있다
-  if (!(await completedToday(user.id))) user.todayPick = { date: kstDate(), courseId: course.id };
+  if (!(await dailyState(user)).full) user.todayPick = { date: kstDate(), courseId: course.id };
   await store.saveUser(user);
   await track(user.id, existing ? 'course_regenerated' : 'course_created', {
     courseId: course.id,
@@ -909,6 +910,29 @@ export async function completedToday(userId: string): Promise<Drop | null> {
   );
 }
 
+/**
+ * 오늘(KST) 하루 한 편으로 읽은 코스들과 남은 자리. 무료는 하루 1편(고른 코스),
+ * Plus는 진행 중인 코스마다 한 편씩 하루 2편까지 (2026-11-10 대표 결정). 전체 열린 코스는 세지 않는다
+ */
+export async function dailyState(user: User): Promise<{ readToday: Set<string>; slots: number; full: boolean }> {
+  const store = getStore();
+  const today = kstDate();
+  const [courses, drops] = await Promise.all([store.listCourses(user.id), store.listDropsByUser(user.id)]);
+  const openedAt = new Map(courses.filter(c => c.openedAllAt).map(c => [c.id, c.openedAllAt!]));
+  const readToday = new Set<string>();
+  for (const d of drops) {
+    if (!d.completedAt || kstDate(d.completedAt) !== today) continue;
+    const opened = openedAt.get(d.courseId);
+    if (!opened || d.completedAt < opened) readToday.add(d.courseId);
+  }
+  const slots = isPlus(user) ? PLUS_DAILY_COURSES : 1;
+  return { readToday, slots, full: readToday.size >= slots };
+}
+
+/** 이 코스를 오늘 하루 한 편으로 더 읽을 수 있는지 (자리가 남았고 이 코스는 오늘 아직 안 읽음) */
+export const canReadCourseToday = (state: { readToday: Set<string>; full: boolean }, courseId: string) =>
+  !state.full && !state.readToday.has(courseId);
+
 /* ---------- 전체 열기 (Plus, 구독 한 달에 한 코스) ---------- */
 
 /** 이번 구독 기간에 전체 열기를 쓸 수 있는지, 썼다면 다시 쓸 수 있는 날 (다음 결제일). 열린 코스는 해지 뒤에도 계속 읽는다 */
@@ -954,10 +978,10 @@ export async function activeCourses(userId: string): Promise<CourseNext[]> {
   return out.sort((a, b) => (b.course.lastReadAt ?? b.course.createdAt).localeCompare(a.course.lastReadAt ?? a.course.createdAt));
 }
 
-/** 오늘 받을 코스: 오늘 고른 코스 → 어제 정해 둔 내일 코스 → 최근 코스 */
-export function pickedCourseId(user: User, items: CourseNext[]): string | undefined {
+/** 오늘 받을 코스: 오늘 고른 코스 → 어제 정해 둔 내일 코스 → 최근 코스. readToday를 주면 오늘 이미 읽은 코스는 건너뛴다 (Plus 하루 여러 편) */
+export function pickedCourseId(user: User, items: CourseNext[], readToday?: Set<string>): string | undefined {
   // 전체 열린 코스는 하루 한 편과 따로 읽는다
-  const ids = items.filter(i => !i.course.openedAllAt).map(i => i.course.id);
+  const ids = items.filter(i => !i.course.openedAllAt && !readToday?.has(i.course.id)).map(i => i.course.id);
   const today = kstDate();
   if (user.todayPick?.date === today && ids.includes(user.todayPick.courseId)) return user.todayPick.courseId;
   if (user.tomorrowCourseId && ids.includes(user.tomorrowCourseId)) return user.tomorrowCourseId;
@@ -968,7 +992,7 @@ export async function pickToday(user: User, courseId: string) {
   const store = getStore();
   const course = await store.getCourse(courseId);
   if (!course || course.userId !== user.id || course.status !== 'active') return false;
-  if (await completedToday(user.id)) return false;
+  if (!canReadCourseToday(await dailyState(user), courseId)) return false;
   user.todayPick = { date: kstDate(), courseId };
   await store.saveUser(user);
   await track(user.id, 'today_picked', { courseId });
@@ -986,7 +1010,7 @@ export async function pickTomorrow(user: User, courseId: string) {
 
 /**
  * 이 Drop을 지금 열 수 있는지. 읽은 Drop은 언제든 다시 볼 수 있고, 건너뛴 Drop은 열 수 없다.
- * 새 Drop은 하루 한 편 (오늘 고른 코스의 다음 Drop). 오늘 만든 코스의 첫 Drop은 바로 읽을 수 있다 (D1)
+ * 새 Drop은 하루 한 편 (오늘 고른 코스의 다음 Drop, Plus는 코스마다 한 편씩 하루 2편). 오늘 만든 코스의 첫 Drop은 바로 읽을 수 있다 (D1)
  */
 export async function canOpenDrop(user: User, drop: Drop): Promise<boolean> {
   if (drop.completedAt) return true;
@@ -999,9 +1023,11 @@ export async function canOpenDrop(user: User, drop: Drop): Promise<boolean> {
   if (nextDrop(drops)?.id !== drop.id) return false;
   // 첫 Drop이 건너뛰어졌으면 그다음 Drop이 첫 Drop이다
   if (drops.find(d => d.status !== 'skipped')?.id === drop.id && kstDate(course.createdAt) === kstDate()) return true;
-  if (await completedToday(user.id)) return false;
-  const picked = pickedCourseId(user, await activeCourses(user.id));
-  return picked === course.id;
+  const state = await dailyState(user);
+  if (!canReadCourseToday(state, course.id)) return false;
+  // Plus는 진행 중인 코스 어디서나 (하루 2편까지), 무료는 오늘 고른 코스만
+  if (isPlus(user)) return true;
+  return pickedCourseId(user, await activeCourses(user.id)) === course.id;
 }
 
 /* ---------- 캐릭터 단계 ---------- */

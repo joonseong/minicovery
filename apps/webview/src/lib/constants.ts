@@ -74,6 +74,8 @@ export const DROP_NOTIFY_TIME = { start: '08:00', end: '09:00' };
 
 /** 무료는 코스 1개, Plus는 새 코스 한 달 3개 (2026-10-22 대표 결정) */
 export const FREE_COURSE_LIMIT = 1;
+/** 하루 한 편으로 읽을 수 있는 코스 수: 무료 1, Plus는 코스마다 한 편씩 하루 2편까지 (2026-11-10 대표 결정: 한 코스는 전체 열기, 나머지 둘은 매일) */
+export const PLUS_DAILY_COURSES = 2;
 export const PLUS_MONTHLY_COURSES = 3;
 
 /** 알림이 꺼진 사용자에게 Drop 완료 뒤 다시 물어보는 간격 */

@@ -1,6 +1,6 @@
 import { CATEGORIES } from './constants';
 import { type Recall, recallForToday } from './learning';
-import { activeCourses, completedToday, courseQuota, isPlus, pickedCourseId, plusUsage, stageOf, weekDone, weekDropCount } from './service';
+import { activeCourses, canReadCourseToday, completedToday, courseQuota, dailyState, isPlus, pickedCourseId, plusUsage, stageOf, weekDone, weekDropCount } from './service';
 import { buildHomeStats } from './stats';
 import { getStore } from './store';
 import type { Course, Drop, User } from './types';
@@ -49,6 +49,11 @@ export async function todayData(user: User) {
   const cards: CourseCard[] = [];
   for (const i of items) if (!i.course.openedAllAt) cards.push(card(i.course, await store.listDrops(i.course.id)));
   const doneDrop = await completedToday(user.id);
+  const state = await dailyState(user);
+  // 오늘 더 읽을 수 있는 코스 (Plus는 한 편 읽은 뒤에도 다른 코스 한 편이 남을 수 있다)
+  const openable = cards.filter(c => c.nextDropId && canReadCourseToday(state, c.id));
+  const allDone = Boolean(doneDrop) && (state.full || openable.length === 0);
+  const pickedId = pickedCourseId(user, items, state.readToday);
   const week = await weekDone(user.id);
   const tomorrowId = user.tomorrowCourseId && cards.some(c => c.id === user.tomorrowCourseId) ? user.tomorrowCourseId : cards[0]?.id;
   const now = new Date(Date.now() + 9 * 3600_000);
@@ -65,14 +70,18 @@ export async function todayData(user: User) {
   }
   const recall: (Recall & { dropId: string }) | null = doneDrop ? null : await recallForToday(user);
   // 홈 카드의 '같은 코스' 기준은 오늘 받을 코스
-  if (recall) recall.sameCourse = (await store.getDrop(recall.dropId))?.courseId === pickedCourseId(user, items);
+  if (recall) recall.sameCourse = (await store.getDrop(recall.dropId))?.courseId === pickedId;
   return {
     dateLabel,
     /** KST 요일 (0=일) */
     weekday: kstWeekday(),
     cards,
-    pickedId: pickedCourseId(user, items),
-    doneToday: doneDrop ? { dropId: doneDrop.id, title: doneDrop.title, courseId: doneDrop.courseId } : null,
+    pickedId,
+    doneToday: allDone && doneDrop ? { dropId: doneDrop.id, title: doneDrop.title, courseId: doneDrop.courseId } : null,
+    /** 오늘 이미 읽은 코스 (Plus가 한 편 더 읽을 때 카드에 '오늘 읽음') */
+    readToday: [...state.readToday],
+    /** Plus: 오늘 한 편 읽었고 다른 코스 한 편이 더 남음 */
+    moreToday: Boolean(doneDrop) && !allDone,
     tomorrow: cards.find(c => c.id === tomorrowId) ?? null,
     anon: user.anon,
     weekDays: week.filter(Boolean).length,
