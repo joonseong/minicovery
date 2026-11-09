@@ -50,7 +50,6 @@ export function RecommendScreen({
                   {i + 1}
                 </span>
                 <span className="flex-1 text-sm">{t}</span>
-                {course.access[i] === 'locked' ? <span className="flex-shrink-0 text-[13px] font-medium text-fuse-sub">Plus</span> : null}
               </>
             );
             return (
