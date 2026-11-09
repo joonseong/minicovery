@@ -89,7 +89,7 @@ function dropRequest(params: DropParams, messages: Anthropic.MessageParam[], too
     system: [{ type: 'text' as const, text: DROP_SYSTEM, cache_control: { type: 'ephemeral' as const } }],
     tools: [WEB_SEARCH_TOOL],
     ...(toolChoice ? { tool_choice: toolChoice } : {}),
-    output_config: { effort: 'medium' as const },
+    output_config: { effort: params.effort ?? ('medium' as const) },
     messages,
   };
 }

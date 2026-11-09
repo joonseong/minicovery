@@ -29,6 +29,8 @@ export interface DropParams {
   index: number;
   learnedTitles: string[];
   model: ModelTier;
+  /** 생각 깊이. 없으면 medium (비용 비교 실험용, 2026-11-10) */
+  effort?: 'low' | 'medium';
 }
 
 export interface DropOutput {
