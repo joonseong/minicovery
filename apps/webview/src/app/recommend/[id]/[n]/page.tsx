@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 
 import { SharedDropScreen } from '@/components/screens/SharedDropScreen';
 import { sharedDrop } from '@/lib/learning';
@@ -10,5 +10,7 @@ export const dynamic = 'force-dynamic';
 export default async function SharedDropPage({ params }: { params: { id: string; n: string } }) {
   const drop = await sharedDrop(params.id, Number(params.n), await currentUser());
   if (!drop) notFound();
+  // 무료로 볼 수 있는 편을 넘으면 구독 안내로
+  if (drop === 'locked') redirect('/plus?from=shared');
   return <SharedDropScreen drop={drop} />;
 }

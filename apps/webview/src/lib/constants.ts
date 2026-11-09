@@ -63,6 +63,9 @@ export const LEARNED_COMPLETION_RATIO = 0.7;
 /** 하루 실시간 생성 중 Opus로 만드는 개수. 그 뒤로는 Sonnet (PRD §29.3) */
 export const DAILY_PREMIUM_REALTIME = 2;
 
+/** 다른 사람이 만든 코스: 무료는 앞에서 몇 번째 Drop까지 볼 수 있는지. 마지막 편은 앞부분만 보여 주고 Plus로 이어 읽게 한다 (2026-11-10 대표 결정) */
+export const SHARED_FREE_DROPS = 3;
+
 /** 알림을 보내지 않는 시간대 (PRD §17.2) */
 export const QUIET_HOURS = { start: '21:00', end: '08:00' };
 /** 다음 Drop 알림: 모두 아침 8시 (2026-11-10 대표 결정). Drop은 0시에 열리고, 그날 아직 안 읽었으면 이때 한 번 보낸다.

@@ -4,7 +4,7 @@ import { currentUser } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
 
-const FROMS: PaywallFrom[] = ['done', 'keep', 'profile'];
+const FROMS: PaywallFrom[] = ['done', 'keep', 'profile', 'shared'];
 
 export default async function PlusPage({ searchParams }: { searchParams: { from?: string } }) {
   const user = await currentUser();
