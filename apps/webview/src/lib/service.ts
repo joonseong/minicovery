@@ -7,7 +7,6 @@ import {
   APPROVED_TOPIC_HOURS,
   APPROVED_TOPIC_MAX,
   CATEGORY_COLOR,
-  DAILY_PREMIUM_REALTIME,
   FREE_COURSE_LIMIT,
   GENERATING_STALE_MIN,
   LEARNED_COMPLETION_RATIO,
@@ -15,6 +14,7 @@ import {
   NOTIFY_ASK_INTERVALS_DAYS,
   PLUS_DAILY_COURSES,
   PLUS_MONTHLY_COURSES,
+  REALTIME_DROP,
   REVIEW_AT_DROPS,
   STAGES,
 } from './constants';
@@ -27,7 +27,6 @@ import type {
   ExplainAnswer,
   GenerationMode,
   Level,
-  ModelTier,
   Report,
   TaskType,
   UnderstandingSignal,
@@ -360,16 +359,6 @@ export async function createCourse(
 
 /* ---------- Drop 생성 ---------- */
 
-/** 오늘 실시간으로 Opus 생성한 개수가 기준을 넘으면 Sonnet (PRD §29.3) */
-async function pickRealtimeModel(userId: string): Promise<ModelTier> {
-  const today = kstDate();
-  const usage = await getStore().listUsage(new Date(Date.now() - 36 * 3600_000).toISOString());
-  const premiumToday = usage.filter(
-    u => u.userId === userId && u.purpose === 'drop' && u.mode !== 'batch' && u.model === 'opus' && kstDate(u.at) === today,
-  ).length;
-  return premiumToday >= DAILY_PREMIUM_REALTIME ? 'sonnet' : 'opus';
-}
-
 async function learnedTitles(course: Course, beforeIndex: number) {
   const drops = await getStore().listDrops(course.id);
   return drops.filter(d => d.index < beforeIndex && d.completedAt).map(d => d.title);
@@ -477,14 +466,14 @@ export async function generateDrop(user: User, dropId: string, mode: GenerationM
 
   const course = (await store.getCourse(drop.courseId))!;
   const g = getGenerator();
-  const model = await pickRealtimeModel(user.id);
   const params = {
     courseTitle: course.title,
     level: course.level,
     outline: course.outline.map(o => o.title),
     index: drop.index,
     learnedTitles: await learnedTitles(course, drop.index),
-    model,
+    model: REALTIME_DROP.model,
+    effort: REALTIME_DROP.effort,
   };
   // 그림은 글과 함께 그리기 시작한다 (제목·코스 이름으로). 둘 다 되면 같이 보여 준다
   const art = startDropImage(drop, course).then(url => {
@@ -537,7 +526,7 @@ export async function generateDrop(user: User, dropId: string, mode: GenerationM
   drop.body = isCompleteBody(body) ? body : undefined;
   drop.sources = output.result.sources.slice(0, 3);
   drop.evidence = output.result.evidence.slice(0, 20);
-  drop.model = model;
+  drop.model = output.model;
   drop.status = 'ready';
   drop.verify = 'pending';
   drop.generatedAt = nowIso();
