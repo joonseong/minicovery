@@ -60,8 +60,12 @@ export const SUGGESTED_TOPICS = ['행동경제학', '진화론', '와인', '로�
 /** Learned 판정: 코스 Drop의 70% 이상 완료 + 완료한 Drop의 "이해했어요" 과반 (PRD §13.2) */
 export const LEARNED_COMPLETION_RATIO = 0.7;
 
-/** 하루 실시간 생성 중 Opus로 만드는 개수. 그 뒤로는 Sonnet (PRD §29.3) */
-export const DAILY_PREMIUM_REALTIME = 2;
+/**
+ * 열 때 바로 만드는 Drop(새 코스 첫 편·Plus 두 번째 코스 등)의 모델과 생각 깊이.
+ * 2026-11-10 대표 결정: 5주제 비교에서 품질 차이가 작아(Opus 3 : Sonnet low 2) 원가 약 119원 → 44원, 기다림 29초 → 14초.
+ * 밤에 미리 만드는 Drop(Batch)은 그대로 Opus
+ */
+export const REALTIME_DROP = { model: 'sonnet', effort: 'low' } as const;
 
 /** 다른 사람이 만든 코스: 무료는 앞에서 몇 번째 Drop까지 볼 수 있는지. 마지막 편은 앞부분만 보여 주고 Plus로 이어 읽게 한다 (2026-11-10 대표 결정) */
 export const SHARED_FREE_DROPS = 3;
