@@ -29,6 +29,10 @@ export function DropDoneScreen(props: {
   courseDone: number;
   /** 전체 열린 코스: 하루 한 편과 상관없이 바로 다음 편으로 */
   openedAll?: boolean;
+  /** Plus: 오늘 다른 코스 한 편을 더 읽을 수 있음 */
+  moreToday?: boolean;
+  /** Plus: 진행 중인 코스가 하루 자리 수 이하라 모두 내일 열림 (고를 필요 없음) */
+  dailyAll?: boolean;
   /** 방금 읽은 Drop 번호 (0부터) */
   dropIndex?: number;
   /** 전체 열린 코스에서 이어서 읽을 다음 Drop */
@@ -86,14 +90,14 @@ export function DropDoneScreen(props: {
             ))}
           </div>
           <p className="text-center text-[13px] text-fuse-sub">
-            이번 주 {days}일째 학습했어요.{props.openedAll ? '' : ' 내일도 한 편이 기다려요.'}
+            이번 주 {days}일째 학습했어요.{props.openedAll ? '' : props.moreToday ? ' 오늘 다른 코스 한 편을 더 읽을 수 있어요.' : ' 내일도 한 편이 기다려요.'}
           </p>
         </section>
 
         {props.courses.length ? (
           <section className="mt-7 flex flex-col gap-2.5">
             <h2 className="text-base font-semibold leading-[1.3]">{props.courses.length > 1 ? '내일 받을 코스' : '내일 받을 Drop'}</h2>
-            <TomorrowList items={props.courses} tomorrowId={props.tomorrowId} />
+            <TomorrowList items={props.courses} tomorrowId={props.tomorrowId} all={props.dailyAll} />
             {props.plus ? (
               <>
                 <OutlineButton href="/start" className="mt-3">
@@ -117,11 +121,20 @@ export function DropDoneScreen(props: {
           </section>
         ) : null}
       </Main>
-      <Footer className={props.openedAll ? 'gap-1' : undefined}>
+      <Footer className={props.openedAll || props.moreToday ? 'gap-1' : undefined}>
         {props.openedAll ? (
           <>
             <PrimaryButton href={props.nextDropId ? `/drop/${props.nextDropId}` : `/course/${props.courseId}`} replace>
               {props.nextDropId ? `Drop ${n + 1} 이어서 읽기` : '코스로 돌아가기'}
+            </PrimaryButton>
+            <TextButton href="/today" replace>
+              오늘 학습 마치기
+            </TextButton>
+          </>
+        ) : props.moreToday ? (
+          <>
+            <PrimaryButton href="/today" replace>
+              한 편 더 읽기
             </PrimaryButton>
             <TextButton href="/today" replace>
               오늘 학습 마치기

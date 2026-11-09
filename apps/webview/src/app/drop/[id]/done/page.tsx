@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 
 import { DropDoneScreen } from '@/components/screens/DropDoneScreen';
-import { activeCourses, isPlus, plusUsage, stageOf, weekDone } from '@/lib/service';
+import { activeCourses, canReadCourseToday, dailyState, isPlus, plusUsage, stageOf, weekDone } from '@/lib/service';
 import { currentUser } from '@/lib/session';
 import { getStore } from '@/lib/store';
 
@@ -18,6 +18,9 @@ export default async function DropDonePage({ params, searchParams }: { params: {
   const courses = items
     .filter(i => i.next && !i.course.openedAllAt)
     .map(i => ({ id: i.course.id, topic: i.course.topic, index: i.next!.index, total: i.course.outline.length, title: i.next!.title, category: i.course.category }));
+  // Plus: 오늘 다른 코스 한 편을 더 읽을 수 있는지 (코스마다 한 편씩 하루 2편)
+  const state = await dailyState(user);
+  const moreToday = !course.openedAllAt && courses.some(c => canReadCourseToday(state, c.id));
   const tomorrowId = courses.some(c => c.id === user.tomorrowCourseId) ? user.tomorrowCourseId! : courses[0]?.id;
   const week = await weekDone(user.id);
   // 전체 열린 코스면 바로 이어 읽을 다음 Drop (건너뛴 Drop은 빼고)
@@ -32,6 +35,8 @@ export default async function DropDonePage({ params, searchParams }: { params: {
       courses={courses}
       tomorrowId={tomorrowId}
       plus={isPlus(user)}
+      moreToday={moreToday}
+      dailyAll={isPlus(user) && courses.length <= state.slots}
       usage={await plusUsage(user)}
       currentTopic={course.topic}
       courseDone={courseDrops.filter(d => d.completedAt).length}

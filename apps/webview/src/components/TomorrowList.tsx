@@ -14,7 +14,9 @@ export type TomorrowItem = { id: string; topic: string; index: number; total: nu
  * 쉬는 중인 코스의 '이 코스로 받기'를 누르면 내일은 그 코스의 Drop을 받는다 (하루 한 편).
  * 코스가 하나면 고를 게 없으니 안내 카드만 보여 준다
  */
-export function TomorrowList({ items, tomorrowId }: { items: TomorrowItem[]; tomorrowId?: string }) {
+export function TomorrowList({ items, tomorrowId, all }: { items: TomorrowItem[]; tomorrowId?: string; all?: boolean }) {
+  // all: Plus라 진행 중인 코스를 모두 매일 받는다 (고를 게 없다)
+  const single = items.length === 1 || Boolean(all);
   const [on, setOn] = useState(tomorrowId ?? items[0]?.id);
 
   const pick = (id: string) => {
@@ -26,7 +28,7 @@ export function TomorrowList({ items, tomorrowId }: { items: TomorrowItem[]; tom
   return (
     <>
       {items.map(c => {
-        const active = items.length === 1 || c.id === on;
+        const active = single || c.id === on;
         return (
           <div
             key={c.id}
@@ -42,7 +44,7 @@ export function TomorrowList({ items, tomorrowId }: { items: TomorrowItem[]; tom
               </span>
               <span className={cx('text-sm font-medium leading-[1.3]', active ? '' : 'text-fuse-sub')}>{c.title}</span>
               <span className={cx('text-[13px] font-medium', active ? 'text-fuse-hot' : 'text-fuse-faint')}>
-                {items.length === 1 ? '내일 0시에 열려요' : active ? '내일 받아요' : '쉬는 중'}
+                {single ? '내일 0시에 열려요' : active ? '내일 받아요' : '쉬는 중'}
               </span>
             </span>
             {active ? null : (
@@ -58,7 +60,11 @@ export function TomorrowList({ items, tomorrowId }: { items: TomorrowItem[]; tom
           </div>
         );
       })}
-      {items.length > 1 ? <p className="mt-0.5 text-[13px] text-fuse-sub">하루 한 편, 고른 코스로 받아요. 쉬는 중인 코스도 진도는 그대로예요.</p> : null}
+      {all && items.length > 1 ? (
+        <p className="mt-0.5 text-[13px] text-fuse-sub">Plus는 코스마다 하루 한 편씩 받아요.</p>
+      ) : items.length > 1 ? (
+        <p className="mt-0.5 text-[13px] text-fuse-sub">하루 한 편, 고른 코스로 받아요. 쉬는 중인 코스도 진도는 그대로예요.</p>
+      ) : null}
     </>
   );
 }

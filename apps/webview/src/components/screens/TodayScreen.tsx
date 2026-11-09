@@ -24,6 +24,10 @@ type Props = {
   cards: CourseCard[];
   pickedId?: string;
   doneToday: { dropId: string; title: string; courseId: string } | null;
+  /** 오늘 이미 읽은 코스 (Plus가 한 편 더 읽을 때) */
+  readToday?: string[];
+  /** Plus: 오늘 한 편 읽었고 다른 코스 한 편이 더 남음 */
+  moreToday?: boolean;
   tomorrow: CourseCard | null;
   weekDays: number;
   weekDrops: number;
@@ -63,6 +67,8 @@ export function TodayScreen({
   cards,
   pickedId,
   doneToday,
+  readToday = [],
+  moreToday = false,
   tomorrow,
   weekDays,
   stats,
@@ -291,6 +297,7 @@ export function TodayScreen({
             {busy ? '여는 중…' : '읽기'}
           </span>
         </button>
+        {moreToday ? <p className="mt-2 text-[13px] font-medium text-fuse-hot">Plus라 오늘 다른 코스 한 편을 더 읽을 수 있어요.</p> : null}
         {!cur.ready ? <p className="mt-2 text-[13px] text-fuse-sub">오늘 Drop은 지금 써 드려요. 그림과 함께 30초쯤 걸려요.</p> : null}
 
         {recall ? <RecallCard recall={recall} id="recall" className="mt-3" /> : null}
@@ -298,17 +305,18 @@ export function TodayScreen({
         <section aria-label="진행 중인 코스" className="mt-3 grid grid-cols-2 gap-2.5">
           {cards.map(c => {
             const today = c.id === picked;
+            const readNow = readToday.includes(c.id);
             return (
               <button
                 key={c.id}
                 type="button"
-                onClick={() => (today ? router.push(`/course/${c.id}`) : setPicked(c.id))}
-                aria-label={today ? `${c.topic} 코스 보기` : `오늘 ${c.topic} 코스로 읽기`}
+                onClick={() => (today || readNow ? router.push(`/course/${c.id}`) : setPicked(c.id))}
+                aria-label={today || readNow ? `${c.topic} 코스 보기` : `오늘 ${c.topic} 코스로 읽기`}
                 className={cx('mc-press flex h-32 flex-col justify-between text-left', CARD)}
               >
                 <span className="flex w-full items-start justify-between">
                   <CatIcon category={c.category} />
-                  <span className={cx('text-[13px] font-medium', today ? 'text-fuse-hot' : 'text-fuse-sub')}>{today ? '오늘' : '이걸로 읽기'}</span>
+                  <span className={cx('text-[13px] font-medium', today ? 'text-fuse-hot' : 'text-fuse-sub')}>{readNow ? '오늘 읽음' : today ? '오늘' : '이걸로 읽기'}</span>
                 </span>
                 <span className="flex flex-col gap-0.5">
                   <span className="truncate text-sm text-fuse-sub">{c.topic}</span>
