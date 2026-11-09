@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { cleanDrop } from '../drop-format';
 import type { AppEvent, Course, Drop, FailureLog, Report, SocialField, UsageLog, User } from '../types';
 import type { Store } from './index';
 
@@ -102,15 +103,18 @@ export class FileStore implements Store {
   }
 
   async getDrop(id: string) {
-    return this.db.drops[id] ?? null;
+    return cleanDrop(this.db.drops[id] ?? null);
   }
   async listDrops(courseId: string) {
     return Object.values(this.db.drops)
       .filter(d => d.courseId === courseId)
-      .sort((a, b) => a.index - b.index);
+      .sort((a, b) => a.index - b.index)
+      .map(cleanDrop);
   }
   async listDropsByUser(userId: string) {
-    return Object.values(this.db.drops).filter(d => d.userId === userId);
+    return Object.values(this.db.drops)
+      .filter(d => d.userId === userId)
+      .map(cleanDrop);
   }
   async saveDrop(drop: Drop) {
     this.db.drops[drop.id] = drop;

@@ -1,5 +1,6 @@
 import { SupabaseClient, createClient } from '@supabase/supabase-js';
 
+import { cleanDrop } from '../drop-format';
 import type { AppEvent, Course, Drop, FailureLog, Report, SocialField, UsageLog, User } from '../types';
 import type { Store } from './index';
 
@@ -143,18 +144,20 @@ export class SupabaseStore implements Store {
     });
   }
 
-  getDrop(id: string) {
-    return this.one<Drop>('drops', id);
+  async getDrop(id: string) {
+    return cleanDrop(await this.one<Drop>('drops', id));
   }
-  listDrops(courseId: string) {
-    return this.many<Drop>((from, to) =>
+  async listDrops(courseId: string) {
+    const rows = await this.many<Drop>((from, to) =>
       this.db.from('drops').select('data').eq('course_id', courseId).order('idx').order('id').range(from, to),
     );
+    return rows.map(cleanDrop);
   }
-  listDropsByUser(userId: string) {
-    return this.many<Drop>((from, to) =>
+  async listDropsByUser(userId: string) {
+    const rows = await this.many<Drop>((from, to) =>
       this.db.from('drops').select('data').eq('user_id', userId).order('idx').order('id').range(from, to),
     );
+    return rows.map(cleanDrop);
   }
   saveDrop(drop: Drop) {
     return this.upsert('drops', {
@@ -170,7 +173,7 @@ export class SupabaseStore implements Store {
     const jsonPatch = JSON.parse(JSON.stringify(patch, (_, value: unknown) => (value === undefined ? null : value))) as Record<string, unknown>;
     const { data, error } = await this.db.rpc('claim_drop', { drop_id: id, from_status: from, patch: jsonPatch });
     if (error) throw error;
-    return (data as Drop | null) ?? null;
+    return cleanDrop((data as Drop | null) ?? null);
   }
 
   async putImage(path: string, bytes: Uint8Array, contentType: string) {
