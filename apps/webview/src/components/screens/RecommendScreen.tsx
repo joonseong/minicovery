@@ -1,13 +1,12 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect } from 'react';
 
 import type { Recommended } from '@/lib/learning';
 
 import { CatIcon } from '../CatIcon';
 import { LikeButton } from '../LikeButton';
-import { AppHeader, Footer, IconArrow, Main, PrimaryButton, Screen } from '../ui';
+import { AppHeader, Footer, Main, PrimaryButton, Screen, cx } from '../ui';
 
 /** 다른 사람이 만든 코스 미리보기: 목차를 보고 받지 않고 바로 읽는다 (만든 사람은 드러나지 않음) */
 export function RecommendScreen({
@@ -42,33 +41,16 @@ export function RecommendScreen({
             <span className="relative -top-[0.14em] ml-2 text-[22px] leading-[1.3]">편</span>
           </p>
         </section>
+        {/* 목차는 보기만 한다 (2026-11-10 대표 결정: 누르는 동작 없음). 읽기는 아래 '첫 Drop 읽기'에서 이어 간다 */}
         <ol className="mt-6 flex flex-col">
-          {course.titles.map((t, i) => {
-            const row = (
-              <>
-                <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-fuse-edge bg-shape-white text-[13px] font-semibold">
-                  {i + 1}
-                </span>
-                <span className="flex-1 text-sm">{t}</span>
-              </>
-            );
-            return (
-              <li key={i} className={i ? 'border-t border-[#F2F2F4]' : ''}>
-                {course.readable[i] && course.access[i] === 'locked' ? (
-                  <Link href="/plus?from=shared" className="flex min-h-[60px] items-center gap-3 py-2 text-fuse-sub">
-                    {row}
-                  </Link>
-                ) : course.readable[i] ? (
-                  <Link href={`/recommend/${course.id}/${i + 1}`} className="flex min-h-[60px] items-center gap-3 py-2">
-                    {row}
-                    <IconArrow />
-                  </Link>
-                ) : (
-                  <div className="flex min-h-[60px] items-center gap-3 py-2 text-fuse-faint">{row}</div>
-                )}
-              </li>
-            );
-          })}
+          {course.titles.map((t, i) => (
+            <li key={i} className={cx('flex min-h-[60px] items-center gap-3 py-2', i ? 'border-t border-[#F2F2F4]' : '')}>
+              <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-fuse-edge bg-shape-white text-[13px] font-semibold">
+                {i + 1}
+              </span>
+              <span className="flex-1 text-sm">{t}</span>
+            </li>
+          ))}
         </ol>
         <p className="mt-3 text-[13px] text-fuse-sub">
           {gated

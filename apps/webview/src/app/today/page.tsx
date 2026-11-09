@@ -9,8 +9,8 @@ export const dynamic = 'force-dynamic';
 
 export default async function TodayPage() {
   const user = await currentUser();
-  const data = await todayData(user);
+  // 둘은 서로 기다릴 필요가 없어 함께 읽는다 (탭 이동 시간 줄이기)
+  const [data, recommended] = await Promise.all([todayData(user), recommendedCourses(user)]);
   if (data.cards.length === 0 && !data.doneToday && (user.learned?.length ?? 0) === 0) redirect('/start');
-  const recommended = await recommendedCourses(user);
   return <TodayScreen {...data} recommended={recommended.items} recommendedMore={recommended.hasMore} />;
 }

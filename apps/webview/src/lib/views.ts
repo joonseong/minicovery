@@ -101,11 +101,11 @@ export async function libraryData(user: User) {
   const courses = (await store.listCourses(user.id)).filter(c => c.status === 'active' || c.status === 'completed');
   const active: CourseCard[] = [];
   const done: CourseCard[] = [];
-  for (const c of courses.sort((a, b) => b.createdAt.localeCompare(a.createdAt))) {
-    const k = card(c, await store.listDrops(c.id));
-    (c.status === 'completed' ? done : active).push(k);
-  }
-  return { active, done, stage: stageOf(user), plus: isPlus(user), usage: await plusUsage(user), email: user.email, anon: user.anon, quota: await courseQuota(user) };
+  // 코스마다 Drop 목록·남은 횟수는 서로 기다릴 필요가 없어 함께 읽는다 (탭 이동 시간 줄이기)
+  const sorted = courses.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const [dropLists, usage, quota] = await Promise.all([Promise.all(sorted.map(c => store.listDrops(c.id))), plusUsage(user), courseQuota(user)]);
+  sorted.forEach((c, i) => (c.status === 'completed' ? done : active).push(card(c, dropLists[i]!)));
+  return { active, done, stage: stageOf(user), plus: isPlus(user), usage, email: user.email, anon: user.anon, quota };
 }
 
 export type MapPlace = { name: string; state: 'done' | 'going' | 'here' | 'fog'; status: string; href: string };
@@ -133,8 +133,10 @@ export async function mapData(user: User) {
   }
   let going = 0;
   let closest: { course: Course; done: number; total: number } | null = null;
-  for (const c of courses.filter(c => c.status === 'active')) {
-    const drops = await store.listDrops(c.id);
+  const activeList = courses.filter(c => c.status === 'active');
+  const dropLists = await Promise.all(activeList.map(c => store.listDrops(c.id)));
+  for (const [i, c] of activeList.entries()) {
+    const drops = dropLists[i]!;
     const done = drops.filter(d => d.completedAt).length;
     going++;
     add(c.category, {

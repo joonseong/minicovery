@@ -10,11 +10,14 @@ import { cx } from './ui';
 export function LikeButton({ courseId, initial }: { courseId: string; initial: boolean }) {
   const [liked, setLiked] = useState(initial);
   const [busy, setBusy] = useState(false);
+  // 좋아요를 켤 때마다 하트가 커졌다 작아진다 (key가 바뀌면 애니메이션을 처음부터)
+  const [pop, setPop] = useState(0);
 
   const toggle = async () => {
     if (busy) return;
     const on = !liked;
     setLiked(on);
+    if (on) setPop(n => n + 1);
     setBusy(true);
     const res = await postJson(`/api/recommended/${courseId}/like`, { on });
     setBusy(false);
@@ -32,7 +35,7 @@ export function LikeButton({ courseId, initial }: { courseId: string; initial: b
         liked ? 'border-fuse-hot' : 'border-fuse-edge',
       )}
     >
-      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+      <svg key={pop} width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" className={pop ? 'mc-heart-pop' : undefined}>
         <path
           d="M12 20.5s-7.5-4.6-9.3-9.2C1.5 8 3.4 4.5 6.9 4.5c2.1 0 3.8 1.2 5.1 3 1.3-1.8 3-3 5.1-3 3.5 0 5.4 3.5 4.2 6.8-1.8 4.6-9.3 9.2-9.3 9.2Z"
           fill={liked ? '#FF4D6D' : 'none'}

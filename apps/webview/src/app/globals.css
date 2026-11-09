@@ -115,6 +115,25 @@ input::placeholder {
   animation: mc-tab-pop 0.5s cubic-bezier(0.3, 1.4, 0.5, 1);
 }
 
+/* 좋아요: 하트가 커졌다 작아진다 */
+@keyframes mc-heart-pop {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.38);
+  }
+  65% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.mc-heart-pop {
+  animation: mc-heart-pop 0.42s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+
 /* 만드는 중인 편: 동그라미 테두리가 로딩처럼 차오른다 */
 @keyframes mc-ring {
   from {
@@ -156,6 +175,7 @@ input::placeholder {
 @media (prefers-reduced-motion: reduce) {
   .mc-tab .mc-ic,
   .mc-ic-on,
+  .mc-heart-pop,
   .mc-pop,
   .mc-up,
   .mc-in,
