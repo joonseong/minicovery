@@ -162,8 +162,15 @@ function TabIcon({ tab, color }: { tab: (typeof TABS)[number]['key']; color: str
   );
 }
 
+/** 방금 눌러서 튕긴 탭. 새 화면의 탭바가 같은 탭을 한 번 더 튕기지 않게 (클라이언트 이동 동안 모듈 변수는 남는다) */
+let poppedTab: { key: TabKey; at: number } | null = null;
+
 /** 화면 위에 떠 있다. 쓰는 화면은 본문 아래에 여백(pb-32)을 둔다 */
 export function BottomNav({ active }: { active: TabKey }) {
+  // 누르는 즉시 그 탭을 켜고 튕긴다. 서버가 새 화면을 그리는 동안 기다리는 느낌을 줄인다
+  const [pending, setPending] = useState<TabKey | null>(null);
+  const [popOnMount] = useState(() => !(poppedTab && poppedTab.key === active && Date.now() - poppedTab.at < 3000));
+  const shown = pending ?? active;
   return (
     <div
       className="pointer-events-none absolute inset-x-0 bottom-0 z-30 h-28"
@@ -172,17 +179,25 @@ export function BottomNav({ active }: { active: TabKey }) {
       <nav aria-label="주요 메뉴" className="pointer-events-auto absolute inset-x-5 bottom-4 flex items-center justify-between">
         <div className="flex items-center gap-0.5 rounded-full bg-shape-white p-1 shadow-[0_8px_24px_rgba(15,15,20,0.10),0_0_0_1px_#F0F0F2]">
           {TABS.map(t => {
-            const on = t.key === active;
+            const on = t.key === shown;
+            const pop = on && (t.key === pending || (!pending && popOnMount));
             return (
               <Link
                 key={t.key}
                 href={t.href}
                 replace
                 aria-label={t.label}
-                aria-current={on ? 'page' : undefined}
+                aria-current={t.key === active ? 'page' : undefined}
+                onClick={() => {
+                  if (t.key === active) return;
+                  poppedTab = { key: t.key, at: Date.now() };
+                  setPending(t.key);
+                }}
                 className={cx('mc-tab flex h-12 w-12 items-center justify-center rounded-full', on && 'bg-fuse-pill')}
               >
-                <TabIcon tab={t.key} color={on ? '#0B0B0C' : '#AEAEB2'} />
+                <span className={cx('mc-ic flex', pop && 'mc-ic-on')}>
+                  <TabIcon tab={t.key} color={on ? '#0B0B0C' : '#AEAEB2'} />
+                </span>
               </Link>
             );
           })}
